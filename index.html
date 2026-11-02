@@ -383,6 +383,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>Math.round(n).toLocaleString("cs-CZ");
 const fmtKm=(km,d=1)=>km.toLocaleString("cs-CZ",{maximumFractionDigits:km<10?2:d});
+const lenTxt=km=>km<1?fmt(km*1000)+" m":fmtKm(km)+" km";
 function plural(n,a,b,c){n=Math.abs(n);return n===1?a:(n>=2&&n<=4?b:c)}
 const cest=n=>plural(n,"cestující","cestující","cestujících");
 const vag=n=>plural(n,"vagón","vagóny","vagónů");
@@ -771,7 +772,7 @@ const Game=(()=>{
 function renderHud(){
   const I=info();
   $("#sFollowers").textContent=fmt(S.followers);
-  $("#sLength").textContent=fmtKm(I.L)+" km";
+  $("#sLength").textContent=lenTxt(I.L);
   if(I.head.waiting){$("#sNext").textContent="Výhybka";$("#sNextBar").style.width="100%"}
   else{const need=followersFor(I.head.leg.start+I.head.leg.km)-S.followers;$("#sNext").textContent=`${nodeName(I.head.leg.to)} · ${fmt(need)}`;$("#sNextBar").style.width=(I.head.t*100).toFixed(1)+"%"}
   $("#voteDot").hidden=!(S.vote&&S.vote.options&&S.vote.options.length);
@@ -804,8 +805,8 @@ function renderBoarding(){
   }else{
     el.innerHTML=`<span class="eyebrow">Nástupiště 1 · vlak followerů</span>
       <h1>Nastup do vlaku</h1>
-      <p class="lead">Každý follow přidá jeden vagón. Vlak je dlouhý ${fmtKm(I.L)} km a jednou obepne celou Zemi.</p>
-      <div class="counter"><span><b>${fmt(S.followers)}</b>cestujících</span><span><b>${fmtKm(I.L)} km</b>délka vlaku</span></div>
+      <p class="lead">Každý follow přidá jeden vagón. Vlak je dlouhý ${lenTxt(I.L)} a jednou obepne celou Zemi.</p>
+      <div class="counter"><span><b>${fmt(S.followers)}</b>cestujících</span><span><b>${lenTxt(I.L)}</b>délka vlaku</span></div>
       <ol class="steps">
         <li><span><b>Dej follow</b> na Instagramu${S.instagram?` <a href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">@${esc(S.instagram)}</a>`:""}. Tím jsi na palubě.</span></li>
         <li><span><b>Vyzvedni si jízdenku</b> a dostaneš vlastní vagón.</span></li>
@@ -1112,7 +1113,7 @@ function renderAdmin(){
     <div class="card"><h3>Cestující</h3>
       <div class="row-f"><div class="field"><label for="aF">Počet followerů</label><input type="number" id="aF" min="0" value="${S.followers}"></div><button class="btn primary" id="aFSave" type="button">Uložit</button></div>
       <div class="row-f">${[1,10,50,500].map(k=>`<button class="btn small" type="button" data-add="${k}">+${k}</button>`).join("")}<button class="btn small" type="button" data-add="-10">−10</button></div>
-      <p class="muted" style="font-size:.88rem">Vlak je dlouhý ${fmtKm(I.L)} km. ${I.head.waiting?`Lokomotiva čeká na výhybce ${esc(nodeName(I.head.node))}.`:`Do stanice ${esc(nodeName(I.head.leg.to))} chybí ${fmt(followersFor(I.head.leg.start+I.head.leg.km)-S.followers)}.`}</p>
+      <p class="muted" style="font-size:.88rem">Vlak je dlouhý ${lenTxt(I.L)}. ${I.head.waiting?`Lokomotiva čeká na výhybce ${esc(nodeName(I.head.node))}.`:`Do stanice ${esc(nodeName(I.head.leg.to))} chybí ${fmt(followersFor(I.head.leg.start+I.head.leg.km)-S.followers)}.`}</p>
       <div class="row-f"><div class="field"><label for="aLen">Délka vagónu (m)</label><input type="number" id="aLen" min="1" value="${S.wagonLength}"></div><div class="field"><label for="aEvery">Speciální vagón každý</label><input type="number" id="aEvery" min="1" value="${S.specialEvery}"></div><button class="btn" id="aLenSave" type="button">Uložit</button></div>
       <div class="row-f"><div class="field"><label for="aIg">Instagram účet (bez @)</label><input type="text" id="aIg" value="${esc(S.instagram)}" placeholder="nazev.uctu"></div><button class="btn" id="aIgSave" type="button">Uložit</button></div>
     </div>
