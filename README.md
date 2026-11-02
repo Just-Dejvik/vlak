@@ -1,23 +1,24 @@
-# Vlak bez konečné
+# Vlak followerů
 
-Statický web (jedna stránka, žádný build). Každý follower = jeden vagón dlouhý 25 m.
-Vlak leží na trati od Prahy až po lokomotivu, na výhybkách rozhoduje komunita.
+Hra pro Instagram: každý follower přidá jeden vagón (25 m). Vlak leží na trati od Prahy
+až po lokomotivu, na výhybkách rozhoduje komunita. Cíl: obepnout Zemi (40 075 km).
 
-## Soubory
-- `index.html` – celý web včetně správy (`/#sprava`)
-- `data.json` – stav vlaku: počet cestujících, trasa, hlasování, kronika, speciální vagóny
+## Jak to je postavené
+- `index.html` – celá hra (3D vlak přes three.js) i správa na `/#sprava`
+- `api/world.js` – veřejný stav světa a seznam ověřených cestujících
+- `api/ticket.js` – vyzvednutí jízdenky, stav, úprava panáčka, smazání
+- `api/admin.js` – správa (heslo v proměnné `ADMIN_PASSWORD`), denní kontrola followerů
+- `lib/` – logika jízdenek a úložiště (privátní Vercel Blob, podmíněné zápisy přes ETag)
+- `data.json` – ukázková data, použijí se jen když server neběží
 
-## Jak aktualizovat vlak (bez databáze)
-1. Otevři `/#sprava`, uprav počet cestujících, hlasy, kroniku…
-2. Dole klikni na **Zkopírovat data**.
-3. Na GitHubu otevři `data.json` → Edit → vlož → Commit.
-4. Vercel web do minuty znovu nasadí a změny uvidí všichni.
+## Denní kontrola followerů
+1. Instagram → Nastavení → Centrum účtů → Vaše informace a oprávnění → Stáhnout informace
+2. Jen „Sledující a sledovaní“, formát JSON, celé období
+3. Ve správě nahraj `followers_1.json` a dej **Spustit kontrolu**
 
-## Nasazení na Vercel
-1. Nahraj obsah této složky do nového repozitáře na GitHubu.
-2. Na vercel.com → Add New → Project → vyber repozitář → Deploy (žádné nastavení není potřeba).
+Kontrola ověří čekající jízdenky, odstěhuje lidi, kteří dali unfollow (vagón jim drží),
+vrátí ty, kteří se vrátili, zruší jízdenky neověřené do 4 dnů a nastaví počet cestujících.
 
-## Co zatím chybí do ostré verze
-- Jízdenky se ukládají jen v prohlížeči návštěvníka → potřebují databázi (např. Vercel Postgres / Neon).
-- Správa nemá heslo → před zveřejněním ji schováme za přihlášení.
-- Kontrola jízdenek proti exportu sledujících z Instagramu (1× denně).
+## Proměnné na Vercelu
+- `BLOB_READ_WRITE_TOKEN` – nastaví Vercel po napojení Blob úložiště
+- `ADMIN_PASSWORD` – heslo do správy
