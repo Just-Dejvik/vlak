@@ -821,7 +821,7 @@ function renderBoarding(){
     $("#bForm").onsubmit=async e=>{e.preventDefault();const btn=$("#bForm button[type=submit]");if(btn.disabled)return;btn.disabled=true;btn.textContent="Vydávám…";$("#bErr").textContent="";
       const r=ONLINE?await claimOnline($("#bNick").value,$("#bPub").checked):claimTicket($("#bNick").value,$("#bPub").checked);
       btn.disabled=false;btn.textContent="Nastoupit";if(r.err){$("#bErr").textContent=r.err;return}
-      closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();Game.flyTo(myTicket.wagon,0);toast(ONLINE?`Vítej na palubě! Vagón № ${fmt(myTicket.wagon)} je tvůj, ověříme tě do 24 hodin.`:`Vítej na palubě! Tvůj vagón je № ${fmt(myTicket.wagon)}.`);
+      closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();Game.flyTo(myTicket.wagon,0);toast(ONLINE?`Vítej na palubě! Vagón № ${fmt(myTicket.wagon)} je tvůj. Follow ověříme do 24 hodin.`:`Vítej na palubě! Tvůj vagón je № ${fmt(myTicket.wagon)}.`);
       if(!isPhone())setTimeout(()=>openSheet("jizdenka",true),Game.ok?3000:0)};
   }
   $("#bLook").onclick=()=>{closeBoarding();Game.flyTo(Math.min(6,wagonCount()),.75)};
@@ -859,7 +859,7 @@ function sheetTicket(el,fresh){
     <div class="row"><span>Do</span><span>vlak nemá konečnou</span></div>
     <div class="row"><span>Stav</span><span>${STATUS_TXT[t.status]||"Platná"}</span></div>
     <div class="row"><span>Vydáno</span><span>${esc(t.createdAt?new Date(t.createdAt).toLocaleDateString("cs-CZ"):fmtDate(t.date))}</span></div></div>
-  ${t.status==="pending"?`<div class="task"><span class="eyebrow">Čeká na ověření</span><p style="margin-top:4px">Jednou denně porovnáme jízdenky se seznamem sledujících${S.instagram?` účtu @${esc(S.instagram)}`:""}. Když tě najdeme, staneš se ověřeným cestujícím${t.public?" a tvůj nick uvidí i ostatní":""}. Když tě nenajdeme do ${t.expiresAt?new Date(t.expiresAt).toLocaleDateString("cs-CZ"):"4 dnů"}, jízdenka propadne.</p></div>`:""}
+  ${t.status==="pending"?`<div class="task"><span class="eyebrow">Čeká na ověření</span><p style="margin-top:4px">Jednou denně porovnáme jízdenky se seznamem sledujících${S.instagram?` účtu @${esc(S.instagram)}`:""}. Když tě najdeme, staneš se ověřeným cestujícím. Když tě nenajdeme do ${t.expiresAt?new Date(t.expiresAt).toLocaleDateString("cs-CZ"):"4 dnů"}, jízdenka propadne.</p></div>`:""}
   ${t.status==="left"?`<div class="task"><span class="eyebrow">Vystoupil(a) jsi</span><p style="margin-top:4px">Při poslední kontrole jsme tě nenašli mezi sledujícími. Dej znovu follow a vrátíš se do vagónu № ${fmt(t.lastWagon||0)}, pokud bude volný.</p></div>`:""}
   ${t.wagon?`<button class="btn primary" type="button" id="tGo">Ukaž mi můj vagón</button>`:""}
   <div class="card"><h3>Tvůj cestující</h3><p class="muted" style="font-size:.88rem">Uprav si panáčka. Změny hned uvidíš ve vagónu.</p>
@@ -872,7 +872,7 @@ function sheetTicket(el,fresh){
   </div>
   <div class="card"><h3>Soukromí</h3>
     <label class="check"><input type="checkbox" id="tPub" ${t.public?"checked":""}><span>Ukazovat můj nick ostatním u vagónu.</span></label>
-    <p class="fine">Ty svůj nick ve vagónu vidíš vždycky. Ostatní ho uvidí jen se souhlasem${ONLINE?" a až po ověření":""}.</p>
+    <p class="fine">Ty svůj nick ve vagónu vidíš vždycky. Ostatní ho uvidí jen se souhlasem.</p>
     <span id="delWrap"><button class="btn danger small" type="button" id="tDel">Odstranit jízdenku a nick</button></span></div>`;
   const tg=$("#tGo");if(tg)tg.onclick=()=>{Game.flyTo(t.wagon,0);if(isPhone())closeSheet()};
   el.querySelectorAll("[data-k]").forEach(group=>group.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;a[group.dataset.k]=b.dataset.v;saveMy();pushTicketUpdate({avatar:a});
@@ -952,7 +952,7 @@ function sheetInfo(el){
     <ul class="muted" style="margin:6px 0 0;padding-left:18px;display:grid;gap:4px">
       <li>Když tě do 4 dnů nenajdeme mezi sledujícími, jízdenka propadne.</li>
       <li>Kdo přestane sledovat, vystoupí. Když se vrátí, dostane svůj vagón zpátky, pokud je volný.</li>
-      <li>Nick ukážeme ostatním jen se souhlasem a až po ověření. Sprosté nebo cizí nicky schováme.</li>
+      <li>Nick ukážeme ostatním jen se souhlasem. Sprosté nebo cizí nicky schováme.</li>
     </ul></div>
   <div class="card"><h3>Jaké údaje ukládáme</h3><p class="muted">Instagramový nick, číslo vagónu, vzhled tvého panáčka, kdy sis jízdenku vyzvedl(a), kdy jsme tě ověřili a jestli smí být nick vidět. Kvůli ochraně před zneužitím ukládáme na 24 hodin i zašifrovaný otisk připojení, ne samotnou IP adresu. Ze seznamu sledujících si nenecháváme nic kromě jejich počtu.</p>
     <p class="muted">Data leží na serverech Vercel ve Frankfurtu a nikomu je neprodáváme. Uchováváme je, dokud projekt běží nebo dokud nepožádáš o smazání.</p></div>
