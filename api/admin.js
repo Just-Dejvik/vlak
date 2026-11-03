@@ -65,17 +65,6 @@ export default wrap(async (req, res) => {
   }
 
   if (b.action === 'check') return send(res, 200, { ok: true });
-  if (b.action === 'debug-etag') {
-    const sdk = await import('@vercel/blob');
-    const out = {};
-    for (const f of ['state.json', 'tickets.json']) {
-      const h = await sdk.head(f).catch((e) => ({ err: String(e) }));
-      const g1 = await sdk.get(f, { access: 'private', useCache: false });
-      const g2 = await sdk.get(f, { access: 'private' });
-      out[f] = { head: h.etag || h.err, getFresh: g1 && g1.blob.etag, getCached: g2 && g2.blob.etag, uploaded: h.uploadedAt, cacheHdr: g1 && g1.headers.get('x-vercel-cache') };
-    }
-    return send(res, 200, out);
-  }
 
   throw new HttpError(400, 'Neznámá akce.');
 });

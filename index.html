@@ -836,13 +836,13 @@ function renderBoarding(){
       </ol>
       <form class="claim" id="bForm" novalidate>
         <div class="nickrow"><input type="text" id="bNick" placeholder="@tvuj.nick" autocomplete="off" spellcheck="false" maxlength="31" aria-label="Tvůj instagramový nick"><button class="btn primary" type="submit">Nastoupit</button></div>
-        <label class="check"><input type="checkbox" id="bPub"><span>Můj nick může být u vagónu vidět i pro ostatní.</span></label>
+        <label class="check"><input type="checkbox" id="bHide"><span>Skrýt můj nick před ostatními. Jinak ho ostatní uvidí u tvého vagónu.</span></label>
         <div class="err" id="bErr" role="alert"></div>
         <p class="fine">Nikdy nechceme heslo. Jednou denně jízdenky porovnáme se seznamem sledujících. Když tě do 4 dnů nenajdeme, jízdenka propadne. <a href="#info" data-open="info">Pravidla a soukromí</a></p>
       </form>
       <button class="linkbtn" type="button" id="bLook">Jen se rozhlédnu</button>`;
     $("#bForm").onsubmit=async e=>{e.preventDefault();const btn=$("#bForm button[type=submit]");if(btn.disabled)return;btn.disabled=true;btn.textContent="Vydávám…";$("#bErr").textContent="";
-      const r=ONLINE?await claimOnline($("#bNick").value,$("#bPub").checked):claimTicket($("#bNick").value,$("#bPub").checked);
+      const pub=!$("#bHide").checked;const r=ONLINE?await claimOnline($("#bNick").value,pub):claimTicket($("#bNick").value,pub);
       btn.disabled=false;btn.textContent="Nastoupit";if(r.err){$("#bErr").textContent=r.err;return}
       closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();Game.flyTo(myTicket.wagon,0);toast(ONLINE?`Vítej na palubě! Vagón № ${fmt(myTicket.wagon)} je tvůj. Follow ověříme do 24 hodin.`:`Vítej na palubě! Tvůj vagón je № ${fmt(myTicket.wagon)}.`);
       if(!isPhone())setTimeout(()=>openSheet("jizdenka",true),Game.ok?3000:0)};
@@ -894,13 +894,13 @@ function sheetTicket(el,fresh){
     <div class="field"><span class="lab">V ruce</span>${seg("item",AV.items)}</div>
   </div>
   <div class="card"><h3>Soukromí</h3>
-    <label class="check"><input type="checkbox" id="tPub" ${t.public?"checked":""}><span>Ukazovat můj nick ostatním u vagónu.</span></label>
-    <p class="fine">Ty svůj nick ve vagónu vidíš vždycky. Ostatní ho uvidí jen se souhlasem.</p>
+    <label class="check"><input type="checkbox" id="tHide" ${t.public?"":"checked"}><span>Skrýt můj nick před ostatními.</span></label>
+    <p class="fine">Ty svůj nick ve vagónu vidíš vždycky. Skrytý nick ostatní neuvidí.</p>
     <span id="delWrap"><button class="btn danger small" type="button" id="tDel">Odstranit jízdenku a nick</button></span></div>`;
   const tg=$("#tGo");if(tg)tg.onclick=()=>{Game.flyTo(t.wagon,0);if(isPhone())closeSheet()};
   el.querySelectorAll("[data-k]").forEach(group=>group.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;a[group.dataset.k]=b.dataset.v;saveMy();pushTicketUpdate({avatar:a});
     group.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));Game.refreshWagon();if(t.wagon&&Game.focus()!==t.wagon)Game.flyTo(t.wagon,0)}));
-  $("#tPub").onchange=e=>{t.public=e.target.checked;saveMy();pushTicketUpdate({public:t.public});Game.refreshWagon();toast(t.public?"Nick je u vagónu vidět":"Nick je pro ostatní skrytý")};
+  $("#tHide").onchange=e=>{t.public=!e.target.checked;saveMy();pushTicketUpdate({public:t.public});Game.refreshWagon();toast(t.public?"Nick je u vagónu vidět":"Nick je pro ostatní skrytý")};
   $("#tDel").onclick=()=>{$("#delWrap").innerHTML=`<span class="confirm-inline">Opravdu smazat jízdenku? <button class="btn small danger" id="dY" type="button">Smazat</button><button class="btn small" id="dN" type="button">Ne</button></span>`;
     $("#dY").onclick=async()=>{if(ONLINE&&t.token){try{await api("/api/ticket",{method:"POST",headers:{"x-ticket-token":t.token},body:{action:"delete",nick:t.nick}})}catch(e){if(e.status!==404&&e.status!==403){toast(e.message);return}}}
       myTicket=null;saveMy();closeSheet();renderHud();Game.setN(wagonCount());Game.refreshWagon();toast("Jízdenka i nick jsou smazané")};$("#dN").onclick=()=>sheetTicket(el)};
@@ -975,7 +975,7 @@ function sheetInfo(el){
     <ul class="muted" style="margin:6px 0 0;padding-left:18px;display:grid;gap:4px">
       <li>Když tě do 4 dnů nenajdeme mezi sledujícími, jízdenka propadne.</li>
       <li>Kdo přestane sledovat, vystoupí. Když se vrátí, dostane svůj vagón zpátky, pokud je volný.</li>
-      <li>Nick ukážeme ostatním jen se souhlasem. Sprosté nebo cizí nicky schováme.</li>
+      <li>Nick je u vagónu vidět i pro ostatní. Když nechceš, zaškrtni při vyzvednutí jízdenky „Skrýt můj nick“, nebo ho skryj později v jízdence. Sprosté nebo cizí nicky schováme.</li>
     </ul></div>
   <div class="card"><h3>Jaké údaje ukládáme</h3><p class="muted">Instagramový nick, číslo vagónu, vzhled tvého panáčka, kdy sis jízdenku vyzvedl(a), kdy jsme tě ověřili a jestli smí být nick vidět. Kvůli ochraně před zneužitím ukládáme na 24 hodin i zašifrovaný otisk připojení, ne samotnou IP adresu. Ze seznamu sledujících si nenecháváme nic kromě jejich počtu.</p>
     <p class="muted">Data leží na serverech Vercel ve Frankfurtu a nikomu je neprodáváme. Uchováváme je, dokud projekt běží nebo dokud nepožádáš o smazání.</p></div>
