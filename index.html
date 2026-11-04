@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/qrcode.js"></script>
 <style>
 /* Layout: hra na celou obrazovku — 3D vlak v slunečném odpoledni vzadu, nahoře tabule s čísly, dole dok s akcemi, panely vyjíždějí jako papírové karty. Nástupiště (jízdenka) je první, co člověk vidí. Jeden světlý svět. */
 :root{
@@ -115,7 +116,7 @@ button.stat:hover{border-color:var(--lamp)}
 .dock button.hot{color:#1d1408;background:var(--lamp)}
 .dock button.hot:hover{background:#f6b55c;color:#1d1408}
 .dock .dot{position:absolute;top:6px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 2px var(--night)}
-@media (max-width:420px){.dock button{min-width:50px;padding:7px 5px;font-size:.62rem}.brand span{display:none}.ctx{flex-wrap:nowrap}.plate .b{font-size:1.05rem;max-width:44vw}.plate{padding:6px 10px}}
+@media (max-width:420px){#editBtn{padding:9px 11px}#editBtn .lg{display:none}.dock button{min-width:50px;padding:7px 5px;font-size:.62rem}.brand span{display:none}.ctx{flex-wrap:nowrap}.plate .b{font-size:1.05rem;max-width:44vw}.plate{padding:6px 10px}}
 
 /* boarding card (first screen) */
 .boarding{position:absolute;left:50%;top:calc(var(--st) + 50%);transform:translate(-50%,-52%);width:min(440px,calc(100% - 32px));background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:14px;backdrop-filter:blur(10px);box-shadow:0 24px 60px rgba(30,42,51,.25);max-height:calc(100% - 40px - var(--st) - var(--sb));overflow:auto;z-index:5}
@@ -253,6 +254,7 @@ textarea{min-height:90px;resize:vertical}
       <button class="btn icon navbtn" type="button" id="prevW" aria-label="Vagón dál od lokomotivy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="plate" aria-live="polite"><span class="a" id="ctxA">Pohled na vlak</span><span class="b" id="ctxB">–</span></div>
       <button class="btn icon navbtn" type="button" id="nextW" aria-label="Vagón blíž k lokomotivě"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="btn navbtn" type="button" id="editBtn" hidden>Upravit<span class="lg"> panáčka</span></button>
       <button class="btn icon navbtn" type="button" id="zoomBtn" aria-label="Nahlédnout dovnitř"><svg id="zoomIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M11 8v6M8 11h6"/></svg></button>
     </div>
     <nav class="dock" aria-label="Menu hry">
@@ -455,6 +457,16 @@ function pushTicketUpdate(patch){
   if(!ONLINE||!myTicket||!myTicket.token)return;
   Object.assign(updBody,patch);clearTimeout(updT);
   updT=setTimeout(async()=>{const b=updBody;updBody={};try{const out=await api("/api/ticket",{method:"POST",headers:{"x-ticket-token":myTicket.token},body:{action:"update",nick:myTicket.nick,...b}});myTicket={...out.ticket,token:myTicket.token};saveMy()}catch(e){toast(e.message)}},600);
+}
+const transferLink=t=>`${location.origin}/#j=${t.nick}~${t.token}`;
+let PENDING_TRANSFER=null;
+async function applyTransfer(){
+  const p=PENDING_TRANSFER;PENDING_TRANSFER=null;if(!p)return;
+  if(!ONLINE){toast("Jízdenku teď nejde načíst. Zkus odkaz otevřít znovu.");return}
+  try{const out=await api("/api/ticket?nick="+encodeURIComponent(p.nick),{headers:{"x-ticket-token":p.token}});
+    myTicket={...out.ticket,token:p.token};saveMy();closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();
+    if(myTicket.wagon)Game.flyTo(myTicket.wagon,0);toast(`Jízdenka @${myTicket.nick} je teď i na tomhle zařízení.`)}
+  catch(e){toast("Tenhle odkaz na jízdenku už neplatí. Požádej o nový zprávou na Instagramu.")}
 }
 const STATUS_TXT={pending:"Čeká na ověření",verified:"Ověřený cestující",left:"Vystoupil(a)"};
 
@@ -803,6 +815,7 @@ function renderHud(){
 }
 const ICO_IN='<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M11 8v6M8 11h6"/>',ICO_OUT='<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/>';
 function setCtx(focusN,center){
+  $("#editBtn").hidden=!(focusN>0&&myTicket&&+myTicket.wagon===focusN);
   const sp=specialsMap();const zb=$("#zoomBtn"),ico=$("#zoomIco");
   if(focusN>0){const occ=occupant(focusN);$("#ctxA").textContent=`Vagón № ${fmt(focusN)} z ${fmt(wagonCount())}`+(sp.has(focusN)?` · ${sp.get(focusN)}`:"");
     $("#ctxB").innerHTML=occ.nick?(occ.me?`<em>Ty</em> · @${esc(occ.nick)}`:`@${esc(occ.nick)}`):"Anonymní cestující";zb.setAttribute("aria-label","Pohled zvenku");ico.innerHTML=ICO_OUT}
@@ -810,6 +823,7 @@ function setCtx(focusN,center){
   else{$("#ctxA").textContent="Pohled na vlak";$("#ctxB").innerHTML=`Vagóny kolem <em>№ ${fmt(center)}</em>`;zb.setAttribute("aria-label","Nahlédnout dovnitř");ico.innerHTML=ICO_IN}
 }
 if(Game.ok)Game.onFocus(setCtx);
+$("#editBtn").onclick=()=>{openSheet("jizdenka");const c=$("#tvujCestujici");if(c)c.scrollIntoView({block:"start"})};
 $("#zoomBtn").onclick=()=>{if(!Game.ok)return;if(Game.focus()>0)Game.zoomTo(1);else{const c=Game.center();Game.flyTo(Math.max(1,c),0)}};
 $("#prevW").onclick=()=>{const c=Game.center();Game.flyTo(c+1,Game.focus()>0?0:Game.zoom)};
 $("#nextW").onclick=()=>{const c=Game.center();Game.flyTo(c-1,c-1<1?.6:(Game.focus()>0?0:Game.zoom))};
@@ -840,6 +854,7 @@ function renderBoarding(){
         <div class="err" id="bErr" role="alert"></div>
         <p class="fine">Nikdy nechceme heslo. Jednou denně jízdenky porovnáme se seznamem sledujících. Když tě do 4 dnů nenajdeme, jízdenka propadne. <a href="#info" data-open="info">Pravidla a soukromí</a></p>
       </form>
+      <details class="fine"><summary style="cursor:pointer">Už máš jízdenku na jiném zařízení?</summary><p style="margin-top:6px">Na zařízení, kde sis ji vyzvedl(a), otevři <b>Můj vagón</b> a dole v jízdence načti QR kód z části „Jízdenka na jiném zařízení“. Nemáš to zařízení? Napiš nám na Instagram a pošleme ti nový odkaz.</p></details>
       <button class="linkbtn" type="button" id="bLook">Jen se rozhlédnu</button>`;
     $("#bForm").onsubmit=async e=>{e.preventDefault();const btn=$("#bForm button[type=submit]");if(btn.disabled)return;btn.disabled=true;btn.textContent="Vydávám…";$("#bErr").textContent="";
       const pub=!$("#bHide").checked;const r=ONLINE?await claimOnline($("#bNick").value,pub):claimTicket($("#bNick").value,pub);
@@ -885,7 +900,7 @@ function sheetTicket(el,fresh){
   ${t.status==="pending"?`<div class="task"><span class="eyebrow">Čeká na ověření</span><p style="margin-top:4px">Jednou denně porovnáme jízdenky se seznamem sledujících${S.instagram?` účtu @${esc(S.instagram)}`:""}. Když tě najdeme, staneš se ověřeným cestujícím. Když tě nenajdeme do ${t.expiresAt?new Date(t.expiresAt).toLocaleDateString("cs-CZ"):"4 dnů"}, jízdenka propadne.</p></div>`:""}
   ${t.status==="left"?`<div class="task"><span class="eyebrow">Vystoupil(a) jsi</span><p style="margin-top:4px">Při poslední kontrole jsme tě nenašli mezi sledujícími. Dej znovu follow a vrátíš se do vagónu № ${fmt(t.lastWagon||0)}, pokud bude volný.</p></div>`:""}
   ${t.wagon?`<button class="btn primary" type="button" id="tGo">Ukaž mi můj vagón</button>`:""}
-  <div class="card"><h3>Tvůj cestující</h3><p class="muted" style="font-size:.88rem">Uprav si panáčka. Změny hned uvidíš ve vagónu.</p>
+  <div class="card" id="tvujCestujici"><h3>Tvůj cestující</h3><p class="muted" style="font-size:.88rem">Uprav si panáčka. Změny hned uvidíš ve vagónu.</p>
     <div class="field"><span class="lab">Kabát</span>${sw("coat",AV.coats,"Kabát")}</div>
     <div class="field"><span class="lab">Vlasy</span>${sw("hair",AV.hair,"Vlasy")}</div>
     <div class="field"><span class="lab">Pleť</span>${sw("skin",AV.skin,"Pleť")}</div>
@@ -896,8 +911,16 @@ function sheetTicket(el,fresh){
   <div class="card"><h3>Soukromí</h3>
     <label class="check"><input type="checkbox" id="tHide" ${t.public?"":"checked"}><span>Skrýt můj nick před ostatními.</span></label>
     <p class="fine">Ty svůj nick ve vagónu vidíš vždycky. Skrytý nick ostatní neuvidí.</p>
-    <span id="delWrap"><button class="btn danger small" type="button" id="tDel">Odstranit jízdenku a nick</button></span></div>`;
+    <span id="delWrap"><button class="btn danger small" type="button" id="tDel">Odstranit jízdenku a nick</button></span></div>
+  ${ONLINE&&t.token?`<div class="card"><h3>Jízdenka na jiném zařízení</h3>
+    <p class="muted" style="font-size:.9rem">Chceš mít jízdenku i v mobilu nebo na počítači? Načti tenhle QR kód fotoaparátem druhého zařízení, nebo si tam pošli odkaz.</p>
+    <div id="tQr" style="background:#fff;border-radius:12px;padding:10px;width:200px;max-width:100%;align-self:center;justify-self:center"></div>
+    <button class="btn" type="button" id="tLink">Zkopírovat odkaz</button>
+    <p class="fine">Odkaz nikomu jinému neposílej. Kdo ho má, může měnit tvůj vagón.</p></div>`:""}`;
   const tg=$("#tGo");if(tg)tg.onclick=()=>{Game.flyTo(t.wagon,0);if(isPhone())closeSheet()};
+  if(ONLINE&&t.token){const link=transferLink(t);
+    try{const q=qrcode(0,"M");q.addData(link);q.make();$("#tQr").innerHTML=q.createSvgTag({cellSize:4,margin:2,scalable:true})}catch(e){$("#tQr").hidden=true}
+    $("#tLink").onclick=()=>{const fb=()=>{toast("Odkaz: "+link)};if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>toast("Odkaz zkopírován"),fb);else fb()}}
   el.querySelectorAll("[data-k]").forEach(group=>group.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;a[group.dataset.k]=b.dataset.v;saveMy();pushTicketUpdate({avatar:a});
     group.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));Game.refreshWagon();if(t.wagon&&Game.focus()!==t.wagon)Game.flyTo(t.wagon,0)}));
   $("#tHide").onchange=e=>{t.public=!e.target.checked;saveMy();pushTicketUpdate({public:t.public});Game.refreshWagon();toast(t.public?"Nick je u vagónu vidět":"Nick je pro ostatní skrytý")};
@@ -1093,7 +1116,7 @@ function bindCheck(A){
       await adminLoad();PARSED=null;renderAdmin();toast(`Hotovo: ověřeno ${LAST_REPORT.report.verified.length}, vystoupilo ${LAST_REPORT.report.left.length}`)}
     catch(e){btn.disabled=false;btn.textContent="Spustit kontrolu";if(e.status===401)return adminLogout();$("#fErr").textContent=e.message}};
 }
-let TFILTER="";
+let TFILTER="",RELINK=null;
 function ticketsCardHtml(){
   if(!ONLINE){
     return `<div class="card"><h3>Jízdenky</h3>
@@ -1108,7 +1131,7 @@ function ticketsCardHtml(){
     <input type="text" id="tFilter" placeholder="Hledat nick nebo vagón" value="${esc(TFILTER)}" autocomplete="off">
     <div class="tblbox" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th>Vagón</th><th>Nick</th><th>Stav</th><th></th></tr></thead><tbody>
     ${list.slice(0,300).map(t=>`<tr><td class="num">${t.wagon?fmt(t.wagon):(t.lastWagon?"("+fmt(t.lastWagon)+")":"–")}</td><td>@${esc(t.nick)}${t.public?"":' <span class="muted" style="font-size:.78rem">skrytý</span>'}</td><td style="font-size:.82rem">${STATUS_TXT[t.status]||t.status}<br><span class="muted">${fmtDT(t.createdAt)}</span></td>
-      <td style="white-space:nowrap"><button class="btn small" type="button" data-thide="${esc(t.nick)}" data-pub="${t.public?0:1}">${t.public?"Skrýt nick":"Zobrazit"}</button> <span data-tdw="${esc(t.nick)}"><button class="btn small danger" type="button" data-tdelon="${esc(t.nick)}">Smazat</button></span></td></tr>`).join("")||`<tr><td colspan="4" class="muted">${q?"Nic nenalezeno.":"Zatím nikdo nemá jízdenku."}</td></tr>`}
+      <td style="white-space:nowrap"><button class="btn small" type="button" data-thide="${esc(t.nick)}" data-pub="${t.public?0:1}">${t.public?"Skrýt nick":"Zobrazit"}</button> <button class="btn small" type="button" data-relink="${esc(t.nick)}">Nový odkaz</button> <span data-tdw="${esc(t.nick)}"><button class="btn small danger" type="button" data-tdelon="${esc(t.nick)}">Smazat</button></span>${RELINK&&RELINK.nick===t.nick?`<div style="margin-top:6px;white-space:normal"><input type="text" readonly value="${esc(RELINK.link)}" id="relinkOut" style="font-size:.78rem"><p class="fine">Pošli tenhle odkaz do DM @${esc(t.nick)}. Starý odkaz přestal platit.</p></div>`:""}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">${q?"Nic nenalezeno.":"Zatím nikdo nemá jízdenku."}</td></tr>`}
     </tbody></table></div>${list.length>300?`<p class="fine">Zobrazeno 300 z ${fmt(list.length)}. Zúži hledání.</p>`:""}</div>`;
 }
 function bindTickets(A){
@@ -1117,6 +1140,8 @@ function bindTickets(A){
   const tf=$("#tFilter");if(tf)tf.oninput=()=>{TFILTER=tf.value;const pos=tf.selectionStart;renderAdmin();const n=$("#tFilter");n.focus();n.setSelectionRange(pos,pos)};
   const act=async(body,msg)=>{try{await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"ticket-update",...body}});await adminLoad();renderAdmin();toast(msg)}catch(e){if(e.status===401)return adminLogout();toast(e.message)}};
   A.querySelectorAll("[data-thide]").forEach(b=>b.onclick=()=>act({nick:b.dataset.thide,public:b.dataset.pub==="1"},b.dataset.pub==="1"?"Nick je vidět":"Nick je skrytý"));
+  A.querySelectorAll("[data-relink]").forEach(b=>b.onclick=async()=>{try{const out=await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"ticket-relink",nick:b.dataset.relink}});
+    RELINK={nick:out.nick,link:`${location.origin}/#j=${out.nick}~${out.token}`};renderAdmin();const i=$("#relinkOut");if(i){i.focus();i.select()}}catch(e){if(e.status===401)return adminLogout();toast(e.message)}});
   A.querySelectorAll("[data-tdelon]").forEach(b=>b.onclick=()=>{const w=A.querySelector(`[data-tdw="${CSS.escape(b.dataset.tdelon)}"]`);const nick=b.dataset.tdelon;
     w.innerHTML=`<span class="confirm-inline">Smazat? <button class="btn small danger" type="button" data-y>Ano</button><button class="btn small" type="button" data-n>Ne</button></span>`;
     w.querySelector("[data-y]").onclick=()=>act({nick,remove:true},`Jízdenka @${nick} smazána`);w.querySelector("[data-n]").onclick=renderAdmin});
@@ -1238,11 +1263,12 @@ async function loadWorld(){
   if(!d||!d.online||!d.state||!d.state.nodes)throw 0;return d;
 }
 async function init(){
+  {const m=location.hash.match(/^#j=([a-z0-9._]{1,30})~([A-Za-z0-9_-]{10,})$/);if(m){PENDING_TRANSFER={nick:m[1],token:m[2]};history.replaceState(null,"",location.pathname+location.search);try{sessionStorage.setItem(SEENKEY,"1")}catch(e){}}}
   try{const d=await loadWorld();ONLINE=true;BASE=d.state;setRoster(d.roster);COUNTS=d.counts}catch(e){}
   if(!ONLINE){try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const d=await r.json();if(d&&d.nodes&&d.route)BASE=d}}catch(e){}}
   const draft=ONLINE?null:lsGet(KEY);if(draft){try{S=JSON.parse(draft);localDraft=true}catch(e){S=clone(BASE)}}else S=clone(BASE);
   if(ONLINE){try{ADMIN_PW=sessionStorage.getItem(ADMKEY)}catch(e){}}
-  loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();refreshMy();
+  loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();if(PENDING_TRANSFER)applyTransfer();else refreshMy();
   if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},90000);
   const h=location.hash.slice(1);
   let seen=false;try{seen=sessionStorage.getItem(SEENKEY)==="1"}catch(e){}
