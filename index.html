@@ -6,6 +6,16 @@
 <title>Vlak followerů</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Každý follow nastupuje. Internet rozhoduje, kam vlak jede.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Vlak followerů">
+<meta property="og:description" content="Každý follow = jeden vagón. Vyzvedni si jízdenku a podívej se do svého vagónu.">
+<meta property="og:url" content="https://vlak-followeru.vercel.app/">
+<meta property="og:image" content="https://vlak-followeru.vercel.app/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="cs_CZ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#4f9fe0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap">
@@ -142,6 +152,7 @@ button.stat:hover{border-color:var(--lamp)}
 .sheet-h h2{font-size:1.7rem}
 .sheet-b{padding:16px;overflow:auto;display:grid;grid-auto-rows:max-content;gap:16px;align-content:start;overscroll-behavior:contain}
 @media (max-width:640px){
+  .sheet.half{max-height:46%}
   .sheet{left:0;right:0;width:auto;top:auto;bottom:0;max-height:82%;border-radius:18px 18px 0 0;padding-bottom:var(--sb)}
   .sheet-h{padding-left:var(--sl);padding-right:var(--sr)}
   .sheet-b{padding-left:var(--sl);padding-right:var(--sr)}
@@ -244,7 +255,7 @@ textarea{min-height:90px;resize:vertical}
     <div class="stats">
       <div class="stat"><span class="k">Cestujících</span><span class="v" id="sFollowers">–</span></div>
       <div class="stat opt-s"><span class="k">Délka vlaku</span><span class="v" id="sLength">–</span></div>
-      <button class="stat" type="button" data-open="trasa" aria-label="Další stanice"><span class="k">Další stanice</span><span class="v" id="sNext">–</span><span class="mini"><i id="sNextBar" style="width:0"></i></span></button>
+      <button class="stat" type="button" id="sNextBtn" data-open="trasa"><span class="k" id="sNextK">Další stanice</span><span class="v" id="sNext">–</span><span class="mini"><i id="sNextBar" style="width:0"></i></span></button>
     </div>
   </div>
   <a class="local-chip" id="localChip" href="#sprava" hidden>Lokální verze ze správy</a>
@@ -747,7 +758,7 @@ const Game=(()=>{
   /* ---------- LOOP ---------- */
   function resize(){W=canvas.clientWidth||1;H=canvas.clientHeight||1;portrait=W/H<.85;renderer.setSize(W,H,false);camera.aspect=W/H;camera.fov=portrait?60:46;camera.updateProjectionMatrix()}
   new ResizeObserver(resize).observe(canvas);resize();
-  let last=performance.now(),active=true,lastCenter=null,lastFocus=-2;const onFocus=[];
+  let last=performance.now(),active=true,lastCenter=null,lastFocus=-2,shift=0,tshift=0;const onFocus=[];
   const wrap=(v,span,c)=>{const lo=c-span/2;return lo+(((v-lo)%span)+span)%span};
   function frame(now){
     const dt=Math.min(.05,(now-last)/1000);last=now;
@@ -783,6 +794,8 @@ const Game=(()=>{
     for(const p of smoke){if(!near||reduce){p.s.visible=false;continue}p.s.visible=true;p.age+=dt;if(p.age>p.life)p.age-=p.life;const u=p.age/p.life;p.s.position.set(13.2-u*18,6+u*5+Math.sin(u*6+p.life)*.4,(u*2-.5)*.6);const sc=1.2+u*5;p.s.scale.set(sc,sc,1);p.s.material.opacity=.55*(1-u)*Math.min(1,u*8)}
     if(av&&interior.visible){av.t+=dt;if(av.waves&&!reduce){const w=Math.sin(av.t*7)*.35;av.armR.rotation.set(0,0,-2.6+w)}av.head.rotation.y=reduce?0:Math.sin(av.t*.9)*.18}
     if(pet&&pet.tail&&!reduce)pet.tail.rotation.x=Math.sin(now/260)*.5;
+    shift+=(tshift-shift)*Math.min(1,reduce?1:dt*6);
+    if(Math.abs(shift)>.002)camera.setViewOffset(W,H,0,shift*H,W,H);else if(camera.view&&camera.view.enabled)camera.clearViewOffset();
     renderer.render(scene,camera);
     updateLabels(focusN);
     if(active)requestAnimationFrame(frame);
@@ -793,6 +806,16 @@ const Game=(()=>{
   return{ok:true,
     setN(n){n=Math.max(1,n);if(n===N)return;N=n;for(const s of slots)s.n=-1;lastCenter=null;lastFocus=-2;tx=clampX(tx)},
     flyTo,zoomTo,setActive,
+    setShift(v){tshift=v},
+    flying:()=>!!fly,
+    capture(w,h){
+      const pr=renderer.getPixelRatio(),wasP=portrait;
+      renderer.setPixelRatio(1);renderer.setSize(w,h,false);portrait=w/h<.85;
+      camera.aspect=w/h;camera.fov=portrait?60:46;camera.clearViewOffset();camera.updateProjectionMatrix();
+      const pose=camPose(cx,z);camera.position.set(...pose.p);camera.lookAt(...pose.l);
+      renderer.render(scene,camera);const url=renderer.domElement.toDataURL("image/jpeg",.92);
+      renderer.setPixelRatio(pr);portrait=wasP;resize();shift=0;return url;
+    },
     refreshWagon(){lastFocus=-2;lastCenter=null;for(const s of slots)s.n=-1},
     focus:()=>lastFocus,
     get zoom(){return tz},
@@ -807,8 +830,9 @@ function renderHud(){
   const I=info();
   $("#sFollowers").textContent=fmt(S.followers);
   $("#sLength").textContent=lenTxt(I.L);
-  if(I.head.waiting){$("#sNext").textContent="Výhybka";$("#sNextBar").style.width="100%"}
-  else{const need=followersFor(I.head.leg.start+I.head.leg.km)-S.followers;$("#sNext").textContent=`${nodeName(I.head.leg.to)} · ${fmt(need)}`;$("#sNextBar").style.width=(I.head.t*100).toFixed(1)+"%"}
+  const nb=$("#sNextBtn");$("#sNextBar").parentElement.hidden=I.head.waiting;
+  if(I.head.waiting){$("#sNextK").textContent="Hlasuje se";$("#sNext").textContent=`Kudy z ${genitive(I.head.node)}?`;nb.dataset.open="hlasovani"}
+  else{$("#sNextK").textContent="Další stanice";nb.dataset.open="trasa";const need=followersFor(I.head.leg.start+I.head.leg.km)-S.followers;$("#sNext").textContent=`${nodeName(I.head.leg.to)} · ${fmt(need)}`;$("#sNextBar").style.width=(I.head.t*100).toFixed(1)+"%"}
   $("#voteDot").hidden=!(S.vote&&S.vote.options&&S.vote.options.length);
   $("#localChip").hidden=!localDraft||ONLINE;
   const mine=$("#dMine");$("#dMineL").textContent=myTicket?"Můj vagón":"Nastoupit";mine.classList.toggle("hot",!myTicket);
@@ -823,7 +847,8 @@ function setCtx(focusN,center){
   else{$("#ctxA").textContent="Pohled na vlak";$("#ctxB").innerHTML=`Vagóny kolem <em>№ ${fmt(center)}</em>`;zb.setAttribute("aria-label","Nahlédnout dovnitř");ico.innerHTML=ICO_IN}
 }
 if(Game.ok)Game.onFocus(setCtx);
-$("#editBtn").onclick=()=>{openSheet("jizdenka");const c=$("#tvujCestujici");if(c)c.scrollIntoView({block:"start"})};
+function editMode(){if(isPhone()){$("#sheet").classList.add("half");Game.setShift(.2)}const c=$("#tvujCestujici");if(c)c.scrollIntoView({block:"start"})}
+$("#editBtn").onclick=()=>{openSheet("jizdenka");editMode()};
 $("#zoomBtn").onclick=()=>{if(!Game.ok)return;if(Game.focus()>0)Game.zoomTo(1);else{const c=Game.center();Game.flyTo(Math.max(1,c),0)}};
 $("#prevW").onclick=()=>{const c=Game.center();Game.flyTo(c+1,Game.focus()>0?0:Game.zoom)};
 $("#nextW").onclick=()=>{const c=Game.center();Game.flyTo(c-1,c-1<1?.6:(Game.focus()>0?0:Game.zoom))};
@@ -870,14 +895,14 @@ function closeBoarding(){$("#boarding").hidden=true;try{sessionStorage.setItem(S
 /* ================= SHEETS ================= */
 const SHEETS={
   jizdenka:{t:"Jízdenka",r:sheetTicket},najit:{t:"Najít cestujícího",r:sheetFind},trasa:{t:"Trasa",r:sheetRoute},
-  hlasovani:{t:"Hlasování",r:sheetVote},kronika:{t:"Kronika",r:sheetChron},cil:{t:"Cíl: obepnout Zemi",r:sheetGoal},info:{t:"Pravidla a soukromí",r:sheetInfo}
+  hlasovani:{t:"Hlasování",r:sheetVote},kronika:{t:"Kronika",r:sheetChron},cil:{t:"Cíl: obepnout Zemi",r:sheetGoal},info:{t:"Pravidla a soukromí",r:sheetInfo},sdilet:{t:"Sdílet můj vagón",r:sheetShare}
 };
 let openKey=null;
-function openSheet(k,fresh){if(!SHEETS[k])return;if(k==="jizdenka"&&!myTicket){openBoarding();return}
+function openSheet(k,fresh){if(!SHEETS[k])return;$("#sheet").classList.remove("half");Game.setShift(0);if(k==="jizdenka"&&!myTicket){openBoarding();return}
   $("#boarding").hidden=true;openKey=k;$("#sheetTitle").textContent=SHEETS[k].t;$("#sheet").hidden=false;SHEETS[k].r($("#sheetBody"),fresh);$("#sheetBody").scrollTop=0;
   document.querySelectorAll(".dock button[data-open]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.open===k?"true":"false"));
   if(location.hash!=="#"+k)history.replaceState(null,"","#"+k)}
-function closeSheet(keepHash){$("#sheet").hidden=true;openKey=null;document.querySelectorAll(".dock button").forEach(b=>b.setAttribute("aria-pressed","false"));if(!keepHash&&location.hash&&location.hash!=="#sprava")history.replaceState(null,"",location.pathname+location.search)}
+function closeSheet(keepHash){$("#sheet").hidden=true;$("#sheet").classList.remove("half");Game.setShift(0);openKey=null;document.querySelectorAll(".dock button").forEach(b=>b.setAttribute("aria-pressed","false"));if(!keepHash&&location.hash&&location.hash!=="#sprava")history.replaceState(null,"",location.pathname+location.search)}
 $("#sheetClose").onclick=()=>closeSheet();
 document.addEventListener("click",e=>{const b=e.target.closest("[data-open]");if(!b)return;const k=b.dataset.open;if(openKey===k){closeSheet();return}
   if(b.tagName==="A")e.preventDefault();
@@ -899,7 +924,7 @@ function sheetTicket(el,fresh){
     <div class="row"><span>Vydáno</span><span>${esc(t.createdAt?new Date(t.createdAt).toLocaleDateString("cs-CZ"):fmtDate(t.date))}</span></div></div>
   ${t.status==="pending"?`<div class="task"><span class="eyebrow">Čeká na ověření</span><p style="margin-top:4px">Jednou denně porovnáme jízdenky se seznamem sledujících${S.instagram?` účtu @${esc(S.instagram)}`:""}. Když tě najdeme, staneš se ověřeným cestujícím. Když tě nenajdeme do ${t.expiresAt?new Date(t.expiresAt).toLocaleDateString("cs-CZ"):"4 dnů"}, jízdenka propadne.</p></div>`:""}
   ${t.status==="left"?`<div class="task"><span class="eyebrow">Vystoupil(a) jsi</span><p style="margin-top:4px">Při poslední kontrole jsme tě nenašli mezi sledujícími. Dej znovu follow a vrátíš se do vagónu № ${fmt(t.lastWagon||0)}, pokud bude volný.</p></div>`:""}
-  ${t.wagon?`<button class="btn primary" type="button" id="tGo">Ukaž mi můj vagón</button>`:""}
+  ${t.wagon?`<div class="row-f"><button class="btn primary" type="button" id="tGo" style="flex:1">Ukaž mi můj vagón</button><button class="btn" type="button" data-open="sdilet" style="flex:1">Sdílet můj vagón</button></div>`:""}
   <div class="card" id="tvujCestujici"><h3>Tvůj cestující</h3><p class="muted" style="font-size:.88rem">Uprav si panáčka. Změny hned uvidíš ve vagónu.</p>
     <div class="field"><span class="lab">Kabát</span>${sw("coat",AV.coats,"Kabát")}</div>
     <div class="field"><span class="lab">Vlasy</span>${sw("hair",AV.hair,"Vlasy")}</div>
@@ -921,12 +946,55 @@ function sheetTicket(el,fresh){
   if(ONLINE&&t.token){const link=transferLink(t);
     try{const q=qrcode(0,"M");q.addData(link);q.make();$("#tQr").innerHTML=q.createSvgTag({cellSize:4,margin:2,scalable:true})}catch(e){$("#tQr").hidden=true}
     $("#tLink").onclick=()=>{const fb=()=>{toast("Odkaz: "+link)};if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>toast("Odkaz zkopírován"),fb);else fb()}}
-  el.querySelectorAll("[data-k]").forEach(group=>group.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;a[group.dataset.k]=b.dataset.v;saveMy();pushTicketUpdate({avatar:a});
+  el.querySelectorAll("[data-k]").forEach(group=>group.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;a[group.dataset.k]=b.dataset.v;saveMy();pushTicketUpdate({avatar:a});if(isPhone()&&!$("#sheet").classList.contains("half"))editMode();
     group.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));Game.refreshWagon();if(t.wagon&&Game.focus()!==t.wagon)Game.flyTo(t.wagon,0)}));
   $("#tHide").onchange=e=>{t.public=!e.target.checked;saveMy();pushTicketUpdate({public:t.public});Game.refreshWagon();toast(t.public?"Nick je u vagónu vidět":"Nick je pro ostatní skrytý")};
   $("#tDel").onclick=()=>{$("#delWrap").innerHTML=`<span class="confirm-inline">Opravdu smazat jízdenku? <button class="btn small danger" id="dY" type="button">Smazat</button><button class="btn small" id="dN" type="button">Ne</button></span>`;
     $("#dY").onclick=async()=>{if(ONLINE&&t.token){try{await api("/api/ticket",{method:"POST",headers:{"x-ticket-token":t.token},body:{action:"delete",nick:t.nick}})}catch(e){if(e.status!==404&&e.status!==403){toast(e.message);return}}}
       myTicket=null;saveMy();closeSheet();renderHud();Game.setN(wagonCount());Game.refreshWagon();toast("Jízdenka i nick jsou smazané")};$("#dN").onclick=()=>sheetTicket(el)};
+}
+async function makeShareImage(shot,t){
+  try{await document.fonts.ready}catch(e){}
+  const c=document.createElement("canvas");c.width=1080;c.height=1920;const g=c.getContext("2d");
+  const bg=g.createLinearGradient(0,0,0,1920);bg.addColorStop(0,"#4f9fe0");bg.addColorStop(.55,"#9fd0f2");bg.addColorStop(1,"#79b456");g.fillStyle=bg;g.fillRect(0,0,1080,1920);
+  const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
+  g.textAlign="center";g.textBaseline="middle";
+  g.font='600 34px "IBM Plex Mono",monospace';const eb="VLAK FOLLOWERŮ";const ew=g.measureText(eb).width+60;
+  g.fillStyle="rgba(20,35,45,.5)";rr(540-ew/2,170,ew,64,32);g.fill();g.fillStyle="#fff";g.fillText(eb,540,203);
+  g.font='900 150px "Big Shoulders Display","Arial Narrow",sans-serif';g.shadowColor="rgba(20,40,60,.45)";g.shadowOffsetY=7;g.shadowBlur=0;
+  g.fillStyle="#fff";g.fillText("JSEM VE",540,320);g.fillStyle="#ffd23f";g.fillText("VLAKU!",540,450);g.shadowColor="transparent";
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=shot});
+  const X=60,Y=540,Wd=960,Hd=760;g.save();rr(X,Y,Wd,Hd,44);g.clip();
+  const sc=Math.max(Wd/img.width,Hd/img.height)*1.45,iw=img.width*sc,ih=img.height*sc;g.drawImage(img,X+Wd/2-iw*.5,Y+Hd/2-ih*.54,iw,ih);g.restore();
+  g.lineWidth=12;g.strokeStyle="#fffaf0";rr(X,Y,Wd,Hd,44);g.stroke();
+  g.font='900 96px "Big Shoulders Display","Arial Narrow",sans-serif';const nk="@"+t.nick;const nw=Math.min(980,Math.max(560,g.measureText(nk).width+120));
+  g.fillStyle="#fffaf0";rr(540-nw/2,1240,nw,190,36);g.fill();g.lineWidth=8;g.strokeStyle="#f0a03a";g.stroke();
+  g.fillStyle="#1e2a33";g.fillText(nk,540,1310,nw-60);g.font='600 34px "IBM Plex Mono",monospace';g.fillStyle="#b45f12";g.fillText(`VAGÓN № ${t.wagon.toLocaleString("cs-CZ")}`,540,1390);
+  g.fillStyle="#fff";g.shadowColor="rgba(20,40,60,.45)";g.shadowOffsetY=4;
+  g.font='700 46px "Instrument Sans",sans-serif';g.fillText("Každý follow = jeden vagón. Nastup taky:",540,1500,1000);
+  g.font='800 58px "Instrument Sans",sans-serif';g.fillText(location.host,540,1575,1000);
+  g.font='600 40px "IBM Plex Mono",monospace';g.fillText("@"+(S.instagram||"vlak.followeru"),540,1645);
+  return await new Promise(r=>c.toBlob(r,"image/jpeg",.92));
+}
+let SHARE_FILE=null,SHARE_URL=null;
+async function sheetShare(el){
+  const t=myTicket;if(!t||!t.wagon){el.innerHTML=`<p class="muted">Nejdřív si vyzvedni jízdenku.</p>`;return}
+  el.innerHTML=`<p class="muted">Připravuji obrázek tvého vagónu…</p>`;
+  if(!Game.ok){el.innerHTML=`<p class="muted">Obrázek se nepodařilo připravit, protože se nenačetla 3D scéna.</p>`;return}
+  Game.flyTo(t.wagon,0);
+  for(let i=0;i<80&&(Game.flying()||Game.focus()!==+t.wagon);i++)await new Promise(r=>setTimeout(r,100));
+  await new Promise(r=>setTimeout(r,400));
+  if(openKey!=="sdilet")return;
+  try{const blob=await makeShareImage(Game.capture(1080,1300),t);
+    if(SHARE_URL)URL.revokeObjectURL(SHARE_URL);SHARE_URL=URL.createObjectURL(blob);
+    SHARE_FILE=new File([blob],`vlak-followeru-vagon-${t.wagon}.jpg`,{type:"image/jpeg"});
+    const canShare=!!(navigator.canShare&&navigator.canShare({files:[SHARE_FILE]}));
+    el.innerHTML=`<img src="${SHARE_URL}" alt="Tvůj vagón s nickem @${esc(t.nick)}" style="width:100%;max-width:300px;justify-self:center;border-radius:14px;box-shadow:0 10px 30px rgba(30,42,51,.2)">
+      ${canShare?`<button class="btn primary" type="button" id="shGo">Sdílet do Stories</button>`:""}
+      <a class="btn${canShare?"":" primary"}" href="${SHARE_URL}" download="${SHARE_FILE.name}">Stáhnout obrázek</a>
+      <p class="fine">Nahraj obrázek do Stories, přidej nálepku s odkazem na <b>${esc(location.host)}</b> a označ <b>@${esc(S.instagram||"vlak.followeru")}</b>.</p>`;
+    const go=$("#shGo");if(go)go.onclick=()=>{navigator.share({files:[SHARE_FILE],title:"Vlak followerů",text:`Jsem ve vlaku! Nastup taky: ${location.origin}`}).catch(()=>{})};
+  }catch(e){el.innerHTML=`<p class="muted">Obrázek se nepodařilo připravit. Zkus to prosím znovu.</p>`}
 }
 function sheetFind(el){
   const nm=publicNicks();const list=[...nm.entries()].sort((a,b)=>a[0]-b[0]);
@@ -934,7 +1002,7 @@ function sheetFind(el){
   <div class="err" id="fMsg" style="color:var(--muted)"></div>
   <div class="card"><h3>Cestující s jízdenkou</h3><div class="chips">${list.map(([w,n])=>`<button class="chip" type="button" data-go="${w}"><b>№ ${fmt(w)}</b>@${esc(n)}</button>`).join("")||'<span class="muted">Zatím nikdo.</span>'}</div>
   <p class="fine">Ostatní cestující jsou anonymní, dokud si nevyzvednou jízdenku.</p></div>
-  <div class="card"><h3>Speciální vagóny</h3><div class="chips">${[...S.specials].sort((a,b)=>a.wagon-b.wagon).map(s=>`<button class="chip" type="button" data-go="${s.wagon}"><b>№ ${fmt(s.wagon)}</b>${esc(s.name)}</button>`).join("")}</div></div>
+  ${S.specials.length?"":"<!--"}<div class="card"><h3>Speciální vagóny</h3><div class="chips">${[...S.specials].sort((a,b)=>a.wagon-b.wagon).map(s=>`<button class="chip" type="button" data-go="${s.wagon}"><b>№ ${fmt(s.wagon)}</b>${esc(s.name)}</button>`).join("")}</div></div>${S.specials.length?"":"-->"}
   <div class="row-f"><button class="btn" type="button" data-go="0">K lokomotivě</button><button class="btn" type="button" data-go="${wagonCount()}">Na konec vlaku</button></div>`;
   el.onclick=e=>{const b=e.target.closest("[data-go]");if(!b)return;const n=+b.dataset.go;if(n>wagonCount()){toast("Tenhle vagón ještě není připojený");return}Game.flyTo(n,n===0?.6:0);if(isPhone())closeSheet()};
   $("#fForm").onsubmit=e=>{e.preventDefault();const q=$("#fIn").value.trim(),msg=$("#fMsg");
@@ -962,8 +1030,8 @@ function sheetVote(el){
     h=`<div class="card"><span class="eyebrow">Výhybka · ${esc(nodeName(v.at))}</span><h3>Kudy z ${esc(genitive(v.at))}?</h3>
     <p class="muted">${need>0?`Lokomotiva dorazí na výhybku po ${fmt(need)} dalších ${cest(need)}.`:"Lokomotiva už stojí na výhybce a čeká."}</p>
     ${v.options.map(o=>{const pc=tot?Math.round((+o.votes||0)/tot*100):0;const km=edgeKm(v.at,o.to);return`<div class="opt${tot&&(+o.votes||0)===max?" win":""}"><div class="opt-top"><span>${esc(nodeName(o.to))}${km?` <span class="muted" style="font-weight:400;font-size:.82rem">· ${km} km</span>`:""}</span><span>${pc} %</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}
-    <p class="note">Hlasuje se v Instagram Stories${v.deadline?` do ${esc(v.deadline)}`:""}. Výsledky přepisujeme ručně · ${fmt(tot)} hlasů.</p>
-    ${S.instagram?`<a class="btn" href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">Hlasovat ve Stories</a>`:""}</div>`}
+    <p class="note">Hlasuje se v komentářích pod videem a ve Stories${v.deadline?` do ${esc(v.deadline)}`:""}. Výsledky sem přepisujeme ručně · ${fmt(tot)} hlasů.</p>
+    ${S.instagram?`<a class="btn" href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">Hlasovat na Instagramu</a>`:""}</div>`}
   const sv=S.specialVote;
   if(sv&&sv.options&&sv.options.length){const tot=sv.options.reduce((s,o)=>s+(+o.votes||0),0),max=Math.max(...sv.options.map(o=>+o.votes||0));const need=Math.max(0,sv.wagon-S.followers);
     h+=`<div class="card"><span class="eyebrow">Speciální vagón № ${fmt(sv.wagon)}</span><h3>Co v něm bude?</h3><p class="muted">${need>0?`Připojí se za ${fmt(need)} ${cest(need)}.`:"Vagón už je připojený, čeká se na výsledek."}</p>
@@ -993,7 +1061,7 @@ function sheetInfo(el){
   const ig=S.instagram?`<a href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">@${esc(S.instagram)}</a>`:"instagramový účet projektu";
   el.innerHTML=`<p style="color:var(--lamp-2)">Každý follow nastupuje. Internet rozhoduje, kam vlak jede.</p>
   <div class="card"><h3>Follow = vagón</h3><p class="muted">Počet cestujících je počet followerů účtu ${ig}. Každý přidá jeden vagón dlouhý ${S.wagonLength} m. Konec vlaku stojí v Praze a lokomotiva je tam, kam vlak dosáhne.</p></div>
-  <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete ve Stories. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
+  <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete v komentářích a ve Stories. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
   <div class="card"><h3>Jízdenka a kontrola</h3><p class="muted">Jízdenka je dobrovolná a hned dostaneš vagón. Jednou denně porovnáme jízdenky se seznamem sledujících, který si stáhneme z vlastního instagramového účtu. Nic nescrapujeme a nikdy po tobě nechceme heslo.</p>
     <ul class="muted" style="margin:6px 0 0;padding-left:18px;display:grid;gap:4px">
       <li>Když tě do 4 dnů nenajdeme mezi sledujícími, jízdenka propadne.</li>
@@ -1249,7 +1317,7 @@ function bindAdmin(){
 function renderAll(){
   if(location.hash==="#sprava"){renderAdmin();return}
   renderHud();Game.setN(wagonCount());Game.refreshWagon();
-  if(openKey&&SHEETS[openKey])SHEETS[openKey].r($("#sheetBody"));
+  if(openKey&&SHEETS[openKey]&&openKey!=="sdilet")SHEETS[openKey].r($("#sheetBody"));
 }
 function route(){
   const h=location.hash.slice(1);const adm=h==="sprava";
