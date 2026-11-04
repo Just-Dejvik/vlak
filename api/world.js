@@ -1,6 +1,6 @@
 // Veřejný stav světa a seznam ověřených cestujících. Krátce se cachuje na CDN.
 import { readJSON } from '../lib/store.js';
-import { counts, roster, seedState, emptyDb } from '../lib/core.js';
+import { counts, displayFollowers, roster, seedState, emptyDb } from '../lib/core.js';
 import { send, wrap } from '../lib/http.js';
 
 export default wrap(async (req, res) => {
@@ -10,9 +10,10 @@ export default wrap(async (req, res) => {
     readJSON('tickets.json', { fresh: false }),
   ]);
   const tickets = db ? db.data : emptyDb();
+  const state = st ? st.data : seedState();
   send(res, 200, {
     online: true,
-    state: st ? st.data : seedState(),
+    state: { ...state, followers: displayFollowers(state, tickets), baseFollowers: state.followers },
     roster: roster(tickets),
     counts: counts(tickets),
   }, 'public, max-age=0, s-maxage=15, stale-while-revalidate=60');

@@ -440,7 +440,7 @@ async function claimOnline(nickRaw,pub){
   if(!nick)return{err:"Napiš svůj instagramový nick."};
   if(!/^[a-z0-9._]{1,30}$/.test(nick)||/^\./.test(nick)||/\.$/.test(nick))return{err:"Nick může mít jen písmena bez diakritiky, číslice, tečky a podtržítka (max. 30 znaků)."};
   try{const out=await api("/api/ticket",{method:"POST",body:{action:"claim",nick,public:!!pub,avatar:seededAvatar(hashStr(nick))}});
-    myTicket={...out.ticket,token:out.token};saveMy();return{ok:true}}
+    myTicket={...out.ticket,token:out.token};saveMy();S.followers+=1;return{ok:true}}
   catch(e){return{err:e.message}}
 }
 async function refreshMy(){
@@ -1160,6 +1160,7 @@ function renderAdmin(){
     <div class="card"><h3>Cestující</h3>
       <div class="row-f"><div class="field"><label for="aF">Počet followerů</label><input type="number" id="aF" min="0" value="${S.followers}"></div><button class="btn primary" id="aFSave" type="button">Uložit</button></div>
       <div class="row-f">${[1,10,50,500].map(k=>`<button class="btn small" type="button" data-add="${k}">+${k}</button>`).join("")}<button class="btn small" type="button" data-add="-10">−10</button></div>
+      <p class="fine">Tohle je základ z poslední kontroly. Na webu se k němu automaticky přičítají lidé, kteří si od kontroly vyzvedli jízdenku.</p>
       <p class="muted" style="font-size:.88rem">Vlak je dlouhý ${lenTxt(I.L)}. ${I.head.waiting?`Lokomotiva čeká na výhybce ${esc(nodeName(I.head.node))}.`:`Do stanice ${esc(nodeName(I.head.leg.to))} chybí ${fmt(followersFor(I.head.leg.start+I.head.leg.km)-S.followers)}.`}</p>
       <div class="row-f"><div class="field"><label for="aLen">Délka vagónu (m)</label><input type="number" id="aLen" min="1" value="${S.wagonLength}"></div><div class="field"><label for="aEvery">Speciální vagón každý</label><input type="number" id="aEvery" min="1" value="${S.specialEvery}"></div><button class="btn" id="aLenSave" type="button">Uložit</button></div>
       <div class="row-f"><div class="field"><label for="aIg">Instagram účet (bez @)</label><input type="text" id="aIg" value="${esc(S.instagram)}" placeholder="nazev.uctu"></div><button class="btn" id="aIgSave" type="button">Uložit</button></div>
@@ -1269,7 +1270,7 @@ async function init(){
   const draft=ONLINE?null:lsGet(KEY);if(draft){try{S=JSON.parse(draft);localDraft=true}catch(e){S=clone(BASE)}}else S=clone(BASE);
   if(ONLINE){try{ADMIN_PW=sessionStorage.getItem(ADMKEY)}catch(e){}}
   loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();if(PENDING_TRANSFER)applyTransfer();else refreshMy();
-  if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},90000);
+  if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},30000);
   const h=location.hash.slice(1);
   let seen=false;try{seen=sessionStorage.getItem(SEENKEY)==="1"}catch(e){}
   if(h!=="sprava"&&!SHEETS[h]&&!seen)openBoarding();
