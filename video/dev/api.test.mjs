@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+const B='http://localhost:3456';
+const j=async(p,o={})=>{const r=await fetch(B+p,{...o,headers:{'content-type':'application/json',...(o.headers||{})}});return [r.status,await r.json()]};
+let [s,w]=await j('/api/world'); assert.equal(s,200); assert.equal(w.state.followers,3412); assert.deepEqual(w.roster,[]);
+// 20 souběžných jízdenek z různých IP
+const res=await Promise.all(Array.from({length:20},(_,i)=>j('/api/ticket',{method:'POST',body:JSON.stringify({action:'claim',nick:'user'+i,public:true}),headers:{'x-forwarded-for':'10.0.0.'+i}})));
+assert.ok(res.every(([st])=>st===201), JSON.stringify(res.filter(r=>r[0]!==201)));
+const wagons=res.map(([,b])=>b.ticket.wagon).sort((a,b)=>a-b); assert.deepEqual(wagons,Array.from({length:20},(_,i)=>i+1));
+const tok=res[0][1].token, nick=res[0][1].ticket.nick;
+[s]=await j('/api/ticket?nick='+nick); assert.equal(s,403);
+[s,w]=await j('/api/ticket?nick='+nick,{headers:{'x-ticket-token':tok}}); assert.equal(w.ticket.status,'pending');
+[s,w]=await j('/api/ticket',{method:'POST',headers:{'x-ticket-token':tok},body:JSON.stringify({action:'update',nick,avatar:{hat:'koruna'}})}); assert.equal(w.ticket.avatar.hat,'koruna');
+[s]=await j('/api/admin'); assert.equal(s,401);
+const A={'x-admin-password':'heslo123'};
+[s,w]=await j('/api/admin',{headers:A}); assert.equal(w.tickets.length,20);
+[s,w]=await j('/api/admin',{method:'POST',headers:A,body:JSON.stringify({action:'verify',followers:[[nick,1],['user1',2],['cizi',3]]})});
+assert.equal(s,200); assert.equal(w.followers,3); assert.deepEqual(w.report.verified.sort(),[nick,'user1'].sort());
+[s,w]=await j('/api/world'); assert.equal(w.state.followers,3); assert.equal(w.roster.length,20); assert.equal(w.state.lastCheck.verified,2);
+[s,w]=await j('/api/admin',{method:'POST',headers:A,body:JSON.stringify({action:'ticket-update',nick:'user1',public:false})});
+[s,w]=await j('/api/world'); assert.equal(w.roster.length,19);
+[s,w]=await j('/api/ticket',{method:'POST',headers:{'x-ticket-token':tok},body:JSON.stringify({action:'delete',nick})}); assert.equal(s,200);
+[s]=await j('/api/ticket?nick='+nick,{headers:{'x-ticket-token':tok}}); assert.equal(s,404);
+[s,w]=await j('/api/admin',{method:'POST',headers:A,body:JSON.stringify({action:'save-state',state:{...w,nodes:{},route:[]}})}); assert.equal(s,400);
+console.log('api OK');
