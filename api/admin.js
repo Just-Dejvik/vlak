@@ -76,6 +76,22 @@ export default wrap(async (req, res) => {
     return send(res, 200, { nick, token: out.token });
   }
 
+  if (b.action === 'set-driver') {
+    let driver = null;
+    if (b.nick) {
+      const nick = cleanNick(b.nick);
+      const db = await readJSON('tickets.json');
+      const t = db && db.data.tickets[nick];
+      if (!t || (t.status !== 'verified' && t.status !== 'pending')) throw new HttpError(404, 'Tenhle nick nemá platnou jízdenku.');
+      driver = { nick, at: Date.now() };
+    }
+    await mutateJSON('state.json', seedState, (cur) => {
+      if (driver) cur.driver = driver; else delete cur.driver;
+      return { ok: true };
+    });
+    return send(res, 200, { ok: true, driver });
+  }
+
   if (b.action === 'check') return send(res, 200, { ok: true });
 
   throw new HttpError(400, 'Neznámá akce.');

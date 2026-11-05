@@ -91,6 +91,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--lamp);outline:none}
 .lbl.me{background:var(--lamp);color:#1d1408;font-weight:600}
 .lbl.big{font-size:15px;padding:6px 14px;display:grid;justify-items:center;line-height:1.25;border-radius:12px}
 .lbl.big small{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.lbl.drv{background:#1f7a5a;border-color:#d9a13b;color:#fff}
 .lbl.anon{border-color:var(--line);color:var(--muted)}
 .lbl::after{content:"";position:absolute;left:50%;bottom:-5px;width:8px;height:8px;background:inherit;border-right:1px solid;border-bottom:1px solid;border-color:inherit;transform:translateX(-50%) rotate(45deg)}
 
@@ -373,7 +374,7 @@ const AV={
 
 /* ================= STATE ================= */
 const KEY="vf.draft.v3",MYKEY="vf.myticket.v3",SEENKEY="vf.seen",ADMKEY="vf.admin";
-let ONLINE=false,ROSTER=[],ROSTER_MAP=new Map(),COUNTS=null,ADMIN_PW=null,ADMIN_TICKETS=[],LAST_REPORT=null;
+let DRIVER=null,ONLINE=false,ROSTER=[],ROSTER_MAP=new Map(),COUNTS=null,ADMIN_PW=null,ADMIN_TICKETS=[],LAST_REPORT=null;
 async function api(path,{method="GET",body,headers={}}={}){
   let r;try{r=await fetch(path,{method,cache:"no-store",headers:{"Content-Type":"application/json",...headers},body:body?JSON.stringify(body):undefined})}catch(e){throw new Error("Nepodařilo se spojit se serverem. Zkontroluj připojení a zkus to znovu.")}
   let data={};try{data=await r.json()}catch(e){}
@@ -500,7 +501,7 @@ const Game=(()=>{
   const camera=new THREE.PerspectiveCamera(48,1,.1,900);
 
   const WL=12,GAP=.9,STEP=WL+GAP;
-  const wagonX=n=>n<=0?8:-(n-1)*STEP-WL/2-GAP;
+  const wagonX=n=>n<=0?3.4:-(n-1)*STEP-WL/2-GAP;
   let N=1;
 
   const M=c=>new THREE.MeshStandardMaterial({color:c,roughness:.8,metalness:.05,flatShading:true});
@@ -577,8 +578,15 @@ const Game=(()=>{
   const locoBlack=new THREE.MeshStandardMaterial({color:0x2b3139,roughness:.55,metalness:.4,flatShading:true});
   const red=M(0xa8402f);
   loco.add(mesh(box(4.4,2.6,2.9),locoGreen,-.6,2.2,0));loco.add(mesh(box(4,.5,2.5),locoBlack,-.6,3.7,0));
-  loco.add(mesh(box(3.6,3.4,3),locoGreen,3.6,2.9,0));loco.add(mesh(box(4.2,.3,3.4),locoBlack,3.6,4.75,0));
-  loco.add(mesh(new THREE.PlaneGeometry(1.5,1.1),winMats[1],3.6,3.5,1.52));
+  // kabina je dutá: oknem je vidět strojvedoucí
+  for(const [w,h,d,x,y,zz] of [[3.6,3.4,.12,3.6,2.9,-1.44],[.12,3.4,3,1.86,2.9,0],[.12,3.4,3,5.34,2.9,0],[3.6,1.75,.12,3.6,2.075,1.44],[3.6,.55,.12,3.6,4.325,1.44],[1.05,1.1,.12,2.325,3.5,1.44],[1.05,1.1,.12,4.875,3.5,1.44]])loco.add(mesh(box(w,h,d),locoGreen,x,y,zz));
+  loco.add(mesh(box(4.2,.3,3.4),locoBlack,3.6,4.75,0));
+  loco.add(mesh(new THREE.PlaneGeometry(3.36,3.2),new THREE.MeshStandardMaterial({color:0x2a4a3c,roughness:.9}),3.6,2.9,-1.37));
+  for(const [w,h,x,y] of [[1.6,.08,3.6,4.05],[1.6,.08,3.6,2.95],[.08,1.16,2.82,3.5],[.08,1.16,4.38,3.5]])loco.add(mesh(box(w,h,.16),brassMat,x,y,1.46));
+  loco.add(mesh(box(.9,.5,.8),locoBlack,3.6,2.1,.25));
+  const driverSlot=new THREE.Group();driverSlot.position.set(3.6,2.12,.2);driverSlot.scale.setScalar(1.2);loco.add(driverSlot);
+  const cabLight=new THREE.PointLight(0xffe4b8,0,5,1.6);cabLight.position.set(3.6,4.1,.9);loco.add(cabLight);
+  let driverAv=null,driverKey="";
   const boiler=mesh(cyl(1.3,1.3,8,18),locoGreen,9.6,2.85,0);boiler.rotation.z=Math.PI/2;loco.add(boiler);
   for(const bx of [7,9.4,11.8]){const band=mesh(cyl(1.33,1.33,.18,18),brassMat,bx,2.85,0);band.rotation.z=Math.PI/2;loco.add(band)}
   const smokebox=mesh(cyl(1.38,1.38,1.6,18),locoBlack,14.2,2.85,0);smokebox.rotation.z=Math.PI/2;loco.add(smokebox);
@@ -747,6 +755,7 @@ const Game=(()=>{
     let i=0;
     const set=(x,y,html,cls)=>{vt.set(x,y,.2).project(camera);if(vt.z>1)return;const px=(vt.x*.5+.5)*W,py=(-vt.y*.5+.5)*H;if(px<-120||px>W+120||py<-60||py>H+60)return;
       const L=lbl(i++);if(L.txt!==html){L.d.innerHTML=html;L.txt=html}if(L.cls!==cls){L.d.className=cls;L.cls=cls}L.d.style.transform=`translate(${px.toFixed(1)}px,${py.toFixed(1)}px) translate(-50%,-100%)`;L.d.hidden=false};
+    if(DRIVER&&loco.visible&&(focusN===0||z>.3)){const big=focusN===0&&z<.4;set(loco.position.x+3.6,big?5.5:5.6,big?`<small>strojvedoucí</small>${DRIVER.nick?"@"+esc(DRIVER.nick):"tajemný cestující"}`:`🚂 ${DRIVER.nick?"@"+esc(DRIVER.nick):"strojvedoucí"}`,big?"lbl big drv":"lbl drv")}
     if(focusN>0&&z<.4){const occ=occupant(focusN);const x=wagonX(focusN)-.1;
       if(occ.nick)set(x,3.6,`<small>${occ.me?"Tohle jsi ty · ":""}vagón № ${fmt(focusN)}</small>@${esc(occ.nick)}${occ.me&&myTicket.status==="pending"?"<small>čeká na ověření</small>":(occ.me&&!occ.public?"<small>nick vidíš jen ty</small>":"")}`,"lbl big"+(occ.me?" me":""));
       else set(x,3.6,`<small>vagón № ${fmt(focusN)}</small>anonymní cestující`,"lbl big anon");
@@ -792,6 +801,7 @@ const Game=(()=>{
     const near=Math.abs(cx)<170;loco.visible=near;
     if(near){for(const w of locoWheels)w.m.rotation.z=-travel/w.r;const a=-travel/1.05;rod.position.set(9.8+Math.cos(a)*.5,1.1+Math.sin(a)*.5,1.5)}
     for(const p of smoke){if(!near||reduce){p.s.visible=false;continue}p.s.visible=true;p.age+=dt;if(p.age>p.life)p.age-=p.life;const u=p.age/p.life;p.s.position.set(13.2-u*18,6+u*5+Math.sin(u*6+p.life)*.4,(u*2-.5)*.6);const sc=1.2+u*5;p.s.scale.set(sc,sc,1);p.s.material.opacity=.55*(1-u)*Math.min(1,u*8)}
+    if(driverAv&&loco.visible&&!reduce){driverAv.t+=dt;driverAv.armR.rotation.set(0,0,-2.6+Math.sin(driverAv.t*5)*.35);driverAv.head.rotation.y=Math.sin(driverAv.t*.8)*.25}
     if(av&&interior.visible){av.t+=dt;if(av.waves&&!reduce){const w=Math.sin(av.t*7)*.35;av.armR.rotation.set(0,0,-2.6+w)}av.head.rotation.y=reduce?0:Math.sin(av.t*.9)*.18}
     if(pet&&pet.tail&&!reduce)pet.tail.rotation.x=Math.sin(now/260)*.5;
     shift+=(tshift-shift)*Math.min(1,reduce?1:dt*6);
@@ -807,6 +817,8 @@ const Game=(()=>{
     setN(n){n=Math.max(1,n);if(n===N)return;N=n;for(const s of slots)s.n=-1;lastCenter=null;lastFocus=-2;tx=clampX(tx)},
     flyTo,zoomTo,setActive,
     setShift(v){tshift=v},
+    setDriver(d){const key=d?JSON.stringify(d.avatar||{})+(d.nick||""):"";if(key===driverKey)return;driverKey=key;driverSlot.clear();driverAv=null;cabLight.intensity=0;
+      if(!d)return;driverAv=buildAvatar(d.avatar||seededAvatar(hashStr(d.nick||"strojvedouci")));driverAv.waves=true;driverSlot.add(driverAv.g);castAll(driverAv.g);cabLight.intensity=1.1},
     flying:()=>!!fly,
     capture(w,h){
       const pr=renderer.getPixelRatio(),wasP=portrait;
@@ -1062,6 +1074,7 @@ function sheetInfo(el){
   el.innerHTML=`<p style="color:var(--lamp-2)">Každý follow nastupuje. Internet rozhoduje, kam vlak jede.</p>
   <div class="card"><h3>Follow = vagón</h3><p class="muted">Počet cestujících je počet followerů účtu ${ig}. Každý přidá jeden vagón dlouhý ${S.wagonLength} m. Konec vlaku stojí v Praze a lokomotiva je tam, kam vlak dosáhne.</p></div>
   <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete v komentářích a ve Stories. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
+  <div class="card"><h3>Strojvedoucí</h3><p class="muted">Na každé stanici vylosujeme z cestujících s jízdenkou jednoho strojvedoucího. Jeho panáček řídí lokomotivu až do další stanice. Kdo má nick skrytý, řídí jako „tajemný cestující“.</p></div>
   <div class="card"><h3>Jízdenka a kontrola</h3><p class="muted">Jízdenka je dobrovolná a hned dostaneš vagón. Jednou denně porovnáme jízdenky se seznamem sledujících, který si stáhneme z vlastního instagramového účtu. Nic nescrapujeme a nikdy po tobě nechceme heslo.</p>
     <ul class="muted" style="margin:6px 0 0;padding-left:18px;display:grid;gap:4px">
       <li>Když tě do 4 dnů nenajdeme mezi sledujícími, jízdenka propadne.</li>
@@ -1184,6 +1197,23 @@ function bindCheck(A){
       await adminLoad();PARSED=null;renderAdmin();toast(`Hotovo: ověřeno ${LAST_REPORT.report.verified.length}, vystoupilo ${LAST_REPORT.report.left.length}`)}
     catch(e){btn.disabled=false;btn.textContent="Spustit kontrolu";if(e.status===401)return adminLogout();$("#fErr").textContent=e.message}};
 }
+function driverPool(){const ok=ADMIN_TICKETS.filter(t=>t.status==="verified");return ok.length?{list:ok,kind:"ověřených"}:{list:ADMIN_TICKETS.filter(t=>t.status==="pending"),kind:"čekajících na ověření"}}
+function driverCardHtml(){
+  if(!ONLINE)return "";
+  const cur=S.driver&&S.driver.nick;const t=cur&&ADMIN_TICKETS.find(x=>x.nick===cur);const p=driverPool();
+  return `<div class="card"><h3>Strojvedoucí</h3>
+    <p class="muted" style="font-size:.9rem">${cur?`Teď řídí <b>@${esc(cur)}</b>${t?` (vagón № ${fmt(t.wagon||t.lastWagon)})${t.public?"":" · nick má skrytý, na webu bude „tajemný cestující“"}`:" · <b style='color:var(--signal)'>jízdenka už neplatí, na webu se nezobrazuje</b>"}${S.driver.at?` · od ${fmtDT(S.driver.at)}`:""}.`:"Lokomotiva zatím jede bez strojvedoucího."}</p>
+    <p class="fine">Na každé stanici vylosuj nového. Losuje se z ${p.kind} cestujících (${fmt(p.list.length)}).</p>
+    <div class="row-f"><button class="btn primary" type="button" id="drDraw"${p.list.length?"":" disabled"}>Vylosovat</button>${cur?`<button class="btn small danger" type="button" id="drOff">Bez strojvedoucího</button>`:""}</div>
+    <div class="row-f"><div class="field"><label for="drNick">Nebo zadej nick ručně</label><input type="text" id="drNick" placeholder="nick.cestujiciho" autocomplete="off"></div><button class="btn" type="button" id="drSet">Nastavit</button></div>
+    <div class="err" id="drErr"></div></div>`;
+}
+function bindDriver(A){
+  const set=async(nick,msg)=>{try{await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"set-driver",nick}});await adminLoad();renderAdmin();toast(msg)}catch(e){if(e.status===401)return adminLogout();const er=$("#drErr");if(er)er.textContent=e.message}};
+  const d=$("#drDraw");if(d)d.onclick=()=>{const p=driverPool().list;if(!p.length)return;const a=new Uint32Array(1);crypto.getRandomValues(a);const w=p[a[0]%p.length];set(w.nick,`Strojvedoucí: @${w.nick}`)};
+  const o=$("#drOff");if(o)o.onclick=()=>set(null,"Lokomotiva jede bez strojvedoucího");
+  const s=$("#drSet");if(s)s.onclick=()=>{const n=$("#drNick").value.trim().replace(/^@+/,"").toLowerCase();if(!n){$("#drErr").textContent="Napiš nick.";return}set(n,`Strojvedoucí: @${n}`)};
+}
 let TFILTER="",RELINK=null;
 function ticketsCardHtml(){
   if(!ONLINE){
@@ -1233,6 +1263,7 @@ function renderAdmin(){
       <div class="row-f"><div class="field"><label for="aLen">Délka vagónu (m)</label><input type="number" id="aLen" min="1" value="${S.wagonLength}"></div><div class="field"><label for="aEvery">Speciální vagón každý</label><input type="number" id="aEvery" min="1" value="${S.specialEvery}"></div><button class="btn" id="aLenSave" type="button">Uložit</button></div>
       <div class="row-f"><div class="field"><label for="aIg">Instagram účet (bez @)</label><input type="text" id="aIg" value="${esc(S.instagram)}" placeholder="nazev.uctu"></div><button class="btn" id="aIgSave" type="button">Uložit</button></div>
     </div>
+    ${driverCardHtml()}
     <div class="card"><h3>Výhybka · ${esc(nodeName(v.at))}</h3>
       <p class="muted" style="font-size:.9rem">Trasa: ${S.route.map(id=>esc(nodeName(id))).join(" → ")}</p>
       <div class="tblbox"><table class="tbl"><thead><tr><th>Směr</th><th>Hlasy</th><th></th></tr></thead><tbody>
@@ -1305,7 +1336,7 @@ function bindAdmin(){
     if(!name||!km||isNaN(lat)||isNaN(lon)){$("#nErr").textContent="Vyplň název, kilometry a obě souřadnice.";return}
     let id=name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")||"st";while(S.nodes[id])id+="2";
     S.nodes[id]={name,lon,lat,lab:"r"};S.edges.push([from,id,km]);if(S.vote&&S.vote.at===from&&!S.route.includes(id))S.vote.options.push({to:id,votes:0});save(`Stanice ${name} přidána`)};
-  bindTickets(A);bindCheck(A);
+  bindTickets(A);bindCheck(A);bindDriver(A);
   const lo=$("#aLogout");if(lo)lo.onclick=()=>{adminLogout();toast("Odhlášeno")};
   $("#dCopy").onclick=()=>{const ta=$("#dJson");const txt=JSON.stringify(S,null,2);const fb=()=>{ta.focus();ta.select();toast("Označeno, zkopíruj Ctrl+C")};if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Data zkopírována"),fb);else fb()};
   $("#dLoad").onclick=()=>{try{const d=JSON.parse($("#dJson").value);if(!d.nodes||!d.route||typeof d.followers!=="number")throw 0;S=d;save("Data načtena")}catch(e){$("#dErr").textContent="Tohle nejsou platná data vlaku. Zkontroluj, že je vložený celý JSON."}};
@@ -1333,12 +1364,12 @@ async function loadWorld(){
 }
 async function init(){
   {const m=location.hash.match(/^#j=([a-z0-9._]{1,30})~([A-Za-z0-9_-]{10,})$/);if(m){PENDING_TRANSFER={nick:m[1],token:m[2]};history.replaceState(null,"",location.pathname+location.search);try{sessionStorage.setItem(SEENKEY,"1")}catch(e){}}}
-  try{const d=await loadWorld();ONLINE=true;BASE=d.state;setRoster(d.roster);COUNTS=d.counts}catch(e){}
+  try{const d=await loadWorld();ONLINE=true;BASE=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null}catch(e){}
   if(!ONLINE){try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const d=await r.json();if(d&&d.nodes&&d.route)BASE=d}}catch(e){}}
   const draft=ONLINE?null:lsGet(KEY);if(draft){try{S=JSON.parse(draft);localDraft=true}catch(e){S=clone(BASE)}}else S=clone(BASE);
   if(ONLINE){try{ADMIN_PW=sessionStorage.getItem(ADMKEY)}catch(e){}}
-  loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();if(PENDING_TRANSFER)applyTransfer();else refreshMy();
-  if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},30000);
+  loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();if(Game.ok)Game.setDriver(DRIVER);if(PENDING_TRANSFER)applyTransfer();else refreshMy();
+  if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;if(Game.ok)Game.setDriver(DRIVER);renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},30000);
   const h=location.hash.slice(1);
   let seen=false;try{seen=sessionStorage.getItem(SEENKEY)==="1"}catch(e){}
   if(h!=="sprava"&&!SHEETS[h]&&!seen)openBoarding();
