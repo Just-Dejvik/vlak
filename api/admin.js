@@ -1,9 +1,10 @@
 // Správa projektu: stav světa, jízdenky a denní kontrola followerů. Chráněno heslem.
 import { mutateJSON, readJSON } from '../lib/store.js';
 import {
-  cleanNick, cleanState, counts, emptyDb, HttpError, newToken, normalizeFollowers, seedState, sha256, ticketView, verify,
+  cleanNick, cleanState, counts, emptyDb, HttpError, newToken, normalizeFollowers, renameTicket, seedState, sha256, ticketView, verify,
 } from '../lib/core.js';
 import { body, requireAdmin, send, wrap } from '../lib/http.js';
+import { renameDriver } from '../lib/driver.js';
 
 const listTickets = (db) => Object.values(db.tickets)
   .map(ticketView)
@@ -61,6 +62,18 @@ export default wrap(async (req, res) => {
       else if ('public' in b) t.public = !!b.public;
       return { ok: true };
     });
+    return send(res, 200, out);
+  }
+
+  if (b.action === 'ticket-rename') {
+    const from = cleanNick(b.nick);
+    const out = await mutateJSON('tickets.json', emptyDb, (db) => {
+      const t = renameTicket(db, from, b.to);
+      // správa opravuje podle exportu, který právě nahrála: rovnou ověřit
+      if (b.verify && t.status === 'pending') { t.status = 'verified'; t.verifiedAt = Date.now(); }
+      return { ticket: ticketView(t) };
+    });
+    await renameDriver(from, out.ticket.nick);
     return send(res, 200, out);
   }
 

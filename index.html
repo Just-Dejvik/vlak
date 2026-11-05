@@ -375,7 +375,7 @@ const AV={
 
 /* ================= STATE ================= */
 const KEY="vf.draft.v3",MYKEY="vf.myticket.v3",SEENKEY="vf.seen",ADMKEY="vf.admin";
-let DRIVER=null,HIDDEN=new Set(),ONLINE=false,ROSTER=[],ROSTER_MAP=new Map(),COUNTS=null,ADMIN_PW=null,ADMIN_TICKETS=[],LAST_REPORT=null;
+let DRIVER=null,HIDDEN=new Set(),ONLINE=false,ROSTER=[],ROSTER_MAP=new Map(),COUNTS=null,ADMIN_PW=null,ADMIN_TICKETS=[],LAST_REPORT=null,LAST_EXPORT=[],RENAME=null;
 async function api(path,{method="GET",body,headers={}}={}){
   let r;try{r=await fetch(path,{method,cache:"no-store",headers:{"Content-Type":"application/json",...headers},body:body?JSON.stringify(body):undefined})}catch(e){throw new Error("Nepodařilo se spojit se serverem. Zkontroluj připojení a zkus to znovu.")}
   let data={};try{data=await r.json()}catch(e){}
@@ -936,6 +936,9 @@ function sheetTicket(el,fresh){
     <div class="row"><span>Do</span><span>vlak nemá konečnou</span></div>
     <div class="row"><span>Stav</span><span>${STATUS_TXT[t.status]||"Platná"}</span></div>
     <div class="row"><span>Vydáno</span><span>${esc(t.createdAt?new Date(t.createdAt).toLocaleDateString("cs-CZ"):fmtDate(t.date))}</span></div></div>
+  ${t.status==="pending"&&ONLINE&&t.token?`<div class="task"${S.lastCheck&&S.lastCheck.at>t.createdAt?' style="border-color:var(--signal)"':""}><span class="eyebrow">${S.lastCheck&&S.lastCheck.at>t.createdAt?"Při kontrole jsme tě nenašli":"Je tvůj nick správně?"}</span>
+    <p style="margin-top:4px">${S.lastCheck&&S.lastCheck.at>t.createdAt?`Mezi sledujícími jsme nenašli <b>@${esc(t.nick)}</b>. Dej follow, nebo oprav nick, jestli ses překlepl(a). Vagón ti zůstane.`:`Ověřujeme podle nicku <b>@${esc(t.nick)}</b>. Musí přesně sedět s tvým Instagramem, i tečky a podtržítka.`}</p>
+    <div class="row-f" style="margin-top:8px"><input type="text" id="tRen" value="${esc(t.nick)}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Správný nick"><button class="btn" type="button" id="tRenGo">Opravit nick</button></div><div class="err" id="tRenErr"></div></div>`:""}
   ${t.status==="pending"?`<div class="task"><span class="eyebrow">Čeká na ověření</span><p style="margin-top:4px">Jednou denně porovnáme jízdenky se seznamem sledujících${S.instagram?` účtu @${esc(S.instagram)}`:""}. Když tě najdeme, staneš se ověřeným cestujícím. Když tě nenajdeme do ${t.expiresAt?new Date(t.expiresAt).toLocaleDateString("cs-CZ"):"4 dnů"}, jízdenka propadne.</p></div>`:""}
   ${t.status==="left"?`<div class="task"><span class="eyebrow">Vystoupil(a) jsi</span><p style="margin-top:4px">Při poslední kontrole jsme tě nenašli mezi sledujícími. Dej znovu follow a vrátíš se do vagónu № ${fmt(t.lastWagon||0)}, pokud bude volný.</p></div>`:""}
   ${t.wagon?`<div class="row-f"><button class="btn primary" type="button" id="tGo" style="flex:1">Ukaž mi můj vagón</button><button class="btn" type="button" data-open="sdilet" style="flex:1">Sdílet můj vagón</button></div>`:""}
@@ -962,6 +965,10 @@ function sheetTicket(el,fresh){
     $("#tLink").onclick=()=>{const fb=()=>{toast("Odkaz: "+link)};if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>toast("Odkaz zkopírován"),fb);else fb()}}
   el.querySelectorAll("[data-k]").forEach(group=>group.addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;a[group.dataset.k]=b.dataset.v;saveMy();pushTicketUpdate({avatar:a});if(isPhone()&&!$("#sheet").classList.contains("half"))editMode();
     group.querySelectorAll("[data-v]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));Game.refreshWagon();if(t.wagon&&Game.focus()!==t.wagon)Game.flyTo(t.wagon,0)}));
+  const rg=$("#tRenGo");if(rg)rg.onclick=async()=>{const to=cleanNick($("#tRen").value);if(!to||to===t.nick){$("#tRenErr").textContent=to?"To je stejný nick.":"Napiš nick.";return}
+    try{const out=await api("/api/ticket",{method:"POST",headers:{"x-ticket-token":t.token},body:{action:"rename",nick:t.nick,to}});
+      myTicket={...out.ticket,token:t.token};saveMy();renderHud();Game.refreshWagon();sheetTicket(el);toast(myTicket.status==="verified"?`Hotovo, @${myTicket.nick} je ověřený cestující`:`Nick opraven na @${myTicket.nick}`)}
+    catch(e){$("#tRenErr").textContent=e.message}};
   $("#tHide").onchange=e=>{t.public=!e.target.checked;saveMy();pushTicketUpdate({public:t.public});Game.refreshWagon();toast(t.public?"Nick je u vagónu vidět":"Nick je pro ostatní skrytý")};
   $("#tDel").onclick=()=>{$("#delWrap").innerHTML=`<span class="confirm-inline">Opravdu smazat jízdenku? <button class="btn small danger" id="dY" type="button">Smazat</button><button class="btn small" id="dN" type="button">Ne</button></span>`;
     $("#dY").onclick=async()=>{if(ONLINE&&t.token){try{await api("/api/ticket",{method:"POST",headers:{"x-ticket-token":t.token},body:{action:"delete",nick:t.nick}})}catch(e){if(e.status!==404&&e.status!==403){toast(e.message);return}}}
@@ -1161,8 +1168,36 @@ function checkCardHtml(){
       <p>Vystoupili, už nesledují (${rep.left.length}): ${names(rep.left)}</p>
       <p>Vrátili se (${rep.returned.length}): ${names(rep.returned)}</p>
       <p>Propadlé jízdenky (${rep.expired.length}): ${names(rep.expired)}</p>
-      <p>Pořád čekají (${rep.pending.length}): ${names(rep.pending)}</p></div>`:""}`}
+      <p>Pořád čekají (${rep.pending.length}): ${names(rep.pending)}</p>
+      ${typoHtml()}</div>`:""}`}
   </div>`;
+}
+// Překlepy: čekající jízdenka, jejíž nick je skoro stejný jako někdo z exportu bez jízdenky.
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function typoSuggestions(){
+  if(!LAST_EXPORT.length)return[];const have=new Set(ADMIN_TICKETS.map(t=>t.nick));const free=LAST_EXPORT.filter(n=>!have.has(n));
+  const nm=n=>n.replace(/[._]/g,"");const out=[];
+  for(const t of ADMIN_TICKETS){if(t.status!=="pending")continue;const a=nm(t.nick);let best=null,score=1e9;
+    for(const f of free){const b=nm(f);let sc;if(a===b)sc=0;else if(a.length>=4&&(b.startsWith(a)||a.startsWith(b)))sc=1+Math.abs(a.length-b.length)/10;else{const d=lev(a,b);sc=d<=2&&Math.min(a.length,b.length)>=5?1+d:1e9}
+      if(sc<score){score=sc;best=f}}
+    if(best&&score<1e9)out.push({nick:t.nick,to:best,sure:score===0})}
+  return out.sort((x,y)=>(y.sure-x.sure));
+}
+function typoHtml(){const l=typoSuggestions();if(!l.length)return"";
+  return `<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)"><b>Možná překlep v nicku (${l.length})</b>
+    <p class="fine">Tihle čekající mají skoro stejný nick jako někdo z exportu, kdo jízdenku nemá. Oprava nechá vagón i panáčka a cestujícího rovnou ověří.</p>
+    ${l.map(x=>`<div class="row-f" style="align-items:center;gap:8px;margin-top:4px"><span>@${esc(x.nick)} → <b>@${esc(x.to)}</b>${x.sure?"":' <span class="muted" style="font-size:.8rem">(zkontroluj)</span>'}</span><button class="btn small primary" type="button" data-fix="${esc(x.nick)}" data-to="${esc(x.to)}">Opravit</button></div>`).join("")}
+    ${l.filter(x=>x.sure).length>1?`<button class="btn small" type="button" id="fixAllSure" style="margin-top:8px">Opravit všechny jisté (${l.filter(x=>x.sure).length})</button>`:""}</div>`}
+async function renameAdmin(nick,to,verify){
+  const out=await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"ticket-rename",nick,to,verify}});
+  if(LAST_REPORT){const r=LAST_REPORT.report;r.pending=r.pending.filter(n=>n!==nick);if(out.ticket.status==="verified")r.verified=[...r.verified,out.ticket.nick];else r.pending=[...r.pending,out.ticket.nick]}
+  return out.ticket}
+function bindTypos(A){
+  const run=async(pairs)=>{let ok=0;for(const [n,to] of pairs){try{await renameAdmin(n,to,LAST_EXPORT.includes(to));ok++}catch(e){if(e.status===401)return adminLogout();toast(`@${n}: ${e.message}`)}}
+    await adminLoad();renderAdmin();if(ok)toast(ok===1?`Opraveno na @${pairs[0][1]}`:`Opraveno ${ok} nicků`)};
+  A.querySelectorAll("[data-fix]").forEach(b=>b.onclick=()=>run([[b.dataset.fix,b.dataset.to]]));
+  const all=$("#fixAllSure");if(all)all.onclick=()=>run(typoSuggestions().filter(x=>x.sure).map(x=>[x.nick,x.to]));
 }
 const okNick=n=>/^[a-z0-9._]{1,30}$/.test(n)&&!/^\./.test(n)&&!/\.$/.test(n);
 function hrefNick(h){try{const parts=new URL(h).pathname.split("/").filter(x=>x&&x!=="_u");return parts[parts.length-1]||""}catch(e){return ""}}
@@ -1195,6 +1230,7 @@ function bindCheck(A){
   fi.onchange=update;$("#fPaste").oninput=update;
   $("#fRun").onclick=async()=>{await update();if(!PARSED||!PARSED.map.size){$("#fErr").textContent="Nejdřív nahraj export se sledujícími.";return}
     const btn=$("#fRun");btn.disabled=true;btn.textContent="Kontroluji…";
+    LAST_EXPORT=[...PARSED.map.keys()];
     try{LAST_REPORT=await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"verify",followers:[...PARSED.map.entries()],setCount:$("#fSetCount").checked}});
       await adminLoad();PARSED=null;renderAdmin();toast(`Hotovo: ověřeno ${LAST_REPORT.report.verified.length}, vystoupilo ${LAST_REPORT.report.left.length}`)}
     catch(e){btn.disabled=false;btn.textContent="Spustit kontrolu";if(e.status===401)return adminLogout();$("#fErr").textContent=e.message}};
@@ -1231,7 +1267,7 @@ function ticketsCardHtml(){
     <input type="text" id="tFilter" placeholder="Hledat nick nebo vagón" value="${esc(TFILTER)}" autocomplete="off">
     <div class="tblbox" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th>Vagón</th><th>Nick</th><th>Stav</th><th></th></tr></thead><tbody>
     ${list.slice(0,300).map(t=>`<tr><td class="num">${t.wagon?fmt(t.wagon):(t.lastWagon?"("+fmt(t.lastWagon)+")":"–")}</td><td>@${esc(t.nick)}${t.public?"":' <span class="muted" style="font-size:.78rem">skrytý</span>'}</td><td style="font-size:.82rem">${STATUS_TXT[t.status]||t.status}<br><span class="muted">${fmtDT(t.createdAt)}</span></td>
-      <td style="white-space:nowrap"><button class="btn small" type="button" data-thide="${esc(t.nick)}" data-pub="${t.public?0:1}">${t.public?"Skrýt nick":"Zobrazit"}</button> <button class="btn small" type="button" data-relink="${esc(t.nick)}">Nový odkaz</button> <span data-tdw="${esc(t.nick)}"><button class="btn small danger" type="button" data-tdelon="${esc(t.nick)}">Smazat</button></span>${RELINK&&RELINK.nick===t.nick?`<div style="margin-top:6px;white-space:normal"><input type="text" readonly value="${esc(RELINK.link)}" id="relinkOut" style="font-size:.78rem"><p class="fine">Pošli tenhle odkaz do DM @${esc(t.nick)}. Starý odkaz přestal platit.</p></div>`:""}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">${q?"Nic nenalezeno.":"Zatím nikdo nemá jízdenku."}</td></tr>`}
+      <td style="white-space:nowrap"><button class="btn small" type="button" data-thide="${esc(t.nick)}" data-pub="${t.public?0:1}">${t.public?"Skrýt nick":"Zobrazit"}</button> <button class="btn small" type="button" data-relink="${esc(t.nick)}">Nový odkaz</button> <button class="btn small" type="button" data-ren="${esc(t.nick)}">Opravit nick</button> <span data-tdw="${esc(t.nick)}"><button class="btn small danger" type="button" data-tdelon="${esc(t.nick)}">Smazat</button></span>${RENAME===t.nick?`<div class="row-f" style="margin-top:6px;white-space:normal"><input type="text" id="renTo" value="${esc(t.nick)}" autocomplete="off" style="font-size:.85rem"><button class="btn small primary" type="button" id="renGo">Uložit</button><button class="btn small" type="button" id="renNo">Zrušit</button></div>`:""}${RELINK&&RELINK.nick===t.nick?`<div style="margin-top:6px;white-space:normal"><input type="text" readonly value="${esc(RELINK.link)}" id="relinkOut" style="font-size:.78rem"><p class="fine">Pošli tenhle odkaz do DM @${esc(t.nick)}. Starý odkaz přestal platit.</p></div>`:""}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">${q?"Nic nenalezeno.":"Zatím nikdo nemá jízdenku."}</td></tr>`}
     </tbody></table></div>${list.length>300?`<p class="fine">Zobrazeno 300 z ${fmt(list.length)}. Zúži hledání.</p>`:""}</div>`;
 }
 function bindTickets(A){
@@ -1242,6 +1278,10 @@ function bindTickets(A){
   A.querySelectorAll("[data-thide]").forEach(b=>b.onclick=()=>act({nick:b.dataset.thide,public:b.dataset.pub==="1"},b.dataset.pub==="1"?"Nick je vidět":"Nick je skrytý"));
   A.querySelectorAll("[data-relink]").forEach(b=>b.onclick=async()=>{try{const out=await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"ticket-relink",nick:b.dataset.relink}});
     RELINK={nick:out.nick,link:`${location.origin}/#j=${out.nick}~${out.token}`};renderAdmin();const i=$("#relinkOut");if(i){i.focus();i.select()}}catch(e){if(e.status===401)return adminLogout();toast(e.message)}});
+  A.querySelectorAll("[data-ren]").forEach(b=>b.onclick=()=>{RENAME=b.dataset.ren;renderAdmin();const i=$("#renTo");if(i){i.focus();i.select()}});
+  const rg=$("#renGo");if(rg)rg.onclick=async()=>{const to=$("#renTo").value.trim().replace(/^@+/,"").toLowerCase();const from=RENAME;
+    try{const t=await renameAdmin(from,to,LAST_EXPORT.includes(to));RENAME=null;await adminLoad();renderAdmin();toast(`@${from} → @${t.nick}${t.status==="verified"?" · ověřeno":""}`)}catch(e){if(e.status===401)return adminLogout();toast(e.message)}};
+  const rn=$("#renNo");if(rn)rn.onclick=()=>{RENAME=null;renderAdmin()};
   A.querySelectorAll("[data-tdelon]").forEach(b=>b.onclick=()=>{const w=A.querySelector(`[data-tdw="${CSS.escape(b.dataset.tdelon)}"]`);const nick=b.dataset.tdelon;
     w.innerHTML=`<span class="confirm-inline">Smazat? <button class="btn small danger" type="button" data-y>Ano</button><button class="btn small" type="button" data-n>Ne</button></span>`;
     w.querySelector("[data-y]").onclick=()=>act({nick,remove:true},`Jízdenka @${nick} smazána`);w.querySelector("[data-n]").onclick=renderAdmin});
@@ -1338,7 +1378,7 @@ function bindAdmin(){
     if(!name||!km||isNaN(lat)||isNaN(lon)){$("#nErr").textContent="Vyplň název, kilometry a obě souřadnice.";return}
     let id=name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")||"st";while(S.nodes[id])id+="2";
     S.nodes[id]={name,lon,lat,lab:"r"};S.edges.push([from,id,km]);if(S.vote&&S.vote.at===from&&!S.route.includes(id))S.vote.options.push({to:id,votes:0});save(`Stanice ${name} přidána`)};
-  bindTickets(A);bindCheck(A);bindDriver(A);
+  bindTickets(A);bindCheck(A);bindDriver(A);bindTypos(A);
   const lo=$("#aLogout");if(lo)lo.onclick=()=>{adminLogout();toast("Odhlášeno")};
   $("#dCopy").onclick=()=>{const ta=$("#dJson");const txt=JSON.stringify(S,null,2);const fb=()=>{ta.focus();ta.select();toast("Označeno, zkopíruj Ctrl+C")};if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Data zkopírována"),fb);else fb()};
   $("#dLoad").onclick=()=>{try{const d=JSON.parse($("#dJson").value);if(!d.nodes||!d.route||typeof d.followers!=="number")throw 0;S=d;save("Data načtena")}catch(e){$("#dErr").textContent="Tohle nejsou platná data vlaku. Zkontroluj, že je vložený celý JSON."}};

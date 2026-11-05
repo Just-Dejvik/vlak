@@ -39,3 +39,23 @@ import { displayFollowers } from '../../lib/core.js';
   assert.equal(displayFollowers(st, db), 2);                          // nová jízdenka hned +1
   console.log('display OK');
 }
+import { renameTicket } from '../../lib/core.js';
+{
+  const db = emptyDb(); const t0 = 1_900_000_000_000;
+  claim(db, { nick: 'trutnovak', public: true, avatar: { hat: 'koruna' } }, 'y1', t0);
+  claim(db, { nick: 'obsazeny', public: true }, 'y2', t0);
+  const w = db.tickets.trutnovak.wagon;
+  verify(db, new Map([['trutnovak_', 1], ['novy.clovek', 1]]), t0 + 1000);
+  assert.equal(db.tickets.trutnovak.status, 'pending');
+  const t = renameTicket(db, 'trutnovak', 'trutnovak_', t0 + 2000);
+  assert.equal(t.status, 'verified');                       // byl v posledním exportu → hned ověřený
+  assert.equal(t.wagon, w); assert.equal(t.avatar.hat, 'koruna');
+  assert.equal(db.tickets.trutnovak, undefined);
+  assert.throws(() => renameTicket(db, 'trutnovak_', 'obsazeny'), /už jízdenku má/);
+  const c = claim(db, { nick: 'novy.clovek', public: true }, 'y3', t0 + 3000);
+  assert.equal(c.ticket.status, 'verified');                // nový cestující z exportu je ověřený rovnou
+  const d = claim(db, { nick: 'cizi', public: true }, 'y4', t0 + 3000);
+  assert.equal(d.ticket.status, 'pending');
+  assert.ok(!JSON.stringify(db).includes('novy.clovek"]'));
+  console.log('rename OK');
+}

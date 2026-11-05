@@ -1,9 +1,11 @@
 // Jízdenky návštěvníků: vyzvednutí, stav, úprava panáčka, smazání.
 import { mutateJSON, readJSON } from '../lib/store.js';
-import { authTicket, claim, cleanAvatar, emptyDb, HttpError, ticketView } from '../lib/core.js';
+import { authTicket, claim, cleanAvatar, emptyDb, HttpError, renameTicket, ticketView } from '../lib/core.js';
 import { body, clientIpHash, send, wrap } from '../lib/http.js';
+import { renameDriver } from '../lib/driver.js';
 
 const FILE = 'tickets.json';
+
 
 export default wrap(async (req, res) => {
   const token = req.headers['x-ticket-token'];
@@ -32,6 +34,16 @@ export default wrap(async (req, res) => {
       return { ticket: ticketView(t) };
     });
     return send(res, 200, out);
+  }
+
+  if (b.action === 'rename') {
+    const out = await mutateJSON(FILE, emptyDb, (db) => {
+      const t = authTicket(db, b.nick, token);
+      const from = t.nick;
+      return { from, ticket: ticketView(renameTicket(db, from, b.to)) };
+    });
+    await renameDriver(out.from, out.ticket.nick);
+    return send(res, 200, { ticket: out.ticket });
   }
 
   if (b.action === 'delete') {
