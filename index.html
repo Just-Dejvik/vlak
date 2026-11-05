@@ -102,6 +102,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--lamp);outline:none}
 .brand span{font-size:.8rem;font-weight:600;color:#fff;text-shadow:0 1px 6px rgba(30,60,90,.6)}
 .stats{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .stat{background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:6px 10px;display:grid;gap:0;min-width:0;text-align:right;backdrop-filter:blur(6px)}
+.stat .sub{font-size:.68rem;font-weight:600;color:var(--signal);white-space:nowrap}
 .stat .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .stat .v{font-family:var(--display);font-weight:800;font-size:1.35rem;color:var(--lamp-2);line-height:1.05;font-variant-numeric:tabular-nums}
 button.stat{cursor:pointer;color:inherit;font:inherit}
@@ -254,7 +255,7 @@ textarea{min-height:90px;resize:vertical}
       <span>Vlak bez konečné. Každá jízdenka je vagón.</span>
     </button>
     <div class="stats">
-      <div class="stat"><span class="k">Cestujících</span><span class="v" id="sFollowers">–</span></div>
+      <div class="stat"><span class="k">Cestujících</span><span class="v" id="sFollowers">–</span><span class="sub" id="sWaiting" hidden></span></div>
       <div class="stat opt-s"><span class="k">Délka vlaku</span><span class="v" id="sLength">–</span></div>
       <button class="stat" type="button" id="sNextBtn" data-open="trasa"><span class="k" id="sNextK">Další stanice</span><span class="v" id="sNext">–</span><span class="mini"><i id="sNextBar" style="width:0"></i></span></button>
     </div>
@@ -841,6 +842,7 @@ const Game=(()=>{
 function renderHud(){
   const I=info();
   $("#sFollowers").textContent=fmt(S.followers);
+  {const w=Math.max(0,(S.igFollowers|0)-S.followers),el=$("#sWaiting");el.hidden=!ONLINE||!w;el.textContent=`+${fmt(w)} ještě nenastoupilo`}
   $("#sLength").textContent=lenTxt(I.L);
   const nb=$("#sNextBtn");$("#sNextBar").parentElement.hidden=I.head.waiting;
   if(I.head.waiting){$("#sNextK").textContent="Hlasuje se";$("#sNext").textContent=`Kudy z ${genitive(I.head.node)}?`;nb.dataset.open="hlasovani"}
