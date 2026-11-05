@@ -31,11 +31,11 @@ import { displayFollowers } from '../../lib/core.js';
 {
   const db = emptyDb(); const t0 = 1_900_000_000_000;
   claim(db, { nick: 'a1', public: true }, 'x1', t0); claim(db, { nick: 'a2', public: true }, 'x2', t0);
-  assert.equal(displayFollowers({ followers: 1 }, db), 2);            // před kontrolou: počet jízdenek
-  verify(db, new Map([['a1', 1]]), t0 + 1000);
+  assert.equal(displayFollowers({ followers: 70 }, db), 2);           // vlak = jen jízdenky, ne followeři
+  verify(db, new Map([['a1', 1]]), t0 + 5 * 86400000);
   const st = { followers: 5, lastCheck: { at: t0 + 1000 } };
-  assert.equal(displayFollowers(st, db), 5);                          // po kontrole: export, a2 se nepočítá
+  assert.equal(displayFollowers(st, db), 1);                          // a2 bez followu propadla
   claim(db, { nick: 'a3', public: true }, 'x3', t0 + 2000);
-  assert.equal(displayFollowers(st, db), 6);                          // nová jízdenka po kontrole hned +1
+  assert.equal(displayFollowers(st, db), 2);                          // nová jízdenka hned +1
   console.log('display OK');
 }
