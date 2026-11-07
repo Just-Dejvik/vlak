@@ -59,3 +59,14 @@ import { renameTicket } from '../../lib/core.js';
   assert.ok(!JSON.stringify(db).includes('novy.clovek"]'));
   console.log('rename OK');
 }
+import { peakPassengers } from '../../lib/core.js';
+{
+  const db = emptyDb(); const t0 = 1_900_000_000_000;
+  for (let i = 0; i < 5; i++) claim(db, { nick: 'p' + i, public: true }, 'z' + i, t0);
+  assert.equal(peakPassengers(db), 5);
+  delete db.peak;                                           // stará data bez maxima
+  verify(db, new Map([['p0', 1]]), t0 + 5 * 86400000);      // 4 jízdenky propadnou
+  assert.equal(Object.keys(db.tickets).length, 1);
+  assert.equal(peakPassengers(db), 5);                       // ujeté km zůstanou
+  console.log('peak OK');
+}

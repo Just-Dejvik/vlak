@@ -256,7 +256,7 @@ textarea{min-height:90px;resize:vertical}
     </button>
     <div class="stats">
       <div class="stat"><span class="k">Cestujících</span><span class="v" id="sFollowers">–</span><span class="sub" id="sWaiting" hidden></span></div>
-      <div class="stat opt-s"><span class="k">Délka vlaku</span><span class="v" id="sLength">–</span></div>
+      <div class="stat opt-s"><span class="k">Ujeto</span><span class="v" id="sLength">–</span></div>
       <button class="stat" type="button" id="sNextBtn" data-open="trasa"><span class="k" id="sNextK">Další stanice</span><span class="v" id="sNext">–</span><span class="mini"><i id="sNextBar" style="width:0"></i></span></button>
     </div>
   </div>
@@ -359,10 +359,9 @@ const DEFAULT_DATA = {
 };
 const EARTH_KM=40075;
 const MILESTONES=[
-  {km:0.516,t:"Délka Karlova mostu"},{km:7.353,t:"Nejdelší vlak, jaký kdy jel (Austrálie, 2001)"},
   {km:62,t:"Praha → Kolín"},{km:256,t:"Praha → Brno po trati"},{km:493,t:"Česko od západu na východ"},
-  {km:885,t:"Praha → Paříž vzdušnou čarou"},{km:4500,t:"Šířka Evropské unie (zhruba)"},
-  {km:20037,t:"Půlka planety"},{km:EARTH_KM,t:"Vlak obepne Zemi"}
+  {km:885,t:"Praha → Paříž vzdušnou čarou"},{km:1000,t:"Prvních tisíc kilometrů"},{km:4500,t:"Šířka Evropské unie (zhruba)"},
+  {km:20037,t:"Půlka planety"},{km:EARTH_KM,t:"Vlak objede Zemi"}
 ];
 const AV={
   coats:["#c4453a","#2f6f9f","#3f8a5c","#d9a13b","#7a4fa3","#2b2f3a","#e07a9b","#e8e0cc"],
@@ -390,7 +389,7 @@ function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
 function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
 function save(msg){
-  if(ONLINE){const st={...S};delete st.tickets;st.followers=("igFollowers" in S)?(S.igFollowers|0):S.followers;delete st.igFollowers;renderAll();
+  if(ONLINE){const st={...S};delete st.tickets;st.followers=("igFollowers" in S)?(S.igFollowers|0):S.followers;delete st.igFollowers;delete st.peak;renderAll();
     api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"save-state",state:st}})
       .then(()=>{if(msg)toast(msg+" · na webu do minuty")}).catch(e=>{if(e.status===401)adminLogout();toast("Neuloženo: "+e.message)});return}
   lsSet(KEY,JSON.stringify(S));localDraft=true;renderAll();if(msg)toast(msg)}
@@ -413,16 +412,19 @@ function seededAvatar(seed){const r=rng(seed);return{coat:pick(r,AV.coats),hat:p
 /* ================= GEOMETRY ================= */
 function edgeKm(a,b){const e=S.edges.find(e=>(e[0]===a&&e[1]===b)||(e[0]===b&&e[1]===a));return e?e[2]:null}
 function neighbors(id){return S.edges.filter(e=>e[0]===id||e[1]===id).map(e=>e[0]===id?e[1]:e[0])}
+const kmPer=()=>S.kmPerPassenger>0?+S.kmPerPassenger:1;
+const peakN=()=>Math.max(+S.peak||0,S.followers);
 function info(){
-  const L=S.followers*S.wagonLength/1000;const legs=[];let cum=0;const nodeKm={};nodeKm[S.route[0]]=0;
+  const L=S.followers*S.wagonLength/1000;const D=peakN()*kmPer();const legs=[];let cum=0;const nodeKm={};nodeKm[S.route[0]]=0;
   for(let i=1;i<S.route.length;i++){const a=S.route[i-1],b=S.route[i];const km=edgeKm(a,b)||0;legs.push({from:a,to:b,start:cum,km});cum+=km;nodeKm[b]=cum}
   let head;
-  if(L>=cum||!legs.length){head={leg:null,t:1,node:S.route[S.route.length-1],waiting:true,over:L-cum}}
-  else{const leg=legs.find(l=>L>=l.start&&L<l.start+l.km);head={leg,t:(L-leg.start)/leg.km,waiting:false}}
-  let curIdx=0;for(let i=0;i<S.route.length;i++){if(nodeKm[S.route[i]]<=L)curIdx=i}
-  return{L,total:cum,legs,head,nodeKm,cur:S.route[curIdx],curIdx};
+  if(D>=cum||!legs.length){head={leg:null,t:1,node:S.route[S.route.length-1],waiting:true,over:D-cum}}
+  else{const leg=legs.find(l=>D>=l.start&&D<l.start+l.km);head={leg,t:(D-leg.start)/leg.km,waiting:false}}
+  let curIdx=0;for(let i=0;i<S.route.length;i++){if(nodeKm[S.route[i]]<=D)curIdx=i}
+  return{L,D,pos:Math.min(D,cum),total:cum,legs,head,nodeKm,cur:S.route[curIdx],curIdx};
 }
-const followersFor=km=>Math.ceil(km*1000/S.wagonLength);
+// kolik dalších cestujících je potřeba, aby vlak ujel km kilometrů od Prahy
+const needFor=km=>Math.max(0,Math.ceil(km/kmPer()-1e-9)-peakN());
 function locative(id){const m={praha:"Praze",kolin:"Kolíně",pardubice:"Pardubicích",hradec:"Hradci Králové",trebova:"České Třebové",brno:"Brně",olomouc:"Olomouci",ostrava:"Ostravě",breclav:"Břeclavi",hbrod:"Havlíčkově Brodě",plzen:"Plzni",cheb:"Chebu",domazlice:"Domažlicích",usti:"Ústí nad Labem",decin:"Děčíně",liberec:"Liberci",tabor:"Táboře",budejovice:"Českých Budějovicích"};return m[id]||nodeName(id)}
 function genitive(id){const m={pardubice:"Pardubic",kolin:"Kolína",praha:"Prahy",hradec:"Hradce Králové",trebova:"České Třebové",brno:"Brna",olomouc:"Olomouce",ostrava:"Ostravy",breclav:"Břeclavi",hbrod:"Havlíčkova Brodu",plzen:"Plzně",cheb:"Chebu",domazlice:"Domažlic",usti:"Ústí nad Labem",decin:"Děčína",liberec:"Liberce",tabor:"Tábora",budejovice:"Českých Budějovic"};return m[id]||nodeName(id)}
 
@@ -843,10 +845,10 @@ function renderHud(){
   const I=info();
   $("#sFollowers").textContent=fmt(S.followers);
   {const w=Math.max(0,(S.igFollowers|0)-S.followers),el=$("#sWaiting");el.hidden=!ONLINE||!w;el.textContent=`+${fmt(w)} ještě nenastoupilo`}
-  $("#sLength").textContent=lenTxt(I.L);
+  $("#sLength").textContent=fmtKm(I.pos,0)+" km";
   const nb=$("#sNextBtn");$("#sNextBar").parentElement.hidden=I.head.waiting;
   if(I.head.waiting){$("#sNextK").textContent="Hlasuje se";$("#sNext").textContent=`Kudy z ${genitive(I.head.node)}?`;nb.dataset.open="hlasovani"}
-  else{$("#sNextK").textContent="Další stanice";nb.dataset.open="trasa";const need=followersFor(I.head.leg.start+I.head.leg.km)-S.followers;$("#sNext").textContent=`${nodeName(I.head.leg.to)} · ${fmt(need)}`;$("#sNextBar").style.width=(I.head.t*100).toFixed(1)+"%"}
+  else{$("#sNextK").textContent="Další stanice";nb.dataset.open="trasa";const need=needFor(I.head.leg.start+I.head.leg.km);$("#sNext").textContent=`${nodeName(I.head.leg.to)} · ${fmt(need)}`;$("#sNextBar").style.width=(I.head.t*100).toFixed(1)+"%"}
   $("#voteDot").hidden=!(S.vote&&S.vote.options&&S.vote.options.length);
   $("#localChip").hidden=!localDraft||ONLINE;
   const mine=$("#dMine");$("#dMineL").textContent=myTicket?"Můj vagón":"Nastoupit";mine.classList.toggle("hot",!myTicket);
@@ -880,8 +882,8 @@ function renderBoarding(){
   }else{
     el.innerHTML=`<span class="eyebrow">Nástupiště 1 · vlak followerů</span>
       <h1>Nastup do vlaku</h1>
-      <p class="lead">Každá jízdenka přidá jeden vagón. Vlak je dlouhý ${lenTxt(I.L)} a jednou obepne celou Zemi.</p>
-      <div class="counter"><span><b>${fmt(S.followers)}</b>ve vlaku</span>${S.igFollowers>S.followers?`<span><b>${fmt(S.igFollowers-S.followers)}</b>ještě nenastoupilo</span>`:""}<span><b>${lenTxt(I.L)}</b>délka vlaku</span></div>
+      <p class="lead">Každá jízdenka přidá vagón a posune vlak o ${fmtKm(kmPer())} km. Zatím ujel ${fmtKm(I.pos,0)} km a jednou objede celou Zemi.</p>
+      <div class="counter"><span><b>${fmt(S.followers)}</b>ve vlaku</span>${S.igFollowers>S.followers?`<span><b>${fmt(S.igFollowers-S.followers)}</b>ještě nenastoupilo</span>`:""}<span><b>${fmtKm(I.pos,0)} km</b>ujeto</span></div>
       <ol class="steps">
         <li><span><b>Dej follow</b> na Instagramu${S.instagram?` <a href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">@${esc(S.instagram)}</a>`:""}. Bez toho jízdenka do 4 dnů propadne.</span></li>
         <li><span><b>Vyzvedni si jízdenku</b> a dostaneš vlastní vagón.</span></li>
@@ -909,7 +911,7 @@ function closeBoarding(){$("#boarding").hidden=true;try{sessionStorage.setItem(S
 /* ================= SHEETS ================= */
 const SHEETS={
   jizdenka:{t:"Jízdenka",r:sheetTicket},najit:{t:"Najít cestujícího",r:sheetFind},trasa:{t:"Trasa",r:sheetRoute},
-  hlasovani:{t:"Hlasování",r:sheetVote},kronika:{t:"Kronika",r:sheetChron},cil:{t:"Cíl: obepnout Zemi",r:sheetGoal},info:{t:"Pravidla a soukromí",r:sheetInfo},sdilet:{t:"Sdílet můj vagón",r:sheetShare}
+  hlasovani:{t:"Hlasování",r:sheetVote},kronika:{t:"Kronika",r:sheetChron},cil:{t:"Cíl: objet Zemi",r:sheetGoal},info:{t:"Pravidla a soukromí",r:sheetInfo},sdilet:{t:"Sdílet můj vagón",r:sheetShare}
 };
 let openKey=null;
 function openSheet(k,fresh){if(!SHEETS[k])return;$("#sheet").classList.remove("half");Game.setShift(0);if(k==="jizdenka"&&!myTicket){openBoarding();return}
@@ -1034,9 +1036,9 @@ function sheetFind(el){
 }
 function sheetRoute(el){
   const I=info();const entries=S.chronicle.filter(c=>c.node===I.cur);const e=entries[entries.length-1];let next="";
-  if(I.head.waiting)next=`Lokomotiva stojí na výhybce v ${esc(locative(I.head.node))} a čeká na výsledek hlasování.`;
-  else{const leg=I.head.leg,need=followersFor(leg.start+leg.km)-S.followers;next=`Další stanice <b>${esc(nodeName(leg.to))}</b> za ${fmtKm(leg.start+leg.km-I.L)} km, tedy ${fmt(need)} ${cest(need)}.`}
-  el.innerHTML=`<p class="muted">Konec vlaku pořád stojí v Praze. Každý nový cestující posune lokomotivu o ${S.wagonLength} m dál.</p>
+  if(I.head.waiting)next=`Lokomotiva stojí na výhybce v ${esc(locative(I.head.node))} a čeká na výsledek hlasování.${I.head.over>=1?` V zásobě má <b>${fmtKm(I.head.over,0)} km</b>. Jakmile se rozhodne, kudy dál, hned je projede.`:""}`;
+  else{const leg=I.head.leg,need=needFor(leg.start+leg.km);next=`Další stanice <b>${esc(nodeName(leg.to))}</b> za ${fmtKm(leg.start+leg.km-I.D)} km, tedy ${fmt(need)} ${cest(need)}.`}
+  el.innerHTML=`<p class="muted">Každý nový cestující přidá vagón a posune vlak o ${fmtKm(kmPer())} km dál. Zatím ujel <b>${fmtKm(I.pos,0)} km</b>.</p>
   <div class="mapbox" id="mapbox"><svg id="map" viewBox="0 0 1060 680" role="img" aria-label="Schéma tratě s polohou vlaku"></svg></div>
   <div class="map-legend"><span><i style="background:var(--lamp)"></i>vlak</span><span><i style="background:repeating-linear-gradient(90deg,var(--lamp-2) 0 5px,transparent 5px 9px)"></i>naplánováno</span><span><i style="background:repeating-linear-gradient(90deg,var(--moss) 0 5px,transparent 5px 9px)"></i>hlasuje se</span></div>
   <div class="card"><span class="eyebrow">Na trati</span><p>${next}</p>${I.head.waiting?"":`<div class="bar"><i style="width:${(I.head.t*100).toFixed(1)}%"></i></div>`}</div>
@@ -1047,7 +1049,7 @@ function sheetRoute(el){
 function sheetVote(el){
   const I=info(),v=S.vote;let h="";
   if(!v||!v.at||!v.options||!v.options.length)h=`<div class="card"><span class="eyebrow">Výhybka</span><h3>Teď se nehlasuje</h3><p class="muted">Až se lokomotiva přiblíží k rozcestí, objeví se tu hlasování.</p></div>`;
-  else{const tot=v.options.reduce((s,o)=>s+(+o.votes||0),0),max=Math.max(...v.options.map(o=>+o.votes||0));const need=Math.max(0,followersFor(I.nodeKm[v.at]??0)-S.followers);
+  else{const tot=v.options.reduce((s,o)=>s+(+o.votes||0),0),max=Math.max(...v.options.map(o=>+o.votes||0));const need=needFor(I.nodeKm[v.at]??0);
     h=`<div class="card"><span class="eyebrow">Výhybka · ${esc(nodeName(v.at))}</span><h3>Kudy z ${esc(genitive(v.at))}?</h3>
     <p class="muted">${need>0?`Lokomotiva dorazí na výhybku po ${fmt(need)} dalších ${cest(need)}.`:"Lokomotiva už stojí na výhybce a čeká."}</p>
     ${v.options.map(o=>{const pc=tot?Math.round((+o.votes||0)/tot*100):0;const km=edgeKm(v.at,o.to);return`<div class="opt${tot&&(+o.votes||0)===max?" win":""}"><div class="opt-top"><span>${esc(nodeName(o.to))}${km?` <span class="muted" style="font-weight:400;font-size:.82rem">· ${km} km</span>`:""}</span><span>${pc} %</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}
@@ -1066,11 +1068,11 @@ function sheetChron(el){
   ${c.task?`<div class="task"><span class="eyebrow">Úkol</span><p style="margin-top:4px">${esc(c.task)}</p></div>`:""}${c.voteResult?`<p class="vres">Výhybka: ${esc(c.voteResult)}</p>`:""}</article>`}).join("")||`<p class="muted">Kronika je zatím prázdná.</p>`;
 }
 function sheetGoal(el){
-  const I=info();const pct=I.L/EARTH_KM*100;const left=Math.max(0,followersFor(EARTH_KM)-S.followers);let cur=false;
-  el.innerHTML=`<p class="muted">Obvod Země na rovníku je 40 075 km. Až bude vlak takhle dlouhý, lokomotiva dojede k vlastnímu poslednímu vagónu.</p>
+  const I=info();const pct=I.pos/EARTH_KM*100;const left=needFor(EARTH_KM);let cur=false;
+  el.innerHTML=`<p class="muted">Obvod Země na rovníku je 40 075 km. Každý cestující posune vlak o ${fmtKm(kmPer())} km. Až vlak ujede 40 075 km, objede celou planetu.</p>
   <div class="globe-row"><canvas class="globe" id="globe" width="240" height="240" aria-label="Kolik z obvodu Země vlak pokrývá"></canvas>
   <div class="big2"><div><div class="k">Hotovo</div><div class="v">${(pct<1?pct.toLocaleString("cs-CZ",{maximumFractionDigits:3}):pct.toLocaleString("cs-CZ",{maximumFractionDigits:1}))} %</div></div><div><div class="k">Zbývá lidí</div><div class="v">${fmt(left)}</div></div></div></div>
-  <ul class="ms">${MILESTONES.map(m=>{const done=I.L>=m.km;let cls=done?"done":"";if(!done&&!cur){cls="cur";cur=true}const f=followersFor(m.km);return`<li class="${cls}"><span class="ok">${done?"✓":(cls==="cur"?"→":"·")}</span><span class="t">${esc(m.t)} <span class="muted" style="font-size:.8rem">· ${fmtKm(m.km)} km</span></span><span class="d">${fmt(f)}</span></li>`}).join("")}</ul>`;
+  <ul class="ms">${MILESTONES.map(m=>{const done=I.pos>=m.km;let cls=done?"done":"";if(!done&&!cur){cls="cur";cur=true}const f=Math.ceil(m.km/kmPer()-1e-9);return`<li class="${cls}"><span class="ok">${done?"✓":(cls==="cur"?"→":"·")}</span><span class="t">${esc(m.t)} <span class="muted" style="font-size:.8rem">· ${fmtKm(m.km)} km</span></span><span class="d">${fmt(f)}</span></li>`}).join("")}</ul>`;
   const c=$("#globe"),g=c.getContext("2d"),W=c.width,R=W/2-22,cx=W/2,cy=W/2;
   const grd=g.createRadialGradient(cx-R*.35,cy-R*.4,R*.1,cx,cy,R);grd.addColorStop(0,"#7cc3f0");grd.addColorStop(1,"#2f78b8");g.fillStyle=grd;g.beginPath();g.arc(cx,cy,R,0,7);g.fill();
   g.strokeStyle="rgba(255,255,255,.45)";g.lineWidth=1.5;for(let i=1;i<6;i++){g.beginPath();g.ellipse(cx,cy,R*Math.cos(i*Math.PI/12),R,0,0,7);g.stroke()}
@@ -1081,7 +1083,7 @@ function sheetGoal(el){
 function sheetInfo(el){
   const ig=S.instagram?`<a href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">@${esc(S.instagram)}</a>`:"instagramový účet projektu";
   el.innerHTML=`<p style="color:var(--lamp-2)">Každá jízdenka je vagón. Internet rozhoduje, kam vlak jede.</p>
-  <div class="card"><h3>Follow = vagón</h3><p class="muted">Počet cestujících je počet followerů účtu ${ig}. Každý přidá jeden vagón dlouhý ${S.wagonLength} m. Konec vlaku stojí v Praze a lokomotiva je tam, kam vlak dosáhne.</p></div>
+  <div class="card"><h3>Follow = vagón</h3><p class="muted">Počet cestujících je počet followerů účtu ${ig}. Každý přidá jeden vagón dlouhý ${S.wagonLength} m a posune vlak o ${fmtKm(kmPer())} km dál. Vlak nikdy necouvá: když někdo vystoupí, vagón ubude, ale ujeté kilometry zůstanou.</p></div>
   <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete v komentářích a ve Stories. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
   <div class="card"><h3>Strojvedoucí</h3><p class="muted">Na každé stanici vylosujeme z cestujících s jízdenkou jednoho strojvedoucího. Jeho panáček řídí lokomotivu až do další stanice. Kdo má nick skrytý, řídí jako „tajemný cestující“.</p></div>
   <div class="card"><h3>Jízdenka a kontrola</h3><p class="muted">Jízdenka je dobrovolná a hned dostaneš vagón. Jednou denně porovnáme jízdenky se seznamem sledujících, který si stáhneme z vlastního instagramového účtu. Nic nescrapujeme a nikdy po tobě nechceme heslo.</p>
@@ -1112,7 +1114,7 @@ function renderMap(){
   let planned="";const pt=(a,b,t)=>[P[a][0]+(P[b][0]-P[a][0])*t,P[a][1]+(P[b][1]-P[a][1])*t];let hx,hy;
   if(I.head.waiting)[hx,hy]=P[I.head.node];else[hx,hy]=pt(I.head.leg.from,I.head.leg.to,I.head.t);
   const tr=[P[S.route[0]]];
-  for(const l of I.legs){if(I.head.waiting||l.start+l.km<=I.L)tr.push(P[l.to]);else if(l===I.head.leg){tr.push([hx,hy]);planned+=`M${hx} ${hy}L${P[l.to][0]} ${P[l.to][1]}`}else planned+=`M${P[l.from][0]} ${P[l.from][1]}L${P[l.to][0]} ${P[l.to][1]}`}
+  for(const l of I.legs){if(I.head.waiting||l.start+l.km<=I.D)tr.push(P[l.to]);else if(l===I.head.leg){tr.push([hx,hy]);planned+=`M${hx} ${hy}L${P[l.to][0]} ${P[l.to][1]}`}else planned+=`M${P[l.from][0]} ${P[l.from][1]}L${P[l.to][0]} ${P[l.to][1]}`}
   if(planned)h+=`<path d="${planned}" stroke="var(--lamp)" stroke-width="3" stroke-dasharray="5 6" fill="none" stroke-linecap="round" opacity=".9"/>`;
   const train=tr.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
   h+=`<path d="${train}" stroke="var(--lamp)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".25"/><path d="${train}" stroke="var(--lamp)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="train-line" d="${train}" stroke="#fff6e6" stroke-width="2" fill="none" stroke-dasharray="10 4"/>`;
@@ -1132,7 +1134,7 @@ function renderMap(){
 function adminLogout(){ADMIN_PW=null;try{sessionStorage.removeItem(ADMKEY)}catch(e){}if(location.hash==="#sprava")renderAdmin()}
 async function adminLoad(){
   const out=await api("/api/admin",{headers:{"x-admin-password":ADMIN_PW||""}});
-  S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);return out;
+  S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);S.peak=out.peak||S.followers;return out;
 }
 function renderLogin(err){
   $("#admin").innerHTML=`<div class="adm-head"><div><span class="eyebrow">Správa projektu</span><h2 style="margin-top:6px">Výpravna</h2></div><a class="btn" href="#">← Zpět do vlaku</a></div>
@@ -1302,8 +1304,9 @@ function renderAdmin(){
       <p class="fine">Délku vlaku určují jen jízdenky. Počet followerů se doplní sám při kontrole z exportu; na webu je vidět, kolik lidí ještě nenastoupilo.</p>
       <div class="row-f"><div class="field"><label for="aF">Followerů na Instagramu (ručně)</label><input type="number" id="aF" min="0" value="${S.igFollowers||0}"></div><button class="btn" id="aFSave" type="button">Uložit</button></div>`
       :`<div class="row-f"><div class="field"><label for="aF">Počet cestujících</label><input type="number" id="aF" min="0" value="${S.followers}"></div><button class="btn primary" id="aFSave" type="button">Uložit</button></div>`}
-      <p class="muted" style="font-size:.88rem">Vlak je dlouhý ${lenTxt(I.L)}. ${I.head.waiting?`Lokomotiva čeká na výhybce ${esc(nodeName(I.head.node))}.`:`Do stanice ${esc(nodeName(I.head.leg.to))} chybí ${fmt(followersFor(I.head.leg.start+I.head.leg.km)-S.followers)}.`}</p>
-      <div class="row-f"><div class="field"><label for="aLen">Délka vagónu (m)</label><input type="number" id="aLen" min="1" value="${S.wagonLength}"></div><div class="field"><label for="aEvery">Speciální vagón každý</label><input type="number" id="aEvery" min="1" value="${S.specialEvery}"></div><button class="btn" id="aLenSave" type="button">Uložit</button></div>
+      <p class="muted" style="font-size:.88rem">Vlak je dlouhý ${lenTxt(I.L)} a ujel ${fmtKm(I.pos,0)} km (nejvíc cestujících: ${fmt(peakN())}). ${I.head.waiting?`Lokomotiva čeká na výhybce ${esc(nodeName(I.head.node))}${I.head.over>=1?` a v zásobě má ${fmtKm(I.head.over,0)} km. Po rozhodnutí je hned projede.`:"."}`:`Do stanice ${esc(nodeName(I.head.leg.to))} chybí ${fmt(needFor(I.head.leg.start+I.head.leg.km))} ${cest(needFor(I.head.leg.start+I.head.leg.km))}.`}</p>
+      <div class="row-f"><div class="field"><label for="aLen">Délka vagónu (m)</label><input type="number" id="aLen" min="1" value="${S.wagonLength}"></div><div class="field"><label for="aEvery">Speciální vagón každý</label><input type="number" id="aEvery" min="1" value="${S.specialEvery}"></div><div class="field"><label for="aKm">Km za cestujícího</label><input type="number" id="aKm" min="0.01" step="0.1" value="${kmPer()}"></div><button class="btn" id="aLenSave" type="button">Uložit</button></div>
+      <p class="fine">Km za cestujícího určuje, jak rychle vlak jede. Změna platí zpětně pro celou cestu.</p>
       <div class="row-f"><div class="field"><label for="aIg">Instagram účet (bez @)</label><input type="text" id="aIg" value="${esc(S.instagram)}" placeholder="nazev.uctu"></div><button class="btn" id="aIgSave" type="button">Uložit</button></div>
     </div>
     ${driverCardHtml()}
@@ -1353,7 +1356,7 @@ function renderAdmin(){
 function bindAdmin(){
   const A=$("#admin");
   $("#aFSave").onclick=()=>{const v=Math.max(0,parseInt($("#aF").value,10)||0);if(ONLINE){S.igFollowers=v;save("Počet followerů uložen")}else{S.followers=v;save("Počet cestujících uložen")}};
-  $("#aLenSave").onclick=()=>{S.wagonLength=Math.max(1,+$("#aLen").value||25);S.specialEvery=Math.max(1,+$("#aEvery").value||500);save("Uloženo")};
+  $("#aLenSave").onclick=()=>{S.wagonLength=Math.max(1,+$("#aLen").value||25);S.specialEvery=Math.max(1,+$("#aEvery").value||500);S.kmPerPassenger=Math.max(.01,+$("#aKm").value||1);save("Uloženo")};
   $("#aIgSave").onclick=()=>{S.instagram=$("#aIg").value.trim().replace(/^@/,"");save("Účet uložen")};
   const readVotes=()=>{if(!S.vote)return;A.querySelectorAll("[data-vv]").forEach(i=>{S.vote.options[+i.dataset.vv].votes=Math.max(0,+i.value||0)});S.vote.deadline=$("#aDl").value.trim()};
   $("#aVSave").onclick=()=>{readVotes();save("Hlasy uloženy")};
