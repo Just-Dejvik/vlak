@@ -97,9 +97,9 @@ async def shot(pg, name):
         await train(pg, drv=True)
         await pg.evaluate("()=>{Game.flyTo(90,.6)}"); await steps(pg, 150)
         await pg.evaluate(ov('<div class="eb">Vlak followerů</div><div class="ttl huge">Je nás<br><y>150+</y></div>'))
-        await pg.evaluate("()=>{const s=document.createElement('div');s.className='sign';s.id='sign';s.textContent='Kolín';document.body.appendChild(s)}")
+        await pg.evaluate("()=>{const s=document.createElement('div');s.className='sign';s.id='sign';s.textContent='Kolín';s.style.transform='translateX(-50%) translateY(-2200px)';document.body.appendChild(s)}")
         cues = {0: "()=>{Game.flyTo(0,.42)}",
-                T(1.4): fx(ease + "const u=E(t/.45);document.getElementById('sign').style.transform=`translateX(-50%) translateY(${(1-u)*-1400+Math.sin(Math.max(0,t-.45)*14)*Math.exp(-Math.max(0,t-.45)*5)*30}px)`"),
+                T(1.4): fx(ease + "const u=E(t/.45);document.getElementById('sign').style.transform=`translateX(-50%) translateY(${(1-u)*-2200+Math.sin(Math.max(0,t-.45)*14)*Math.exp(-Math.max(0,t-.45)*5)*30}px)`"),
                 T(1.5): ov('<div class="eb">Stanice</div><div class="ttl huge">Stojíme v<br><y>Kolíně!</y></div>')}
         await film.record(pg, name, 3.4, cues=cues)
     elif name == "v6a_vote":   # 15,0–17,74: kudy dál? Pardubice, nebo Havlíčkův Brod?
