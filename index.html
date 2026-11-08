@@ -1277,7 +1277,7 @@ function igCardHtml(){
   return `<div class="card"><h3>Instagram</h3>
     <p style="font-size:1.05rem">Propojeno: <b>@${esc(IG.username)}</b> · followerů: <b>${fmt(IG.followers||0)}</b></p>
     <p class="fine">${days!=null?`Klíč se sám prodlužuje, když Správu otevřeš aspoň jednou za pár týdnů (teď platí ještě ${fmt(days)} dní).`:"Systémový klíč nevyprší."}</p>
-    <div class="row-f"><button class="btn primary" type="button" id="igFol"${(IG.followers||0)===(S.igFollowers||0)?" disabled":""}>Přenést počet followerů na web (${fmt(IG.followers||0)})</button><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
+    <p class="fine">Počet followerů se na webu aktualizuje sám, zhruba každých 15 minut.</p><div class="row-f"><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
 }
 function igVoteHtml(){
   if(!IG||!IG.connected)return `<p class="fine">Hlasy z komentářů se počítají samy, když propojíš Instagram (karta Instagram).</p>`;
@@ -1355,7 +1355,7 @@ function renderAdmin(){
       ${ONLINE&&ADMIN_REC?`<div style="padding:10px 12px;border-radius:10px;background:#fff4e0;margin-bottom:10px;font-size:.92rem"><b>Obnova po výpadku:</b> vrátilo se ${fmt(S.followers)} z ${fmt(ADMIN_REC.upTo)} cestujících. Jízdenka se obnoví sama, jakmile cestující otevře web na mobilu, kde si ji vyzvedl. Vagóny 1–${fmt(ADMIN_REC.upTo)} na ně čekají, noví cestující dostávají další čísla.</div>`:""}
       ${ONLINE?`<p style="font-size:1.05rem">Ve vlaku: <b>${fmt(S.followers)}</b> ${cest(S.followers)} s jízdenkou${S.igFollowers?` · followerů na Instagramu: <b>${fmt(S.igFollowers)}</b>`:""}</p>
       <p class="fine">Délku vlaku určují jen jízdenky. Počet followerů se doplní sám při kontrole z exportu; na webu je vidět, kolik lidí ještě nenastoupilo.</p>
-      <div class="row-f"><div class="field"><label for="aF">Followerů na Instagramu (ručně)</label><input type="number" id="aF" min="0" value="${S.igFollowers||0}"></div><button class="btn" id="aFSave" type="button">Uložit</button></div>`
+      <div class="row-f"><div class="field"><label for="aF">Followerů na Instagramu (ručně, jen když Instagram není propojený)</label><input type="number" id="aF" min="0" value="${S.igFollowers||0}"></div><button class="btn" id="aFSave" type="button">Uložit</button></div>`
       :`<div class="row-f"><div class="field"><label for="aF">Počet cestujících</label><input type="number" id="aF" min="0" value="${S.followers}"></div><button class="btn primary" id="aFSave" type="button">Uložit</button></div>`}
       <p class="muted" style="font-size:.88rem">Vlak je dlouhý ${lenTxt(I.L)} a ujel ${fmtKm(I.pos,0)} km (nejvíc cestujících: ${fmt(peakN())}). ${I.head.waiting?`Lokomotiva čeká na výhybce ${esc(nodeName(I.head.node))}${I.head.over>=1?` a v zásobě má ${fmtKm(I.head.over,0)} km. Po rozhodnutí je hned projede.`:"."}`:`Do stanice ${esc(nodeName(I.head.leg.to))} chybí ${fmt(needFor(I.head.leg.start+I.head.leg.km))} ${cest(needFor(I.head.leg.start+I.head.leg.km))}.`}</p>
       <div class="row-f"><div class="field"><label for="aLen">Délka vagónu (m)</label><input type="number" id="aLen" min="1" value="${S.wagonLength}"></div><div class="field"><label for="aEvery">Speciální vagón každý</label><input type="number" id="aEvery" min="1" value="${S.specialEvery}"></div><div class="field"><label for="aKm">Km za cestujícího</label><input type="number" id="aKm" min="0.01" step="0.1" value="${kmPer()}"></div><button class="btn" id="aLenSave" type="button">Uložit</button></div>
