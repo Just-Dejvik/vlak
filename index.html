@@ -905,7 +905,7 @@ function renderBoarding(){
   }
   $("#bLook").onclick=()=>{closeBoarding();Game.flyTo(Math.min(6,wagonCount()),.75)};
 }
-function openBoarding(){renderBoarding();$("#boarding").hidden=false;closeSheet(true)}
+function openBoarding(){if(window.DOWN){toast("Nástup je na chvíli zavřený, zkus to prosím za chvíli.");return}renderBoarding();$("#boarding").hidden=false;closeSheet(true)}
 function closeBoarding(){$("#boarding").hidden=true;try{sessionStorage.setItem(SEENKEY,"1")}catch(e){}}
 
 /* ================= SHEETS ================= */
@@ -1333,6 +1333,7 @@ function bindTickets(A){
     w.querySelector("[data-y]").onclick=()=>act({nick,remove:true},`Jízdenka @${nick} smazána`);w.querySelector("[data-n]").onclick=renderAdmin});
 }
 function renderAdmin(){
+  if(window.DOWN){$("#admin").innerHTML=`<div class="wrap" style="padding:40px 20px;max-width:640px;margin:0 auto"><h1>Výpravna</h1><p class="muted">Web se teď nemůže spojit s úložištěm, takže správa je dočasně vypnutá. Nic tu neměň, data jsou v bezpečí a po obnovení bude všechno jako dřív.</p><p><a class="btn" href="#">← Zpět do vlaku</a></p></div>`;return}
   if(ONLINE&&!ADMIN_PW){renderLogin();return}
   const el=$("#admin");const I=info();
   const nodeOpts=sel=>Object.keys(S.nodes).map(id=>`<option value="${id}"${id===sel?" selected":""}>${esc(S.nodes[id].name)}</option>`).join("");
@@ -1456,6 +1457,9 @@ async function loadWorld(){
 async function init(){
   {const m=location.hash.match(/^#j=([a-z0-9._]{1,30})~([A-Za-z0-9_-]{10,})$/);if(m){PENDING_TRANSFER={nick:m[1],token:m[2]};history.replaceState(null,"",location.pathname+location.search);try{sessionStorage.setItem(SEENKEY,"1")}catch(e){}}}
   try{const d=await loadWorld();ONLINE=true;BASE=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;HIDDEN=new Set(d.hidden||[])}catch(e){}
+  // na zveřejněném webu bez spojení se serverem neukazovat ukázku, ale technickou přestávku
+  window.DOWN=!ONLINE&&/vercel\.app$/.test(location.hostname);
+  if(DOWN){const b=document.createElement("div");b.setAttribute("role","status");b.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;z-index:200;background:#1e2a33;color:#fff;border-radius:16px;padding:14px 18px;font:600 15px/1.4 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35);text-align:center";b.innerHTML="🔧 Vlak má krátkou technickou přestávku. Jízdenky i vagóny jsou v bezpečí. Za chvíli jedeme dál!";document.body.appendChild(b)}
   if(!ONLINE){try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const d=await r.json();if(d&&d.nodes&&d.route)BASE=d}}catch(e){}}
   const draft=ONLINE?null:lsGet(KEY);if(draft){try{S=JSON.parse(draft);localDraft=true}catch(e){S=clone(BASE)}}else S=clone(BASE);
   if(ONLINE){try{ADMIN_PW=sessionStorage.getItem(ADMKEY)}catch(e){}}
