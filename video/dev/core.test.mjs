@@ -70,3 +70,19 @@ import { peakPassengers } from '../../lib/core.js';
   assert.equal(peakPassengers(db), 5);                       // ujeté km zůstanou
   console.log('peak OK');
 }
+import { restoreTicket } from '../../lib/core.js';
+import { recoveredDb } from '../../lib/recovered.js';
+{
+  const db = recoveredDb(); const t0 = 1_900_000_000_000;
+  const tok = 'x'.repeat(32);
+  const r = restoreTicket(db, { nick: 'Kikinkaa', token: tok, wagon: 3, avatar: { hat: 'koruna' }, public: true }, 'ip1', t0);
+  assert.equal(r.restored, true); assert.equal(r.ticket.wagon, 3); assert.equal(r.ticket.avatar.hat, 'koruna');
+  assert.equal(restoreTicket(db, { nick: 'kikinkaa', token: tok, wagon: 3 }, 'ip1', t0).restored, false);   // znovu: nic
+  assert.throws(() => restoreTicket(db, { nick: 'kikinkaa', token: 'y'.repeat(32), wagon: 3 }, 'ip2', t0), /někdo jiný/);
+  const n = claim(db, { nick: 'novy', public: true }, 'ip3', t0);
+  assert.equal(n.ticket.wagon, 161);                        // nový cestující nebere vagón někoho, kdo se ještě nevrátil
+  assert.equal(peakPassengers(db), 160);
+  delete db.recovering;
+  assert.throws(() => restoreTicket(db, { nick: 'dalsi', token: tok, wagon: 9 }, 'ip1', t0), /skončila/);
+  console.log('restore OK');
+}

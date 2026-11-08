@@ -13,10 +13,17 @@ export default wrap(async (req, res) => {
   const state = st ? st.data : seedState();
   send(res, 200, {
     online: true,
-    state: { ...state, followers: displayFollowers(state, tickets), peak: peakPassengers(tickets), igFollowers: state.followers },
+    state: {
+      ...state,
+      // během obnovy po výpadku ukazujeme vlak v plné délce, vagóny čekají na své cestující
+      followers: tickets.recovering ? Math.max(displayFollowers(state, tickets), Number(tickets.reservedUpTo) || 0) : displayFollowers(state, tickets),
+      peak: peakPassengers(tickets), igFollowers: state.followers,
+    },
+    back: tickets.recovering ? displayFollowers(state, tickets) : null,
     roster: roster(tickets),
     hidden: hiddenWagons(tickets),
     counts: counts(tickets),
     driver: driverView(state, tickets),
-  }, 'public, max-age=0, s-maxage=15, stale-while-revalidate=60');
+    recovering: !!tickets.recovering,
+  }, 'public, max-age=0, s-maxage=30, stale-while-revalidate=300');
 });

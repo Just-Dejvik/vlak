@@ -374,7 +374,7 @@ const AV={
 
 /* ================= STATE ================= */
 const KEY="vf.draft.v3",MYKEY="vf.myticket.v3",SEENKEY="vf.seen",ADMKEY="vf.admin";
-let DRIVER=null,HIDDEN=new Set(),ONLINE=false,ROSTER=[],ROSTER_MAP=new Map(),COUNTS=null,ADMIN_PW=null,ADMIN_TICKETS=[],LAST_REPORT=null,LAST_EXPORT=[],RENAME=null;
+let RECOVERING=false,DRIVER=null,HIDDEN=new Set(),ONLINE=false,ROSTER=[],ROSTER_MAP=new Map(),COUNTS=null,ADMIN_PW=null,ADMIN_TICKETS=[],LAST_REPORT=null,LAST_EXPORT=[],RENAME=null;
 async function api(path,{method="GET",body,headers={}}={}){
   let r;try{r=await fetch(path,{method,cache:"no-store",headers:{"Content-Type":"application/json",...headers},body:body?JSON.stringify(body):undefined})}catch(e){throw new Error("Nepodařilo se spojit se serverem. Zkontroluj připojení a zkus to znovu.")}
   let data={};try{data=await r.json()}catch(e){}
@@ -464,7 +464,13 @@ async function refreshMy(){
     const was=myTicket.status;myTicket={...out.ticket,token:myTicket.token};saveMy();renderHud();Game.setN(wagonCount());Game.refreshWagon();
     if(was==="pending"&&myTicket.status==="verified")toast("Jsi ověřený cestující. Tvůj vagón je № "+fmt(myTicket.wagon)+".");
     if(openKey==="jizdenka")sheetTicket($("#sheetBody"))}
-  catch(e){if(e.status===404||e.status===403){const n=myTicket.nick;myTicket=null;saveMy();renderHud();Game.refreshWagon();if(openKey==="jizdenka")closeSheet();
+  catch(e){
+    // po výpadku úložiště: jízdenku z tohohle mobilu založíme znovu se stejným vagónem a panáčkem
+    if(e.status===404&&RECOVERING){try{const t=myTicket;const out=await api("/api/ticket",{method:"POST",headers:{"x-ticket-token":t.token},body:{action:"restore",nick:t.nick,wagon:t.wagon||t.lastWagon,avatar:t.avatar,public:t.public}});
+      myTicket={...out.ticket,token:t.token};saveMy();setRoster([...ROSTER.filter(r=>r[1]!==myTicket.nick),...(myTicket.public&&myTicket.wagon?[[myTicket.wagon,myTicket.nick,myTicket.avatar]]:[])]);S.followers=Math.max(S.followers,myTicket.wagon||0);renderHud();Game.setN(wagonCount());Game.refreshWagon();
+      toast(`Vítej zpátky, @${myTicket.nick}! Tvůj vagón № ${fmt(myTicket.wagon)} je zase ve vlaku.`);return}
+      catch(e2){if(e2.status===409){toast(`Nick @${myTicket.nick} už mezitím obsadil někdo jiný. Napiš nám na Instagram.`);return}if(e2.status!==410)return}}
+    if(e.status===404||e.status===403){const n=myTicket.nick;myTicket=null;saveMy();renderHud();Game.refreshWagon();if(openKey==="jizdenka")closeSheet();
     toast(`Jízdenka @${n} propadla. Mezi sledujícími jsme tě nenašli. Dej follow a vyzvedni si ji znovu.`)}}
 }
 let updT=null,updBody={};
@@ -761,7 +767,7 @@ const Game=(()=>{
     if(DRIVER&&loco.visible&&(focusN===0||z>.3)){const big=focusN===0&&z<.4;set(loco.position.x+3.6,big?5.5:5.6,big?`<small>strojvedoucí</small>${DRIVER.nick?"@"+esc(DRIVER.nick):"tajemný cestující"}`:`🚂 ${DRIVER.nick?"@"+esc(DRIVER.nick):"strojvedoucí"}`,big?"lbl big drv":"lbl drv")}
     if(focusN>0&&z<.4){const occ=occupant(focusN);const x=wagonX(focusN)-.1;
       if(occ.nick)set(x,3.6,`<small>${occ.me?"Tohle jsi ty · ":""}vagón № ${fmt(focusN)}</small>@${esc(occ.nick)}${occ.me&&myTicket.status==="pending"?"<small>čeká na ověření</small>":(occ.me&&!occ.public?"<small>nick vidíš jen ty</small>":"")}`,"lbl big"+(occ.me?" me":""));
-      else set(x,3.6,`<small>vagón № ${fmt(focusN)}</small>${!ONLINE||HIDDEN.has(focusN)?"cestující se skrytým nickem":"volný vagón"}`,"lbl big anon");
+      else set(x,3.6,`<small>vagón № ${fmt(focusN)}</small>${!ONLINE||HIDDEN.has(focusN)?"cestující se skrytým nickem":(RECOVERING?"čeká na návrat cestujícího":"volný vagón")}`,"lbl big anon");
     }else if(z>.3){const nm=publicNicks();
       for(const s of slots){if(!s.g.visible||s.n<1)continue;const n=nm.get(s.n);if(!n)continue;const me=myTicket&&+myTicket.wagon===s.n;set(s.g.position.x,s.sign.visible?6.1:5.1,(me?"Ty · ":"")+"@"+esc(n),"lbl"+(me?" me":""))}}
     for(let j=i;j<lblPool.length;j++)lblPool[j].d.hidden=true;
@@ -858,7 +864,7 @@ function setCtx(focusN,center){
   $("#editBtn").hidden=!(focusN>0&&myTicket&&+myTicket.wagon===focusN);
   const sp=specialsMap();const zb=$("#zoomBtn"),ico=$("#zoomIco");
   if(focusN>0){const occ=occupant(focusN);$("#ctxA").textContent=`Vagón № ${fmt(focusN)} z ${fmt(wagonCount())}`+(sp.has(focusN)?` · ${sp.get(focusN)}`:"");
-    $("#ctxB").innerHTML=occ.nick?(occ.me?`<em>Ty</em> · @${esc(occ.nick)}`:`@${esc(occ.nick)}`):(!ONLINE||HIDDEN.has(focusN)?"Skrytý nick":"Volný vagón");zb.setAttribute("aria-label","Pohled zvenku");ico.innerHTML=ICO_OUT}
+    $("#ctxB").innerHTML=occ.nick?(occ.me?`<em>Ty</em> · @${esc(occ.nick)}`:`@${esc(occ.nick)}`):(!ONLINE||HIDDEN.has(focusN)?"Skrytý nick":(RECOVERING?"Čeká na návrat":"Volný vagón"));zb.setAttribute("aria-label","Pohled zvenku");ico.innerHTML=ICO_OUT}
   else if(focusN===0||center===0){$("#ctxA").textContent="Lokomotiva VF 001";$("#ctxB").textContent="Táhne celý vlak";zb.setAttribute("aria-label","Nahlédnout dovnitř");ico.innerHTML=ICO_IN}
   else{$("#ctxA").textContent="Pohled na vlak";$("#ctxB").innerHTML=`Vagóny kolem <em>№ ${fmt(center)}</em>`;zb.setAttribute("aria-label","Nahlédnout dovnitř");ico.innerHTML=ICO_IN}
 }
@@ -1134,7 +1140,7 @@ function renderMap(){
 function adminLogout(){ADMIN_PW=null;try{sessionStorage.removeItem(ADMKEY)}catch(e){}if(location.hash==="#sprava")renderAdmin()}
 async function adminLoad(){
   const out=await api("/api/admin",{headers:{"x-admin-password":ADMIN_PW||""}});
-  S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);S.peak=out.peak||S.followers;return out;
+  S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);S.peak=out.peak||S.followers;ADMIN_REC=out.recovering||null;return out;
 }
 function renderLogin(err){
   $("#admin").innerHTML=`<div class="adm-head"><div><span class="eyebrow">Správa projektu</span><h2 style="margin-top:6px">Výpravna</h2></div><a class="btn" href="#">← Zpět do vlaku</a></div>
@@ -1298,6 +1304,7 @@ function bindIg(A){
   const use=k=>()=>{if(!IG_COUNT||!S.vote)return;S.vote.options.forEach(o=>{o.votes=IG_COUNT[k][o.to]||0});save(k==="riders"?"Hlasy cestujících uloženy":"Všechny hlasy uloženy")};
   const ur=$("#igUseR");if(ur)ur.onclick=use("riders");const ua=$("#igUseA");if(ua)ua.onclick=use("all");
 }
+let ADMIN_REC=null;
 let TFILTER="",RELINK=null;
 function ticketsCardHtml(){
   if(!ONLINE){
@@ -1345,6 +1352,7 @@ function renderAdmin(){
   <div class="adm">
     ${checkCardHtml()}
     <div class="card"><h3>Cestující</h3>
+      ${ONLINE&&ADMIN_REC?`<div style="padding:10px 12px;border-radius:10px;background:#fff4e0;margin-bottom:10px;font-size:.92rem"><b>Obnova po výpadku:</b> vrátilo se ${fmt(S.followers)} z ${fmt(ADMIN_REC.upTo)} cestujících. Jízdenka se obnoví sama, jakmile cestující otevře web na mobilu, kde si ji vyzvedl. Vagóny 1–${fmt(ADMIN_REC.upTo)} na ně čekají, noví cestující dostávají další čísla.</div>`:""}
       ${ONLINE?`<p style="font-size:1.05rem">Ve vlaku: <b>${fmt(S.followers)}</b> ${cest(S.followers)} s jízdenkou${S.igFollowers?` · followerů na Instagramu: <b>${fmt(S.igFollowers)}</b>`:""}</p>
       <p class="fine">Délku vlaku určují jen jízdenky. Počet followerů se doplní sám při kontrole z exportu; na webu je vidět, kolik lidí ještě nenastoupilo.</p>
       <div class="row-f"><div class="field"><label for="aF">Followerů na Instagramu (ručně)</label><input type="number" id="aF" min="0" value="${S.igFollowers||0}"></div><button class="btn" id="aFSave" type="button">Uložit</button></div>`
@@ -1456,7 +1464,7 @@ async function loadWorld(){
 }
 async function init(){
   {const m=location.hash.match(/^#j=([a-z0-9._]{1,30})~([A-Za-z0-9_-]{10,})$/);if(m){PENDING_TRANSFER={nick:m[1],token:m[2]};history.replaceState(null,"",location.pathname+location.search);try{sessionStorage.setItem(SEENKEY,"1")}catch(e){}}}
-  try{const d=await loadWorld();ONLINE=true;BASE=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;HIDDEN=new Set(d.hidden||[])}catch(e){}
+  try{const d=await loadWorld();ONLINE=true;BASE=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;HIDDEN=new Set(d.hidden||[]);RECOVERING=!!d.recovering}catch(e){}
   // na zveřejněném webu bez spojení se serverem neukazovat ukázku, ale technickou přestávku
   window.DOWN=!ONLINE&&/vercel\.app$/.test(location.hostname);
   if(DOWN){const b=document.createElement("div");b.setAttribute("role","status");b.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;z-index:200;background:#1e2a33;color:#fff;border-radius:16px;padding:14px 18px;font:600 15px/1.4 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35);text-align:center";b.innerHTML="🔧 Vlak má krátkou technickou přestávku. Jízdenky i vagóny jsou v bezpečí. Za chvíli jedeme dál!";document.body.appendChild(b)}

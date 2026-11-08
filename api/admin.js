@@ -21,6 +21,7 @@ export default wrap(async (req, res) => {
       tickets: listTickets(tickets),
       counts: counts(tickets),
       peak: peakPassengers(tickets),
+      recovering: tickets.recovering ? { upTo: Number(tickets.reservedUpTo) || 0 } : null,
     });
   }
 
