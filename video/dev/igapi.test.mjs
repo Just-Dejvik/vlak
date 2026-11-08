@@ -22,3 +22,21 @@ const v = ig.countVotes(com, [{ to: 'hradec', name: 'Hradec Králové' }, { to: 
 assert.deepEqual(v.all, { hradec: 2, trebova: 1 }); assert.deepEqual(v.riders, { hradec: 1, trebova: 0 });
 assert.ok(!JSON.stringify(st).includes('IGAA'));   // klíč se nevrací
 console.log('igapi OK');
+// EAA klíč: hledání účtu a volání přes graph.facebook.com
+{
+  const seen = [];
+  globalThis.fetch = async (u) => {
+    const url = new URL(u); seen.push(url.host + url.pathname);
+    const ok = (j) => ({ ok: true, status: 200, json: async () => j });
+    if (url.pathname.endsWith('/me/assigned_instagram_accounts')) return { ok: false, status: 400, json: async () => ({ error: { code: 100, message: 'Unsupported get request' } }) };
+    if (url.pathname.endsWith('/me/instagram_accounts')) return ok({ data: [{ id: '1784000000000001', username: 'vlak.followeru' }] });
+    if (url.pathname.endsWith('/1784000000000001')) return ok({ id: '1784000000000001', username: 'vlak.followeru', followers_count: 640, media_count: 6 });
+    if (url.pathname.endsWith('/1784000000000001/media')) return ok({ data: [] });
+    throw new Error('unexpected ' + url);
+  };
+  const r2 = await ig.setToken('EAAMtesttoken1234567890', '', 'vlak.followeru');
+  assert.equal(r2.followers, 640);
+  assert.ok(seen.every((h) => h.startsWith('graph.facebook.com')));
+  assert.deepEqual(await ig.recentMedia(), []);
+  console.log('igapi EAA OK');
+}

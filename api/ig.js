@@ -10,7 +10,10 @@ export default wrap(async (req, res) => {
   if (req.method !== 'POST') return send(res, 405, { error: 'Nepodporovaná metoda.' });
   const b = await body(req);
 
-  if (b.action === 'set-token') return send(res, 200, await setToken(b.token));
+  if (b.action === 'set-token') {
+    const st = await readJSON('state.json');
+    return send(res, 200, await setToken(b.token, b.igId, (st && st.data.instagram) || 'vlak.followeru'));
+  }
   if (b.action === 'disconnect') { await clearToken(); return send(res, 200, { ok: true }); }
   if (b.action === 'media') return send(res, 200, { media: await recentMedia() });
 

@@ -1264,12 +1264,13 @@ function igCardHtml(){
   if(!IG.connected)return `<div class="card"><h3>Instagram</h3>
     ${IG.error?`<p class="err" style="display:block">${esc(IG.error)}</p>`:`<p class="muted" style="font-size:.9rem">Propojení umí spočítat hlasy z komentářů a načíst počet followerů. Seznam followerů Instagram nedává, kontrola jízdenek dál běží přes export.</p>`}
     <p class="fine">developers.facebook.com → tvoje aplikace → Instagram → API setup with Instagram login → Generate access tokens → u @${esc(S.instagram||"vlak.followeru")} „Generate token“. Klíč vlož sem, nikam jinam ho neposílej.</p>
-    <div class="row-f"><div class="field"><label for="igTok">Přístupový klíč (token)</label><input type="password" id="igTok" autocomplete="off" placeholder="IGAA…"></div><button class="btn primary" type="button" id="igSet"${IG_BUSY?" disabled":""}>${IG_BUSY==="set"?"Ověřuji…":"Propojit"}</button></div>
-    <div class="err" id="igErr"></div></div>`;
+    <div class="row-f"><div class="field"><label for="igTok">Přístupový klíč (token)</label><input type="password" id="igTok" autocomplete="off" placeholder="EAA… nebo IGAA…"></div><button class="btn primary" type="button" id="igSet"${IG_BUSY?" disabled":""}>${IG_BUSY==="set"?"Ověřuji…":"Propojit"}</button></div>
+    <details><summary class="fine" style="cursor:pointer">ID instagramového účtu (jen když ho web nenajde sám)</summary><div class="field" style="margin-top:6px"><input type="text" id="igId" inputmode="numeric" autocomplete="off" placeholder="např. 17841400000000000"></div></details>
+    <div class="err" id="igErr" style="word-break:break-word"></div></div>`;
   const days=IG.expiresAt?Math.round((IG.expiresAt-Date.now())/864e5):null;
   return `<div class="card"><h3>Instagram</h3>
     <p style="font-size:1.05rem">Propojeno: <b>@${esc(IG.username)}</b> · followerů: <b>${fmt(IG.followers||0)}</b></p>
-    <p class="fine">Klíč se sám prodlužuje, když Správu otevřeš aspoň jednou za pár týdnů${days!=null?` (teď platí ještě ${fmt(days)} dní)`:""}.</p>
+    <p class="fine">${days!=null?`Klíč se sám prodlužuje, když Správu otevřeš aspoň jednou za pár týdnů (teď platí ještě ${fmt(days)} dní).`:"Systémový klíč nevyprší."}</p>
     <div class="row-f"><button class="btn primary" type="button" id="igFol"${(IG.followers||0)===(S.igFollowers||0)?" disabled":""}>Přenést počet followerů na web (${fmt(IG.followers||0)})</button><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
 }
 function igVoteHtml(){
@@ -1288,7 +1289,7 @@ function igVoteHtml(){
 function bindIg(A){
   if(ONLINE&&!IG){igLoad().then(()=>{if(location.hash==="#sprava")renderAdmin()});return}
   const busy=async(k,fn,errSel)=>{IG_BUSY=k;renderAdmin();try{await fn()}catch(e){if(e.status===401&&/heslo/i.test(e.message))return adminLogout();IG_BUSY="";renderAdmin();const er=$(errSel);if(er)er.textContent=e.message;return}IG_BUSY="";renderAdmin()};
-  const set=$("#igSet");if(set)set.onclick=()=>{const t=$("#igTok").value.trim();if(!t){$("#igErr").textContent="Vlož klíč.";return}busy("set",async()=>{const r=await igApi("POST",{action:"set-token",token:t});await igLoad();toast(`Propojeno s @${r.username}`)},"#igErr")};
+  const set=$("#igSet");if(set)set.onclick=()=>{const t=$("#igTok").value.trim();if(!t){$("#igErr").textContent="Vlož klíč.";return}busy("set",async()=>{const r=await igApi("POST",{action:"set-token",token:t,igId:($("#igId")||{}).value||""});await igLoad();toast(`Propojeno s @${r.username}`)},"#igErr")};
   const off=$("#igOff");if(off)off.onclick=()=>busy("off",async()=>{await igApi("POST",{action:"disconnect"});IG=null;IG_MEDIA=null;IG_COUNT=null;await igLoad();toast("Instagram odpojen")},"#igErr");
   const fol=$("#igFol");if(fol)fol.onclick=()=>{S.igFollowers=IG.followers||0;save(`Followerů: ${fmt(S.igFollowers)}`)};
   const md=$("#igMedia");if(md)md.onclick=()=>busy("media",async()=>{IG_MEDIA=(await igApi("POST",{action:"media"})).media;if(IG_MEDIA[0])IG_PICK=new Set([IG_MEDIA[0].id])},"#igVErr");
