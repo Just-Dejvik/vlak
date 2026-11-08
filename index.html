@@ -1140,7 +1140,9 @@ function renderMap(){
 function adminLogout(){ADMIN_PW=null;try{sessionStorage.removeItem(ADMKEY)}catch(e){}if(location.hash==="#sprava")renderAdmin()}
 async function adminLoad(){
   const out=await api("/api/admin",{headers:{"x-admin-password":ADMIN_PW||""}});
-  S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);S.peak=out.peak||S.followers;ADMIN_REC=out.recovering||null;return out;
+  S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);ADMIN_REC=out.recovering||null;
+  if(ADMIN_REC){const act=ADMIN_TICKETS.filter(t=>t.status==="pending"||t.status==="verified");ADMIN_REC.back=act.filter(t=>t.wagon&&t.wagon<=ADMIN_REC.upTo).length;ADMIN_REC.fresh=act.length-ADMIN_REC.back;S.followers=ADMIN_REC.upTo+ADMIN_REC.fresh}
+  S.peak=out.peak||S.followers;return out;
 }
 function renderLogin(err){
   $("#admin").innerHTML=`<div class="adm-head"><div><span class="eyebrow">Správa projektu</span><h2 style="margin-top:6px">Výpravna</h2></div><a class="btn" href="#">← Zpět do vlaku</a></div>
@@ -1352,7 +1354,7 @@ function renderAdmin(){
   <div class="adm">
     ${checkCardHtml()}
     <div class="card"><h3>Cestující</h3>
-      ${ONLINE&&ADMIN_REC?`<div style="padding:10px 12px;border-radius:10px;background:#fff4e0;margin-bottom:10px;font-size:.92rem"><b>Obnova po výpadku:</b> vrátilo se ${fmt(S.followers)} z ${fmt(ADMIN_REC.upTo)} cestujících. Jízdenka se obnoví sama, jakmile cestující otevře web na mobilu, kde si ji vyzvedl. Vagóny 1–${fmt(ADMIN_REC.upTo)} na ně čekají, noví cestující dostávají další čísla.</div>`:""}
+      ${ONLINE&&ADMIN_REC?`<div style="padding:10px 12px;border-radius:10px;background:#fff4e0;margin-bottom:10px;font-size:.92rem"><b>Obnova po výpadku:</b> vrátilo se ${fmt(ADMIN_REC.back)} z ${fmt(ADMIN_REC.upTo)} cestujících, nově nastoupilo ${fmt(ADMIN_REC.fresh)}. Jízdenka se obnoví sama, jakmile cestující otevře web na mobilu, kde si ji vyzvedl. Vagóny 1–${fmt(ADMIN_REC.upTo)} na ně čekají, noví cestující dostávají další čísla.</div>`:""}
       ${ONLINE?`<p style="font-size:1.05rem">Ve vlaku: <b>${fmt(S.followers)}</b> ${cest(S.followers)} s jízdenkou${S.igFollowers?` · followerů na Instagramu: <b>${fmt(S.igFollowers)}</b>`:""}</p>
       <p class="fine">Délku vlaku určují jen jízdenky. Počet followerů se doplní sám při kontrole z exportu; na webu je vidět, kolik lidí ještě nenastoupilo.</p>
       <div class="row-f"><div class="field"><label for="aF">Followerů na Instagramu (ručně, jen když Instagram není propojený)</label><input type="number" id="aF" min="0" value="${S.igFollowers||0}"></div><button class="btn" id="aFSave" type="button">Uložit</button></div>`
