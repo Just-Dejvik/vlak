@@ -81,8 +81,17 @@ import { recoveredDb } from '../../lib/recovered.js';
   assert.throws(() => restoreTicket(db, { nick: 'kikinkaa', token: 'y'.repeat(32), wagon: 3 }, 'ip2', t0), /někdo jiný/);
   const n = claim(db, { nick: 'novy', public: true }, 'ip3', t0);
   assert.equal(n.ticket.wagon, 161);                        // nový cestující nebere vagón někoho, kdo se ještě nevrátil
-  assert.equal(peakPassengers(db), 160);
+  assert.equal(peakPassengers(db), 161);                    // nový cestující přidá km
   delete db.recovering;
   assert.throws(() => restoreTicket(db, { nick: 'dalsi', token: tok, wagon: 9 }, 'ip1', t0), /skončila/);
   console.log('restore OK');
+}
+import { passengerCount } from '../../lib/core.js';
+{
+  const db = recoveredDb(); const t0 = 1_900_000_000_000;
+  restoreTicket(db, { nick: 'stary', token: 'q'.repeat(32), wagon: 5 }, 'i1', t0);
+  for (let i = 0; i < 7; i++) claim(db, { nick: 'nov' + i, public: true }, 'j' + i, t0);
+  assert.equal(passengerCount(db), 167);                    // 160 čekajících/vrácených + 7 nových
+  assert.equal(peakPassengers(db), 167);                    // a vlak ujede o 7 km víc
+  console.log('recovery count OK');
 }

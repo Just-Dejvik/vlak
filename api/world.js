@@ -1,6 +1,6 @@
 // Veřejný stav světa a seznam ověřených cestujících. Krátce se cachuje na CDN.
 import { readJSON } from '../lib/store.js';
-import { counts, displayFollowers, driverView, hiddenWagons, peakPassengers, roster, seedState, emptyDb } from '../lib/core.js';
+import { counts, displayFollowers, driverView, hiddenWagons, passengerCount, peakPassengers, roster, seedState, emptyDb } from '../lib/core.js';
 import { send, wrap } from '../lib/http.js';
 import { cachedFollowers } from '../lib/ig.js';
 
@@ -18,7 +18,7 @@ export default wrap(async (req, res) => {
     state: {
       ...state,
       // během obnovy po výpadku ukazujeme vlak v plné délce, vagóny čekají na své cestující
-      followers: tickets.recovering ? Math.max(displayFollowers(state, tickets), Number(tickets.reservedUpTo) || 0) : displayFollowers(state, tickets),
+      followers: passengerCount(tickets),
       peak: peakPassengers(tickets), igFollowers: igN ?? state.followers,
     },
     back: tickets.recovering ? displayFollowers(state, tickets) : null,
