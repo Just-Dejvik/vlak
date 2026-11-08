@@ -1053,7 +1053,7 @@ function sheetVote(el){
     h=`<div class="card"><span class="eyebrow">Výhybka · ${esc(nodeName(v.at))}</span><h3>Kudy z ${esc(genitive(v.at))}?</h3>
     <p class="muted">${need>0?`Lokomotiva dorazí na výhybku po ${fmt(need)} dalších ${cest(need)}.`:"Lokomotiva už stojí na výhybce a čeká."}</p>
     ${v.options.map(o=>{const pc=tot?Math.round((+o.votes||0)/tot*100):0;const km=edgeKm(v.at,o.to);return`<div class="opt${tot&&(+o.votes||0)===max?" win":""}"><div class="opt-top"><span>${esc(nodeName(o.to))}${km?` <span class="muted" style="font-weight:400;font-size:.82rem">· ${km} km</span>`:""}</span><span>${pc} %</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}
-    <p class="note">Hlasuje se v komentářích pod videem a ve Stories${v.deadline?` do ${esc(v.deadline)}`:""}. Výsledky sem přepisujeme ručně · ${fmt(tot)} hlasů.</p>
+    <p class="note">Hlasuje se v komentářích pod posledním videem${v.deadline?` do ${esc(v.deadline)}`:""}. <b>Počítají se jen hlasy lidí s jízdenkou</b>, každý má jeden hlas · ${fmt(tot)} hlasů.</p>
     ${S.instagram?`<a class="btn" href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">Hlasovat na Instagramu</a>`:""}</div>`}
   const sv=S.specialVote;
   if(sv&&sv.options&&sv.options.length){const tot=sv.options.reduce((s,o)=>s+(+o.votes||0),0),max=Math.max(...sv.options.map(o=>+o.votes||0));const need=Math.max(0,sv.wagon-S.followers);
@@ -1084,7 +1084,7 @@ function sheetInfo(el){
   const ig=S.instagram?`<a href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">@${esc(S.instagram)}</a>`:"instagramový účet projektu";
   el.innerHTML=`<p style="color:var(--lamp-2)">Každá jízdenka je vagón. Internet rozhoduje, kam vlak jede.</p>
   <div class="card"><h3>Follow = vagón</h3><p class="muted">Počet cestujících je počet followerů účtu ${ig}. Každý přidá jeden vagón dlouhý ${S.wagonLength} m a posune vlak o ${fmtKm(kmPer())} km dál. Vlak nikdy necouvá: když někdo vystoupí, vagón ubude, ale ujeté kilometry zůstanou.</p></div>
-  <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete v komentářích a ve Stories. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
+  <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete v komentářích pod videem. Počítají se jen hlasy cestujících s jízdenkou, každý má jeden. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
   <div class="card"><h3>Strojvedoucí</h3><p class="muted">Na každé stanici vylosujeme z cestujících s jízdenkou jednoho strojvedoucího. Jeho panáček řídí lokomotivu až do další stanice. Kdo má nick skrytý, řídí jako „tajemný cestující“.</p></div>
   <div class="card"><h3>Jízdenka a kontrola</h3><p class="muted">Jízdenka je dobrovolná a hned dostaneš vagón. Jednou denně porovnáme jízdenky se seznamem sledujících, který si stáhneme z vlastního instagramového účtu. Nic nescrapujeme a nikdy po tobě nechceme heslo.</p>
     <ul class="muted" style="margin:6px 0 0;padding-left:18px;display:grid;gap:4px">
@@ -1092,7 +1092,7 @@ function sheetInfo(el){
       <li>Kdo přestane sledovat, vystoupí. Když se vrátí, dostane svůj vagón zpátky, pokud je volný.</li>
       <li>Nick je u vagónu vidět i pro ostatní. Když nechceš, zaškrtni při vyzvednutí jízdenky „Skrýt můj nick“, nebo ho skryj později v jízdence. Sprosté nebo cizí nicky schováme.</li>
     </ul></div>
-  <div class="card"><h3>Jaké údaje ukládáme</h3><p class="muted">Instagramový nick, číslo vagónu, vzhled tvého panáčka, kdy sis jízdenku vyzvedl(a), kdy jsme tě ověřili a jestli smí být nick vidět. Kvůli ochraně před zneužitím ukládáme na 24 hodin i zašifrovaný otisk připojení, ne samotnou IP adresu. Ze seznamu sledujících si nenecháváme nic kromě jejich počtu.</p>
+  <div class="card"><h3>Jaké údaje ukládáme</h3><p class="muted">Instagramový nick, číslo vagónu, vzhled tvého panáčka, kdy sis jízdenku vyzvedl(a), kdy jsme tě ověřili a jestli smí být nick vidět. Kvůli ochraně před zneužitím ukládáme na 24 hodin i zašifrovaný otisk připojení, ne samotnou IP adresu. Ze seznamu sledujících si necháváme jen jejich počet a zakódované otisky nicků, podle kterých tě po vyzvednutí jízdenky hned ověříme. Hlasy počítáme z veřejných komentářů pod našimi videy přes oficiální rozhraní Instagramu pro náš vlastní účet; komentáře neukládáme.</p>
     <p class="muted">Data leží na serverech Vercel ve Frankfurtu a nikomu je neprodáváme. Uchováváme je, dokud projekt běží nebo dokud nepožádáš o smazání.</p></div>
   <div class="card"><h3>Smazání a kontakt</h3><p class="muted">Jízdenku i nick smažeš sám(a) tlačítkem v jízdence. Případně napiš zprávu na ${ig} a smažeme je do druhého dne. Pokud máš za to, že s údaji zacházíme špatně, můžeš si stěžovat u Úřadu pro ochranu osobních údajů (uoou.gov.cz).</p>
     <p class="muted">Je ti méně než 15 let? Zeptej se rodičů, jestli s tím souhlasí, než se zapíšeš.</p></div>
@@ -1254,6 +1254,49 @@ function bindDriver(A){
   const o=$("#drOff");if(o)o.onclick=()=>set(null,"Lokomotiva jede bez strojvedoucího");
   const s=$("#drSet");if(s)s.onclick=()=>{const n=$("#drNick").value.trim().replace(/^@+/,"").toLowerCase();if(!n){$("#drErr").textContent="Napiš nick.";return}set(n,`Strojvedoucí: @${n}`)};
 }
+// --- Instagram: propojení, počet followerů, hlasy z komentářů ---
+let IG=null,IG_MEDIA=null,IG_PICK=new Set(),IG_COUNT=null,IG_BUSY="";
+const igApi=(method,b)=>api("/api/ig",{method,headers:{"x-admin-password":ADMIN_PW||""},body:b});
+async function igLoad(){try{IG=await igApi("GET")}catch(e){IG={connected:false,error:e.message}}}
+function igCardHtml(){
+  if(!ONLINE)return "";
+  if(!IG)return `<div class="card"><h3>Instagram</h3><p class="muted">Načítám…</p></div>`;
+  if(!IG.connected)return `<div class="card"><h3>Instagram</h3>
+    ${IG.error?`<p class="err" style="display:block">${esc(IG.error)}</p>`:`<p class="muted" style="font-size:.9rem">Propojení umí spočítat hlasy z komentářů a načíst počet followerů. Seznam followerů Instagram nedává, kontrola jízdenek dál běží přes export.</p>`}
+    <p class="fine">developers.facebook.com → tvoje aplikace → Instagram → API setup with Instagram login → Generate access tokens → u @${esc(S.instagram||"vlak.followeru")} „Generate token“. Klíč vlož sem, nikam jinam ho neposílej.</p>
+    <div class="row-f"><div class="field"><label for="igTok">Přístupový klíč (token)</label><input type="password" id="igTok" autocomplete="off" placeholder="IGAA…"></div><button class="btn primary" type="button" id="igSet"${IG_BUSY?" disabled":""}>${IG_BUSY==="set"?"Ověřuji…":"Propojit"}</button></div>
+    <div class="err" id="igErr"></div></div>`;
+  const days=IG.expiresAt?Math.round((IG.expiresAt-Date.now())/864e5):null;
+  return `<div class="card"><h3>Instagram</h3>
+    <p style="font-size:1.05rem">Propojeno: <b>@${esc(IG.username)}</b> · followerů: <b>${fmt(IG.followers||0)}</b></p>
+    <p class="fine">Klíč se sám prodlužuje, když Správu otevřeš aspoň jednou za pár týdnů${days!=null?` (teď platí ještě ${fmt(days)} dní)`:""}.</p>
+    <div class="row-f"><button class="btn primary" type="button" id="igFol"${(IG.followers||0)===(S.igFollowers||0)?" disabled":""}>Přenést počet followerů na web (${fmt(IG.followers||0)})</button><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
+}
+function igVoteHtml(){
+  if(!IG||!IG.connected)return `<p class="fine">Hlasy z komentářů se počítají samy, když propojíš Instagram (karta Instagram).</p>`;
+  const v=S.vote;let h=`<div style="margin:12px 0;padding:12px;border:1px dashed var(--line);border-radius:12px"><b>Hlasy z komentářů</b>`;
+  if(!IG_MEDIA)h+=`<p class="fine">Načti poslední příspěvky a vyber video (nebo víc videí), pod kterými se hlasuje.</p><button class="btn small" type="button" id="igMedia"${IG_BUSY?" disabled":""}>${IG_BUSY==="media"?"Načítám…":"Načíst příspěvky"}</button>`;
+  else{h+=`<div style="display:grid;gap:6px;margin:8px 0;max-height:300px;overflow:auto">${IG_MEDIA.map(m=>`<label style="display:flex;gap:10px;align-items:center;font-size:.85rem;cursor:pointer"><input type="checkbox" data-igm="${m.id}"${IG_PICK.has(m.id)?" checked":""}>${m.thumb?`<img src="${esc(m.thumb)}" alt="" style="width:42px;height:56px;object-fit:cover;border-radius:6px">`:""}<span><b>${esc(new Date(m.timestamp).toLocaleDateString("cs-CZ",{day:"numeric",month:"numeric"}))}</b> · ${fmt(m.comments)} komentářů<br><span class="muted">${esc(m.caption||"(bez popisku)")}</span></span></label>`).join("")}</div>
+    <button class="btn small primary" type="button" id="igCount"${IG_PICK.size&&!IG_BUSY?"":" disabled"}>${IG_BUSY==="count"?"Počítám…":"Spočítat hlasy"}</button>`;
+    if(IG_COUNT&&IG_COUNT.at===v.at){const c=IG_COUNT;
+      h+=`<div class="tblbox" style="margin-top:10px"><table class="tbl"><thead><tr><th>Směr</th><th>Cestující s jízdenkou</th><th>Všichni</th></tr></thead><tbody>${v.options.map(o=>`<tr><td>${esc(nodeName(o.to))}</td><td><b>${fmt(c.riders[o.to]||0)}</b></td><td>${fmt(c.all[o.to]||0)}</td></tr>`).join("")}</tbody></table></div>
+      <p class="fine">${fmt(c.comments)} komentářů od ${fmt(c.people)} lidí · každý má 1 hlas (platí poslední komentář) · ${fmt(c.ambiguous)} komentářů zmínilo víc směrů, ty se nepočítají.</p>
+      <div class="row-f"><button class="btn small primary" type="button" id="igUseR">Použít hlasy cestujících</button><button class="btn small" type="button" id="igUseA">Použít všechny hlasy</button></div>
+      <details style="margin-top:6px"><summary class="fine" style="cursor:pointer">Kdo jak hlasoval (${fmt(c.voters.length)})</summary><p class="fine" style="line-height:1.7">${c.voters.map(x=>`${x.passenger?"🎫 ":""}@${esc(x.nick)} → ${esc(nodeName(x.to))}`).join("<br>")}</p></details>`}}
+  return h+`<div class="err" id="igVErr"></div></div>`;
+}
+function bindIg(A){
+  if(ONLINE&&!IG){igLoad().then(()=>{if(location.hash==="#sprava")renderAdmin()});return}
+  const busy=async(k,fn,errSel)=>{IG_BUSY=k;renderAdmin();try{await fn()}catch(e){if(e.status===401&&/heslo/i.test(e.message))return adminLogout();IG_BUSY="";renderAdmin();const er=$(errSel);if(er)er.textContent=e.message;return}IG_BUSY="";renderAdmin()};
+  const set=$("#igSet");if(set)set.onclick=()=>{const t=$("#igTok").value.trim();if(!t){$("#igErr").textContent="Vlož klíč.";return}busy("set",async()=>{const r=await igApi("POST",{action:"set-token",token:t});await igLoad();toast(`Propojeno s @${r.username}`)},"#igErr")};
+  const off=$("#igOff");if(off)off.onclick=()=>busy("off",async()=>{await igApi("POST",{action:"disconnect"});IG=null;IG_MEDIA=null;IG_COUNT=null;await igLoad();toast("Instagram odpojen")},"#igErr");
+  const fol=$("#igFol");if(fol)fol.onclick=()=>{S.igFollowers=IG.followers||0;save(`Followerů: ${fmt(S.igFollowers)}`)};
+  const md=$("#igMedia");if(md)md.onclick=()=>busy("media",async()=>{IG_MEDIA=(await igApi("POST",{action:"media"})).media;if(IG_MEDIA[0])IG_PICK=new Set([IG_MEDIA[0].id])},"#igVErr");
+  A.querySelectorAll("[data-igm]").forEach(c=>c.onchange=()=>{c.checked?IG_PICK.add(c.dataset.igm):IG_PICK.delete(c.dataset.igm);const b=$("#igCount");if(b)b.disabled=!IG_PICK.size});
+  const cnt=$("#igCount");if(cnt)cnt.onclick=()=>busy("count",async()=>{IG_COUNT=await igApi("POST",{action:"count",media:[...IG_PICK]})},"#igVErr");
+  const use=k=>()=>{if(!IG_COUNT||!S.vote)return;S.vote.options.forEach(o=>{o.votes=IG_COUNT[k][o.to]||0});save(k==="riders"?"Hlasy cestujících uloženy":"Všechny hlasy uloženy")};
+  const ur=$("#igUseR");if(ur)ur.onclick=use("riders");const ua=$("#igUseA");if(ua)ua.onclick=use("all");
+}
 let TFILTER="",RELINK=null;
 function ticketsCardHtml(){
   if(!ONLINE){
@@ -1309,6 +1352,7 @@ function renderAdmin(){
       <p class="fine">Km za cestujícího určuje, jak rychle vlak jede. Změna platí zpětně pro celou cestu.</p>
       <div class="row-f"><div class="field"><label for="aIg">Instagram účet (bez @)</label><input type="text" id="aIg" value="${esc(S.instagram)}" placeholder="nazev.uctu"></div><button class="btn" id="aIgSave" type="button">Uložit</button></div>
     </div>
+    ${igCardHtml()}
     ${driverCardHtml()}
     <div class="card"><h3>Výhybka · ${esc(nodeName(v.at))}</h3>
       <p class="muted" style="font-size:.9rem">Trasa: ${S.route.map(id=>esc(nodeName(id))).join(" → ")}</p>
@@ -1317,6 +1361,7 @@ function renderAdmin(){
       </tbody></table></div>
       <div class="row-f"><div class="field"><label for="aVAdd">Přidat směr</label><select id="aVAdd">${cand.filter(c=>!(v.options||[]).some(o=>o.to===c)).map(c=>`<option value="${c}">${esc(nodeName(c))} (${edgeKm(v.at,c)} km)</option>`).join("")||"<option value=''>— žádná další trať —</option>"}</select></div><button class="btn small" id="aVAddBtn" type="button">Přidat</button></div>
       <div class="row-f"><div class="field"><label for="aDl">Hlasuje se do</label><input type="text" id="aDl" value="${esc(v.deadline||"")}" placeholder="neděle 2. 11. ve 20:00"></div><button class="btn" id="aVSave" type="button">Uložit hlasy</button></div>
+      ${ONLINE?igVoteHtml():""}
       <p class="muted" style="font-size:.85rem">„Poslat sem“ uzavře hlasování, zapíše výsledek do kroniky a otevře další výhybku.</p>
       ${S.route.length>1?`<span id="undoWrap"><button class="btn small danger" id="aUndo" type="button">Vrátit poslední úsek trasy</button></span>`:""}
     </div>
@@ -1381,7 +1426,7 @@ function bindAdmin(){
     if(!name||!km||isNaN(lat)||isNaN(lon)){$("#nErr").textContent="Vyplň název, kilometry a obě souřadnice.";return}
     let id=name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")||"st";while(S.nodes[id])id+="2";
     S.nodes[id]={name,lon,lat,lab:"r"};S.edges.push([from,id,km]);if(S.vote&&S.vote.at===from&&!S.route.includes(id))S.vote.options.push({to:id,votes:0});save(`Stanice ${name} přidána`)};
-  bindTickets(A);bindCheck(A);bindDriver(A);bindTypos(A);
+  bindTickets(A);bindCheck(A);bindDriver(A);bindTypos(A);bindIg(A);
   const lo=$("#aLogout");if(lo)lo.onclick=()=>{adminLogout();toast("Odhlášeno")};
   $("#dCopy").onclick=()=>{const ta=$("#dJson");const txt=JSON.stringify(S,null,2);const fb=()=>{ta.focus();ta.select();toast("Označeno, zkopíruj Ctrl+C")};if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Data zkopírována"),fb);else fb()};
   $("#dLoad").onclick=()=>{try{const d=JSON.parse($("#dJson").value);if(!d.nodes||!d.route||typeof d.followers!=="number")throw 0;S=d;save("Data načtena")}catch(e){$("#dErr").textContent="Tohle nejsou platná data vlaku. Zkontroluj, že je vložený celý JSON."}};
