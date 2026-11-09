@@ -425,8 +425,8 @@ function info(){
 }
 // kolik dalších cestujících je potřeba, aby vlak ujel km kilometrů od Prahy
 const needFor=km=>Math.max(0,Math.ceil(km/kmPer()-1e-9)-peakN());
-function locative(id){const m={praha:"Praze",kolin:"Kolíně",pardubice:"Pardubicích",hradec:"Hradci Králové",trebova:"České Třebové",brno:"Brně",olomouc:"Olomouci",ostrava:"Ostravě",breclav:"Břeclavi",hbrod:"Havlíčkově Brodě",plzen:"Plzni",cheb:"Chebu",domazlice:"Domažlicích",usti:"Ústí nad Labem",decin:"Děčíně",liberec:"Liberci",tabor:"Táboře",budejovice:"Českých Budějovicích"};return m[id]||nodeName(id)}
-function genitive(id){const m={pardubice:"Pardubic",kolin:"Kolína",praha:"Prahy",hradec:"Hradce Králové",trebova:"České Třebové",brno:"Brna",olomouc:"Olomouce",ostrava:"Ostravy",breclav:"Břeclavi",hbrod:"Havlíčkova Brodu",plzen:"Plzně",cheb:"Chebu",domazlice:"Domažlic",usti:"Ústí nad Labem",decin:"Děčína",liberec:"Liberce",tabor:"Tábora",budejovice:"Českých Budějovic"};return m[id]||nodeName(id)}
+function locative(id){const m={praha:"Praze",kolin:"Kolíně",pardubice:"Pardubicích",hradec:"Hradci Králové",trebova:"České Třebové",brno:"Brně",olomouc:"Olomouci",ostrava:"Ostravě",breclav:"Břeclavi",hbrod:"Havlíčkově Brodě",plzen:"Plzni",cheb:"Chebu",domazlice:"Domažlicích",usti:"Ústí nad Labem",decin:"Děčíně",liberec:"Liberci",tabor:"Táboře",budejovice:"Českých Budějovicích",viden:"Vídni",berlin:"Berlíně",mnichov:"Mnichově",krakov:"Krakově",varsava:"Varšavě",budapest:"Budapešti",pariz:"Paříži",londyn:"Londýně",rim:"Římě",drazdany:"Drážďanech",bratislava:"Bratislavě",katovice:"Katovicích",linec:"Linci",norimberk:"Norimberku",rezno:"Řezně",lipsko:"Lipsku",hamburk:"Hamburku",frankfurt:"Frankfurtu",zilina:"Žilině",kosice:"Košicích",vratislav:"Vratislavi",salcburk:"Salcburku",benatky:"Benátkách",milan:"Miláně",curych:"Curychu",brusel:"Bruselu",amsterdam:"Amsterdamu",kodan:"Kodani",lublan:"Lublani",zahreb:"Záhřebu",belehrad:"Bělehradě",istanbul:"Istanbulu",graz:"Štýrském Hradci",koln_r:"Kolíně nad Rýnem",zeneva:"Ženevě",neapol:"Neapoli",florencie:"Florencii",sofie:"Sofii",bukurest:"Bukurešti",atheny:"Aténách",lvov:"Lvově",kyjev:"Kyjevě"};return m[id]||nodeName(id)}
+function genitive(id){const m={pardubice:"Pardubic",kolin:"Kolína",praha:"Prahy",hradec:"Hradce Králové",trebova:"České Třebové",brno:"Brna",olomouc:"Olomouce",ostrava:"Ostravy",breclav:"Břeclavi",hbrod:"Havlíčkova Brodu",plzen:"Plzně",cheb:"Chebu",domazlice:"Domažlic",usti:"Ústí nad Labem",decin:"Děčína",liberec:"Liberce",tabor:"Tábora",budejovice:"Českých Budějovic",viden:"Vídně",berlin:"Berlína",mnichov:"Mnichova",krakov:"Krakova",varsava:"Varšavy",budapest:"Budapešti",pariz:"Paříže",londyn:"Londýna",rim:"Říma",drazdany:"Drážďan",bratislava:"Bratislavy",katovice:"Katovic",linec:"Lince",norimberk:"Norimberka",rezno:"Řezna",lipsko:"Lipska",hamburk:"Hamburku",frankfurt:"Frankfurtu",zilina:"Žiliny",kosice:"Košic",vratislav:"Vratislavi",salcburk:"Salcburku",benatky:"Benátek",milan:"Milána",curych:"Curychu",brusel:"Bruselu",amsterdam:"Amsterdamu",kodan:"Kodaně",lublan:"Lublaně",zahreb:"Záhřebu",belehrad:"Bělehradu",istanbul:"Istanbulu",graz:"Štýrského Hradce",koln_r:"Kolína nad Rýnem",zeneva:"Ženevy",neapol:"Neapole",florencie:"Florencie",sofie:"Sofie",bukurest:"Bukurešti",atheny:"Atén",lvov:"Lvova",kyjev:"Kyjeva"};return m[id]||nodeName(id)}
 
 /* tickets */
 function loadMy(){try{const s=lsGet(MYKEY);myTicket=s?JSON.parse(s):null}catch(e){myTicket=null}}
@@ -1058,7 +1058,7 @@ function sheetVote(el){
   else{const tot=v.options.reduce((s,o)=>s+(+o.votes||0),0),max=Math.max(...v.options.map(o=>+o.votes||0));const need=needFor(I.nodeKm[v.at]??0);
     h=`<div class="card"><span class="eyebrow">Výhybka · ${esc(nodeName(v.at))}</span><h3>Kudy z ${esc(genitive(v.at))}?</h3>
     <p class="muted">${need>0?`Lokomotiva dorazí na výhybku po ${fmt(need)} dalších ${cest(need)}.`:"Lokomotiva už stojí na výhybce a čeká."}</p>
-    ${v.options.map(o=>{const pc=tot?Math.round((+o.votes||0)/tot*100):0;const km=edgeKm(v.at,o.to);return`<div class="opt${tot&&(+o.votes||0)===max?" win":""}"><div class="opt-top"><span>${esc(nodeName(o.to))}${km?` <span class="muted" style="font-weight:400;font-size:.82rem">· ${km} km</span>`:""}</span><span>${pc} %</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}
+    ${v.options.map(o=>{const pc=tot?Math.round((+o.votes||0)/tot*100):0;const pp=pathTo(v.at,o.to),km=pp&&pp.km;return`<div class="opt${tot&&(+o.votes||0)===max?" win":""}"><div class="opt-top"><span>${esc(nodeName(o.to))}${km?` <small class="muted" style="font-weight:400;font-size:.8rem;font-family:inherit">· ${fmt(km)} km${via(pp).length?` přes ${esc(via(pp).slice(0,2).join(", "))}${via(pp).length>2?"…":""}`:""}</small>`:""}</span><span>${pc} %</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>`}).join("")}
     <p class="note">Hlasuje se v komentářích pod posledním videem${v.deadline?` do ${esc(v.deadline)}`:""}. <b>Počítají se jen hlasy lidí s jízdenkou</b>, každý má jeden hlas · ${fmt(tot)} hlasů.</p>
     ${S.instagram?`<a class="btn" href="https://www.instagram.com/${esc(S.instagram)}/" target="_blank" rel="noopener">Hlasovat na Instagramu</a>`:""}</div>`}
   const sv=S.specialVote;
@@ -1108,32 +1108,47 @@ function sheetInfo(el){
 
 /* ================= MAP ================= */
 const proj=n=>[(n.lon-11)*125+28,(51.35-n.lat)*190+26];
+// cesta po tratích z „from“ do „to“ (nejkratší, nevrací se přes už projeté stanice)
+function pathTo(from,to){
+  if(from===to)return{path:[from],km:0};const used=new Set(S.route);used.delete(from);
+  const dist={[from]:0},prev={},todo=new Set([from]);
+  while(todo.size){let u=null;for(const x of todo)if(u===null||dist[x]<dist[u])u=x;todo.delete(u);if(u===to)break;
+    for(const [a,b,k] of S.edges){const v=a===u?b:b===u?a:null;if(!v||used.has(v))continue;const d=dist[u]+(+k||0);if(dist[v]===undefined||d<dist[v]){dist[v]=d;prev[v]=u;todo.add(v)}}}
+  if(dist[to]===undefined)return null;const path=[to];while(path[0]!==from)path.unshift(prev[path[0]]);return{path,km:dist[to]};
+}
+const via=p=>p&&p.path.length>2?p.path.slice(1,-1).map(nodeName):[];
 function renderMap(){
   const svg=$("#map");if(!svg)return;const I=info();const P={};for(const id in S.nodes)P[id]=proj(S.nodes[id]);let h="";
-  for(let lon=12;lon<=19;lon++){const x=(lon-11)*125+28;h+=`<line x1="${x}" y1="0" x2="${x}" y2="680" stroke="#dde6cf"/><text x="${x+4}" y="672" fill="#8a9a80" font-family="IBM Plex Mono,monospace" font-size="11">${lon}° v. d.</text>`}
-  for(let lat=48.5;lat<=51;lat+=.5){const y=(51.35-lat)*190+26;h+=`<line x1="0" y1="${y}" x2="1060" y2="${y}" stroke="#dde6cf"/><text x="6" y="${y-4}" fill="#8a9a80" font-family="IBM Plex Mono,monospace" font-size="11">${String(lat).replace(".",",")}° s. š.</text>`}
-  for(const [a,b] of S.edges){if(!P[a]||!P[b])continue;h+=`<line x1="${P[a][0]}" y1="${P[a][1]}" x2="${P[b][0]}" y2="${P[b][1]}" stroke="#c4bba5" stroke-width="3" stroke-linecap="round"/>`}
-  const v=S.vote;
-  if(v&&v.at&&P[v.at]&&v.options&&v.options.length){const tot=v.options.reduce((s,o)=>s+(+o.votes||0),0)||1;
-    for(const o of v.options){if(!P[o.to])continue;const [x1,y1]=P[v.at],[x2,y2]=P[o.to];h+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--moss)" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>`;
-      const mx=(x1+x2)/2,my=(y1+y2)/2;h+=`<g transform="translate(${mx},${my})"><rect x="-24" y="-12" width="48" height="22" rx="5" fill="#eef3e4" stroke="var(--moss)"/><text text-anchor="middle" y="4" fill="var(--moss)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600">${Math.round((+o.votes||0)/tot*100)} %</text></g>`}}
   let planned="";const pt=(a,b,t)=>[P[a][0]+(P[b][0]-P[a][0])*t,P[a][1]+(P[b][1]-P[a][1])*t];let hx,hy;
   if(I.head.waiting)[hx,hy]=P[I.head.node];else[hx,hy]=pt(I.head.leg.from,I.head.leg.to,I.head.t);
+  // výřez: konec trasy, lokomotiva a cíle hlasování
+  const v=S.vote;const vp=(v&&v.at&&v.options||[]).map(o=>({o,p:pathTo(v.at,o.to)})).filter(x=>x.p);
+  const focus=[[hx,hy],...S.route.slice(-4).map(id=>P[id]),...vp.flatMap(x=>x.p.path.map(id=>P[id]))].filter(Boolean);
+  let x0=Math.min(...focus.map(p=>p[0])),x1=Math.max(...focus.map(p=>p[0])),y0=Math.min(...focus.map(p=>p[1])),y1=Math.max(...focus.map(p=>p[1]));
+  let w=Math.max(380,(x1-x0)*1.3+120),hh=Math.max(244,(y1-y0)*1.3+120);if(w/hh<1060/680)w=hh*1060/680;else hh=w*680/1060;
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,vx=cx-w/2,vy=cy-hh/2,k=w/1060;
+  svg.setAttribute("viewBox",`${vx.toFixed(1)} ${vy.toFixed(1)} ${w.toFixed(1)} ${hh.toFixed(1)}`);svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+  const step=k<1.6?1:k<4?2:5;
+  for(let lon=Math.floor(((vx-28)/125+11)/step)*step;lon<=(vx+w-28)/125+11;lon+=step){const x=(lon-11)*125+28;h+=`<line x1="${x}" y1="${vy}" x2="${x}" y2="${vy+hh}" stroke="#dde6cf" stroke-width="${k}"/><text x="${x+4*k}" y="${vy+hh-8*k}" fill="#8a9a80" font-family="IBM Plex Mono,monospace" font-size="${11*k}">${lon}°</text>`}
+  for(let lat=Math.floor((51.35-(vy+hh-26)/190)/step)*step;lat<=51.35-(vy-26)/190;lat+=step){const y=(51.35-lat)*190+26;h+=`<line x1="${vx}" y1="${y}" x2="${vx+w}" y2="${y}" stroke="#dde6cf" stroke-width="${k}"/><text x="${vx+6*k}" y="${y-4*k}" fill="#8a9a80" font-family="IBM Plex Mono,monospace" font-size="${11*k}">${lat}° s. š.</text>`}
+  for(const [a,b] of S.edges){if(!P[a]||!P[b])continue;h+=`<line x1="${P[a][0]}" y1="${P[a][1]}" x2="${P[b][0]}" y2="${P[b][1]}" stroke="#c4bba5" stroke-width="${3*k}" stroke-linecap="round"/>`}
+  if(vp.length){const tot=vp.reduce((s,x)=>s+(+x.o.votes||0),0)||1;
+    for(const {o,p} of vp){const d=p.path.map((id,i)=>(i?"L":"M")+P[id][0].toFixed(1)+" "+P[id][1].toFixed(1)).join("");h+=`<path d="${d}" stroke="var(--moss)" stroke-width="${3.5*k}" stroke-dasharray="${6*k} ${6*k}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const [ex,ey]=P[o.to];h+=`<g transform="translate(${ex},${ey-26*k}) scale(${k})"><rect x="-24" y="-12" width="48" height="22" rx="5" fill="#eef3e4" stroke="var(--moss)"/><text text-anchor="middle" y="4" fill="var(--moss)" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="600">${Math.round((+o.votes||0)/tot*100)} %</text></g>`}}
   const tr=[P[S.route[0]]];
   for(const l of I.legs){if(I.head.waiting||l.start+l.km<=I.D)tr.push(P[l.to]);else if(l===I.head.leg){tr.push([hx,hy]);planned+=`M${hx} ${hy}L${P[l.to][0]} ${P[l.to][1]}`}else planned+=`M${P[l.from][0]} ${P[l.from][1]}L${P[l.to][0]} ${P[l.to][1]}`}
-  if(planned)h+=`<path d="${planned}" stroke="var(--lamp)" stroke-width="3" stroke-dasharray="5 6" fill="none" stroke-linecap="round" opacity=".9"/>`;
+  if(planned)h+=`<path d="${planned}" stroke="var(--lamp)" stroke-width="${3*k}" stroke-dasharray="${5*k} ${6*k}" fill="none" stroke-linecap="round" opacity=".9"/>`;
   const train=tr.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
-  h+=`<path d="${train}" stroke="var(--lamp)" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".25"/><path d="${train}" stroke="var(--lamp)" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="train-line" d="${train}" stroke="#fff6e6" stroke-width="2" fill="none" stroke-dasharray="10 4"/>`;
-  const onRoute=new Set(S.route);
-  for(const id in S.nodes){const n=S.nodes[id],[x,y]=P[id];const r=onRoute.has(id);const stroke=r?"var(--lamp-2)":(n.exit?"#9aa59a":"#7d8a7e");
-    h+=n.exit?`<rect x="${x-6}" y="${y-6}" width="12" height="12" transform="rotate(45 ${x} ${y})" fill="#eef3e4" stroke="${stroke}" stroke-width="2"/>`:`<circle cx="${x}" cy="${y}" r="${r?7:5.5}" fill="${r?"var(--lamp)":"#fff"}" stroke="${stroke}" stroke-width="2.5"/>`;
-    let tx=x+11,ty=y+5,anc="start";if(n.lab==="l"){tx=x-11;anc="end"}else if(n.lab==="t"){tx=x;ty=y-13;anc="middle"}else if(n.lab==="b"){tx=x;ty=y+23;anc="middle"}
-    if(x<90&&anc!=="start"){anc="start";tx=x+10}if(x>980&&anc!=="end"){anc="end";tx=x-10}
-    h+=`<text x="${tx}" y="${ty}" text-anchor="${anc}" fill="${r?"#8a4508":(n.exit?"#7d877d":"#3f4c44")}" font-family="${n.exit?"IBM Plex Mono,monospace":"Instrument Sans,system-ui,sans-serif"}" font-size="${n.exit?12:15}" font-weight="${r?700:500}" paint-order="stroke" stroke="#eef3e4" stroke-width="4">${esc(n.exit?"→ "+n.name.toUpperCase():n.name)}</text>`}
-  h+=`<circle class="head-pulse" cx="${hx}" cy="${hy}" r="7" fill="none" stroke="var(--lamp)" stroke-width="2"/><circle cx="${hx}" cy="${hy}" r="8" fill="var(--signal)" stroke="#fff" stroke-width="2.5"/>`;
-  h+=`<g transform="translate(${hx},${hy-22})"><rect x="-46" y="-13" width="92" height="20" rx="4" fill="var(--signal)"/><text text-anchor="middle" y="1.5" fill="#fff4e4" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">LOKOMOTIVA</text></g>`;
+  h+=`<path d="${train}" stroke="var(--lamp)" stroke-width="${10*k}" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".25"/><path d="${train}" stroke="var(--lamp)" stroke-width="${5*k}" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path class="train-line" d="${train}" stroke="#fff6e6" stroke-width="${2*k}" fill="none" stroke-dasharray="${10*k} ${4*k}"/>`;
+  const onRoute=new Set(S.route),targets=new Set(vp.map(x=>x.o.to));
+  for(const id in S.nodes){const n=S.nodes[id],[x,y]=P[id];if(x<vx-40*k||x>vx+w+40*k||y<vy-40*k||y>vy+hh+40*k)continue;const r=onRoute.has(id),tg=targets.has(id);const stroke=r?"var(--lamp-2)":(tg?"var(--moss)":(n.exit?"#9aa59a":"#7d8a7e"));
+    h+=n.exit?`<rect x="${x-6*k}" y="${y-6*k}" width="${12*k}" height="${12*k}" transform="rotate(45 ${x} ${y})" fill="#eef3e4" stroke="${stroke}" stroke-width="${2*k}"/>`:`<circle cx="${x}" cy="${y}" r="${(r||tg?7:5.5)*k}" fill="${r?"var(--lamp)":"#fff"}" stroke="${stroke}" stroke-width="${2.5*k}"/>`;
+    let tx=x+11*k,ty=y+5*k,anc="start";if(n.lab==="l"){tx=x-11*k;anc="end"}else if(n.lab==="t"){tx=x;ty=y-13*k;anc="middle"}else if(n.lab==="b"){tx=x;ty=y+23*k;anc="middle"}
+    const big=r||tg;h+=`<text x="${tx}" y="${ty}" text-anchor="${anc}" fill="${r?"#8a4508":(tg?"#2b6342":(n.exit?"#7d877d":"#3f4c44"))}" font-family="${n.exit?"IBM Plex Mono,monospace":"Instrument Sans,system-ui,sans-serif"}" font-size="${(big?17:14)*k}" font-weight="${big?700:500}" paint-order="stroke" stroke="#eef3e4" stroke-width="${4*k}">${esc(n.exit?"→ "+n.name.toUpperCase():n.name)}</text>`}
+  h+=`<circle class="head-pulse" cx="${hx}" cy="${hy}" r="${7*k}" fill="none" stroke="var(--lamp)" stroke-width="${2*k}"/><circle cx="${hx}" cy="${hy}" r="${8*k}" fill="var(--signal)" stroke="#fff" stroke-width="${2.5*k}"/>`;
+  h+=`<g transform="translate(${hx},${hy-22*k}) scale(${k})"><rect x="-46" y="-13" width="92" height="20" rx="4" fill="var(--signal)"/><text text-anchor="middle" y="1.5" fill="#fff4e4" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="600">LOKOMOTIVA</text></g>`;
   svg.innerHTML=h;
-  requestAnimationFrame(()=>{svg.style.height=Math.round(svg.getBoundingClientRect().width*680/1060)+"px";const box=$("#mapbox");if(box&&box.scrollWidth>box.clientWidth+4){const scale=box.scrollWidth/1060;box.scrollLeft=Math.max(0,hx*scale-box.clientWidth/2)}});
+  requestAnimationFrame(()=>{svg.style.height=Math.round(svg.getBoundingClientRect().width*680/1060)+"px";const box=$("#mapbox");if(box&&box.scrollWidth>box.clientWidth+4){const scale=box.scrollWidth/1060;box.scrollLeft=Math.max(0,(hx-vx)/w*box.scrollWidth-box.clientWidth/2)}});
 }
 
 /* ================= ADMIN ================= */
@@ -1369,9 +1384,10 @@ function renderAdmin(){
     <div class="card"><h3>Výhybka · ${esc(nodeName(v.at))}</h3>
       <p class="muted" style="font-size:.9rem">Trasa: ${S.route.map(id=>esc(nodeName(id))).join(" → ")}</p>
       <div class="tblbox"><table class="tbl"><thead><tr><th>Směr</th><th>Hlasy</th><th></th></tr></thead><tbody>
-      ${(v.options||[]).map((o,i)=>`<tr><td>${esc(nodeName(o.to))}</td><td><input type="number" min="0" value="${+o.votes||0}" data-vv="${i}" style="width:100px" aria-label="Hlasy pro ${esc(nodeName(o.to))}"></td><td style="white-space:nowrap"><button class="btn small" type="button" data-decide="${o.to}">Poslat sem</button> <button class="btn small danger" type="button" data-vdel="${i}" aria-label="Odebrat">×</button></td></tr>`).join("")||`<tr><td colspan="3" class="muted">Žádné možnosti.</td></tr>`}
+      ${(v.options||[]).map((o,i)=>`<tr><td>${esc(nodeName(o.to))}${(()=>{const p=pathTo(v.at,o.to);return p?`<br><span class="fine">${fmt(p.km)} km${via(p).length?` · přes ${esc(via(p).join(", "))}`:""}</span>`:""})()}</td><td><input type="number" min="0" value="${+o.votes||0}" data-vv="${i}" style="width:100px" aria-label="Hlasy pro ${esc(nodeName(o.to))}"></td><td style="white-space:nowrap"><button class="btn small" type="button" data-decide="${o.to}">Poslat sem</button> <button class="btn small danger" type="button" data-vdel="${i}" aria-label="Odebrat">×</button></td></tr>`).join("")||`<tr><td colspan="3" class="muted">Žádné možnosti.</td></tr>`}
       </tbody></table></div>
-      <div class="row-f"><div class="field"><label for="aVAdd">Přidat směr</label><select id="aVAdd">${cand.filter(c=>!(v.options||[]).some(o=>o.to===c)).map(c=>`<option value="${c}">${esc(nodeName(c))} (${edgeKm(v.at,c)} km)</option>`).join("")||"<option value=''>— žádná další trať —</option>"}</select></div><button class="btn small" id="aVAddBtn" type="button">Přidat</button></div>
+      <div class="row-f"><div class="field"><label for="aVAdd">Přidat cíl (vlak k němu pojede sám přes všechny stanice)</label><select id="aVAdd">${(()=>{const at=v.at||S.route[S.route.length-1];const l=Object.keys(S.nodes).filter(id=>id!==at&&!S.route.includes(id)&&!(v.options||[]).some(o=>o.to===id)).map(id=>({id,p:pathTo(at,id)})).filter(x=>x.p).sort((a,b)=>a.p.km-b.p.km);
+        return l.map(x=>`<option value="${x.id}">${esc(nodeName(x.id))} · ${fmt(x.p.km)} km${via(x.p).length?` · přes ${esc(via(x.p).slice(0,4).join(", "))}${via(x.p).length>4?"…":""}`:""}</option>`).join("")||"<option value=''>— žádná další trať —</option>"})()}</select></div><button class="btn small" id="aVAddBtn" type="button">Přidat</button></div>
       <div class="row-f"><div class="field"><label for="aDl">Hlasuje se do</label><input type="text" id="aDl" value="${esc(v.deadline||"")}" placeholder="neděle 2. 11. ve 20:00"></div><button class="btn" id="aVSave" type="button">Uložit hlasy</button></div>
       ${ONLINE?igVoteHtml():""}
       <p class="muted" style="font-size:.85rem">„Poslat sem“ uzavře hlasování, zapíše výsledek do kroniky a otevře další výhybku.</p>
@@ -1422,7 +1438,8 @@ function bindAdmin(){
   A.querySelectorAll("[data-decide]").forEach(b=>b.onclick=()=>{readVotes();const to=b.dataset.decide,at=S.vote.at;const tot=S.vote.options.reduce((s,o)=>s+(+o.votes||0),0)||1;
     const res=S.vote.options.map(o=>`${nodeName(o.to)} ${Math.round((+o.votes||0)/tot*100)} %`).join(" · ");const ent=[...S.chronicle].reverse().find(c=>c.node===at);
     if(ent)ent.voteResult=res;else S.chronicle.push({node:at,date:new Date().toISOString().slice(0,10),title:`${nodeName(at)}: výhybka rozhodnuta`,text:`Cestující poslali vlak směr ${nodeName(to)}.`,task:"",voteResult:res});
-    S.route.push(to);S.vote={at:to,deadline:"",options:neighbors(to).filter(n=>!S.route.includes(n)).map(n=>({to:n,votes:0}))};save(`Vlak jede do stanice ${nodeName(to)}`)});
+    const p=pathTo(at,to);if(!p){toast("K tomuhle cíli nevede volná trať.");return}
+    S.route.push(...p.path.slice(1));S.vote={at:to,deadline:"",options:[]};save(`Vlak jede do: ${nodeName(to)}${p.path.length>2?` (přes ${p.path.length-2} stanic)`:""}. Přidej nové cíle hlasování.`)});
   const u=$("#aUndo");if(u)u.onclick=()=>{$("#undoWrap").innerHTML=`<span class="confirm-inline">Vrátit úsek do ${esc(nodeName(S.route[S.route.length-1]))}? <button class="btn small danger" id="uYes" type="button">Vrátit</button><button class="btn small" id="uNo" type="button">Ne</button></span>`;
     $("#uYes").onclick=()=>{const gone=S.route.pop();const at=S.route[S.route.length-1];S.vote={at,deadline:"",options:neighbors(at).filter(n=>!S.route.includes(n)).map(n=>({to:n,votes:0}))};save(`Úsek do ${nodeName(gone)} vrácen`)};$("#uNo").onclick=renderAdmin};
   $("#cAdd").onclick=()=>{const t=$("#cTitle").value.trim(),x=$("#cText").value.trim();if(!t||!x){$("#cErr").textContent="Doplň titulek i text.";return}S.chronicle.push({node:$("#cNode").value,date:$("#cDate").value,title:t,text:x,task:$("#cTask").value.trim(),voteResult:""});save("Zastávka zapsána do kroniky")};

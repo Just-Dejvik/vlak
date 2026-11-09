@@ -5,6 +5,7 @@ import {
 } from '../lib/core.js';
 import { body, requireAdmin, send, wrap } from '../lib/http.js';
 import { renameDriver } from '../lib/driver.js';
+import { ensureMap } from '../lib/europe.js';
 
 const listTickets = (db) => Object.values(db.tickets)
   .map(ticketView)
@@ -17,7 +18,7 @@ export default wrap(async (req, res) => {
     const [st, db] = await Promise.all([readJSON('state.json'), readJSON('tickets.json')]);
     const tickets = db ? db.data : emptyDb();
     return send(res, 200, {
-      state: st ? st.data : seedState(),
+      state: ensureMap(st ? st.data : seedState()),
       tickets: listTickets(tickets),
       counts: counts(tickets),
       peak: peakPassengers(tickets),

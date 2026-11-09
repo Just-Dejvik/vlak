@@ -3,6 +3,7 @@ import { readJSON } from '../lib/store.js';
 import { counts, displayFollowers, driverView, hiddenWagons, passengerCount, peakPassengers, roster, seedState, emptyDb } from '../lib/core.js';
 import { send, wrap } from '../lib/http.js';
 import { cachedFollowers } from '../lib/ig.js';
+import { ensureMap } from '../lib/europe.js';
 
 export default wrap(async (req, res) => {
   if (req.method !== 'GET') return send(res, 405, { error: 'Jen GET.' });
@@ -12,7 +13,7 @@ export default wrap(async (req, res) => {
     cachedFollowers(),
   ]);
   const tickets = db ? db.data : emptyDb();
-  const state = st ? st.data : seedState();
+  const state = ensureMap(st ? st.data : seedState());
   send(res, 200, {
     online: true,
     state: {
