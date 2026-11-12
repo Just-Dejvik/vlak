@@ -1,7 +1,7 @@
 // Správa projektu: stav světa, jízdenky a denní kontrola followerů. Chráněno heslem.
 import { mutateJSON, readJSON } from '../lib/store.js';
 import {
-  cleanNick, cleanState, counts, emptyDb, peakPassengers, HttpError, newToken, normalizeFollowers, renameTicket, seedState, sha256, ticketView, verify,
+  cleanExtras, cleanNick, cleanState, counts, emptyDb, peakPassengers, HttpError, newToken, normalizeFollowers, renameTicket, seedState, sha256, ticketView, verify,
 } from '../lib/core.js';
 import { body, requireAdmin, send, wrap } from '../lib/http.js';
 import { renameDriver } from '../lib/driver.js';
@@ -62,6 +62,7 @@ export default wrap(async (req, res) => {
       const t = db.tickets[nick];
       if (!t) throw new HttpError(404, 'Jízdenka neexistuje.');
       if (b.remove) delete db.tickets[nick];
+      else if ('extras' in b) { const x = cleanExtras(b.extras); if (x.length) t.extras = x; else delete t.extras; }
       else if ('public' in b) t.public = !!b.public;
       return { ok: true };
     });

@@ -432,10 +432,10 @@ function genitive(id){const m={pardubice:"Pardubic",kolin:"Kolína",praha:"Prahy
 function loadMy(){try{const s=lsGet(MYKEY);myTicket=s?JSON.parse(s):null}catch(e){myTicket=null}}
 function saveMy(){if(myTicket)lsSet(MYKEY,JSON.stringify(myTicket));else lsDel(MYKEY)}
 function occupant(n){
-  if(myTicket&&+myTicket.wagon===n)return{nick:myTicket.nick,me:true,public:myTicket.public,avatar:myTicket.avatar||seededAvatar(hashStr(myTicket.nick))};
-  if(ONLINE){const e=ROSTER_MAP.get(n);if(e)return{nick:e[1],me:false,public:true,avatar:e[2]||seededAvatar(hashStr(e[1]))}}
+  if(myTicket&&+myTicket.wagon===n){const e=ONLINE?ROSTER_MAP.get(n):null;return{nick:myTicket.nick,me:true,public:myTicket.public,avatar:myTicket.avatar||seededAvatar(hashStr(myTicket.nick)),extras:myTicket.extras||(e&&e[3])||[]}}
+  if(ONLINE){const e=ROSTER_MAP.get(n);if(e)return{nick:e[1],me:false,public:true,avatar:e[2]||seededAvatar(hashStr(e[1])),extras:e[3]||[]}}
   else{const t=(S.tickets||[]).find(t=>+t.wagon===n);if(t&&t.public)return{nick:t.nick,me:false,public:true,avatar:t.avatar||seededAvatar(hashStr(t.nick))}}
-  return{nick:null,me:false,public:false,avatar:seededAvatar(n*7919+13)};
+  return{nick:null,me:false,public:false,avatar:seededAvatar(n*7919+13),extras:[]};
 }
 function publicNicks(){const m=new Map();if(ONLINE){for(const e of ROSTER)m.set(+e[0],e[1])}else{for(const t of (S.tickets||[]))if(t.public)m.set(+t.wagon,t.nick)}if(myTicket&&myTicket.wagon)m.set(+myTicket.wagon,myTicket.nick);return m}
 function specialsMap(){const m=new Map();for(const s of S.specials)m.set(+s.wagon,s.name);return m}
@@ -616,6 +616,62 @@ const Game=(()=>{
   const plateTex=canvasTex(256,64,(g,w,h)=>{g.fillStyle="#7a2a1c";g.fillRect(0,0,w,h);g.strokeStyle="#c9973f";g.lineWidth=5;g.strokeRect(4,4,w-8,h-8);g.fillStyle="#ffe2b0";g.font="600 34px IBM Plex Mono, monospace";g.textAlign="center";g.textBaseline="middle";g.fillText("VF 001",w/2,h/2+2)});
   loco.add(mesh(new THREE.PlaneGeometry(1.9,.48),new THREE.MeshBasicMaterial({map:plateTex}),3.6,2.2,1.52));
   loco.position.x=-.4;
+  /* ---------- CÍLE: dominanta města za vlakem, když na výhybce stojí ---------- */
+  const lmFar=new THREE.Group(),lmNear=new THREE.Group();scene.add(lmFar,lmNear);
+  const stationSign=new THREE.Group();stationSign.visible=false;scene.add(stationSign);
+  const stC=document.createElement("canvas");stC.width=768;stC.height=128;const stT=new THREE.CanvasTexture(stC);stT.anisotropy=4;
+  {const pm=M(0x2b3139);for(const x of [-3.3,3.3])stationSign.add(mesh(box(.22,6.6,.22),pm,x,3.3,0));
+   stationSign.add(mesh(box(7.6,1.35,.16),pm,0,6.4,0));stationSign.add(mesh(new THREE.PlaneGeometry(7.3,1.15),new THREE.MeshBasicMaterial({map:stT}),0,6.4,.09));
+   stationSign.position.set(-6.4,0,-2.6)}
+  function drawStation(name){const g=stC.getContext("2d");g.fillStyle="#1f4f8a";g.fillRect(0,0,768,128);g.strokeStyle="#fff";g.lineWidth=6;g.strokeRect(8,8,752,112);g.fillStyle="#fff";g.font="800 76px 'Big Shoulders Display','Arial Narrow',sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText(name.toUpperCase(),384,68);stT.needsUpdate=true}
+  const LM={
+    berlin(){const far=new THREE.Group(),near=new THREE.Group();
+      const conc=M(0xe6e2da),steel=new THREE.MeshStandardMaterial({color:0xaab3bd,roughness:.25,metalness:.75,flatShading:true});
+      far.add(mesh(cyl(1.1,2,30,12),conc,0,15,0));
+      for(let i=0;i<3;i++){const a=i*2.094;const leg=mesh(box(1.2,5,3.6),conc,Math.cos(a)*1.6,2.5,Math.sin(a)*1.6);leg.rotation.y=-a;far.add(leg)}
+      far.add(mesh(sph(3.6,20,14),steel,0,32,0));far.add(mesh(cyl(3.68,3.68,.9,20),M(0x3a4048),0,32.3,0));
+      far.add(mesh(cyl(.75,.9,3.5,10),conc,0,37,0));
+      for(let i=0;i<8;i++)far.add(mesh(cyl(.4-i*.03,.42-i*.03,1.5,8),M(i%2?0xffffff:0xd2322b),0,39.5+i*1.5,0));
+      const sand=M(0xdcc79c);
+      for(let i=0;i<6;i++)near.add(mesh(cyl(.38,.42,6.2,10),sand,-4.3+i*1.72,3.1,0));
+      for(let i=0;i<6;i++)near.add(mesh(cyl(.38,.42,6.2,10),sand,-4.3+i*1.72,3.1,-2.2));
+      near.add(mesh(box(10.6,1.5,3.1),sand,0,6.95,-1.1));near.add(mesh(box(6.4,1.1,2.6),sand,0,8.25,-1.1));
+      for(const x of [-6.6,6.6])near.add(mesh(box(2.6,5.2,3.4),sand,x,2.6,-1.1));
+      const cu=M(0x4f7d6a);const q=new THREE.Group();q.position.set(0,8.8,-1.1);near.add(q);
+      q.add(mesh(box(.9,1,.7),cu,.1,.5,0));const v=mesh(box(.12,1.4,.12),cu,.1,1.6,0);q.add(v);q.add(mesh(sph(.22,8,6),cu,.1,2.35,0));
+      for(let i=0;i<4;i++){const h=new THREE.Group();h.position.set(-.9+i*.6,0,-.2);h.add(mesh(box(.3,.55,1.05),cu,0,.75,0));const nk=mesh(box(.22,.6,.25),cu,0,1.15,.55);nk.rotation.x=-.5+(i%2)*.15;h.add(nk);h.add(mesh(box(.18,.25,.4),cu,0,1.42,.72));for(const z of [-.4,.4])h.add(mesh(box(.12,.5,.12),cu,0,.25,z));q.add(h)}
+      return{far,near}},
+    brno(){const far=new THREE.Group(),near=new THREE.Group();
+      const blk=new THREE.MeshStandardMaterial({color:0x14161a,roughness:.15,metalness:.4});
+      near.add(mesh(cyl(1.25,1.4,11,18),blk,0,5.5,0));near.add(mesh(sph(1.25,18,10,Math.PI*.5),blk,0,11,0));near.add(mesh(cyl(2.2,2.4,.6,18),M(0x8a8a86),0,.3,0));
+      const st=M(0x6b6a68),ro=M(0x2a2e33);far.add(mesh(box(18,6,6),M(0xd8cfbf),0,12,0));far.add(mesh(cone(11,14,4),M(0x3a5a58),0,0,0));
+      for(const x of [-2.4,2.4]){far.add(mesh(box(2.6,10,2.6),st,x,17,2));far.add(mesh(cone(1.9,12,8),ro,x,28,2))}
+      return{far,near}},
+    viden(){const far=new THREE.Group(),near=new THREE.Group();
+      const wheel=new THREE.Group();wheel.position.set(0,16,0);far.add(wheel);const red=M(0xb5302a),st=M(0x6b7078);
+      wheel.add(mesh(new THREE.TorusGeometry(13,.25,6,48),st));wheel.add(mesh(new THREE.TorusGeometry(12.2,.15,6,48),st));
+      for(let i=0;i<15;i++){const a=i/15*Math.PI*2;const sp=mesh(box(.12,13,.12),st,Math.cos(a)*6.5,Math.sin(a)*6.5,0);sp.rotation.z=a-Math.PI/2;wheel.add(sp)}
+      const cabs=[];for(let i=0;i<15;i++){const a=i/15*Math.PI*2;const c=mesh(box(2.2,1.6,1.4),red,Math.cos(a)*13.2,Math.sin(a)*13.2-1,0);wheel.add(c);cabs.push(c)}
+      for(const z of [-1.2,1.2])for(const sx of [-1,1]){const l=mesh(box(.5,17.5,.5),st,sx*4.2,7.6,z);l.rotation.z=sx*.26;far.add(l)}
+      far.add(mesh(box(14,1,4),M(0xd8cfbf),0,.5,0));
+      far.userData.spin=t=>{wheel.rotation.z=t*.06;for(const c of cabs)c.rotation.z=-wheel.rotation.z};
+      return{far,near}},
+    pariz(){const far=new THREE.Group(),near=new THREE.Group();const ir=M(0x7a5c3e);
+      for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const l=mesh(box(1.6,12,1.6),ir,sx*4.6,5.6,sz*4.6);l.rotation.z=-sx*.36;l.rotation.x=sz*.36;far.add(l)}
+      far.add(mesh(box(9.5,1,9.5),ir,0,11,0));
+      const t2=mesh(cyl(1.9,3.6,12,4),ir,0,17.5,0);t2.rotation.y=Math.PI/4;far.add(t2);far.add(mesh(box(4.4,.7,4.4),ir,0,23.8,0));
+      const t3=mesh(cyl(.35,1.9,17,4),ir,0,32.5,0);t3.rotation.y=Math.PI/4;far.add(t3);far.add(mesh(box(1.4,1,1.4),ir,0,41,0));far.add(mesh(cyl(.08,.12,3,6),ir,0,43,0));
+      for(const sx of [-1,1]){const a=mesh(new THREE.TorusGeometry(3.2,.5,6,12,Math.PI),ir,0,6.6,sx*4.9);far.add(a);const b=mesh(new THREE.TorusGeometry(3.2,.5,6,12,Math.PI),ir,sx*4.9,6.6,0);b.rotation.y=Math.PI/2;far.add(b)}
+      return{far,near}},
+    praha(){const far=new THREE.Group(),near=new THREE.Group();const ir=M(0x6b5040);
+      far.add(mesh(cone(16,7,10),M(0x4f8a3e),0,3,0));
+      const t=mesh(cyl(.9,3.2,24,8),ir,0,18,0);far.add(t);far.add(mesh(box(4,.7,4),ir,0,30.2,0));far.add(mesh(cyl(.5,1.1,5,8),ir,0,33,0));far.add(mesh(cyl(.06,.1,3,6),ir,0,37,0));
+      return{far,near}},
+  };
+  let lmKey=null,lmT=0;
+  function setLandmark(id,name){const key=id?id+"|"+name:null;if(key===lmKey)return;lmKey=key;lmFar.clear();lmNear.clear();lmFar.userData={};
+    stationSign.visible=!!id;if(id)drawStation(name||id);
+    const b=id&&LM[id]?LM[id]():null;if(!b)return;lmFar.add(b.far);lmNear.add(b.near);lmFar.userData.spin=b.far.userData.spin;castAll(b.near)}
   const smokeTex=canvasTex(64,64,(g)=>{const gr=g.createRadialGradient(32,32,2,32,32,32);gr.addColorStop(0,"rgba(255,255,255,.95)");gr.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=gr;g.fillRect(0,0,64,64)});
   const smoke=Array.from({length:34},(_,i)=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,transparent:true,depthWrite:false,opacity:0}));scene.add(s);return{s,age:i/34*4,life:4}});
 
@@ -676,6 +732,69 @@ const Game=(()=>{
   const shelf=new THREE.Group();shelf.add(mesh(box(1.4,1.8,.45),M(0x3b2518),0,2.2,0));const bookCols=[0xc4453a,0x2f6f9f,0xd9a13b,0x3f8a5c,0x7a4fa3,0xe8e0cc];for(let row=0;row<2;row++)for(let i=0;i<6;i++)shelf.add(mesh(box(.15,.5,.32),M(bookCols[(i+row*2)%6]),-.5+i*.2,1.8+row*.75,.08));shelf.position.set(4.7,0,-1.0);interior.add(shelf);
   const frameTex=canvasTex(128,96,(g,w,h)=>{g.fillStyle="#c9973f";g.fillRect(0,0,w,h);g.fillStyle="#9fd0f2";g.fillRect(8,8,w-16,h-16);g.fillStyle="#ffe27a";g.beginPath();g.arc(84,34,10,0,7);g.fill();g.fillStyle="#5e9e4a";g.beginPath();g.moveTo(8,h-8);g.lineTo(40,40);g.lineTo(70,h-8);g.fill()});
   const picFrame=mesh(new THREE.PlaneGeometry(.9,.68),new THREE.MeshBasicMaterial({map:frameTex}),-2.75,2.5,-1.36);interior.add(picFrame);
+  /* splněná přání: věci, které má ve vagónu jen konkrétní cestující */
+  const extrasSlot=new THREE.Group();interior.add(extrasSlot);
+  const glassMat=new THREE.MeshStandardMaterial({color:0xcfeaf2,roughness:.05,metalness:.1,transparent:true,opacity:.22,depthWrite:false});
+  const waterTex=canvasTex(256,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,w,h);gr.addColorStop(0,"#3fc1e0");gr.addColorStop(1,"#1d8fc2");g.fillStyle=gr;g.fillRect(0,0,w,h);g.strokeStyle="rgba(255,255,255,.45)";g.lineWidth=3;for(let i=0;i<14;i++){const y=6+i*9;g.beginPath();for(let x=0;x<=w;x+=8)g.lineTo(x,y+Math.sin(x/18+i*1.7)*3);g.stroke()}});
+  const tileTex=canvasTex(128,64,(g,w,h)=>{g.fillStyle="#f4f8fa";g.fillRect(0,0,w,h);g.strokeStyle="#bcd3dc";g.lineWidth=2;for(let x=0;x<=w;x+=16){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}for(let y=0;y<=h;y+=16){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}});
+  const monaTex=canvasTex(256,352,(g,w,h)=>{
+    const sk=g.createLinearGradient(0,0,0,h*.6);sk.addColorStop(0,"#9fae86");sk.addColorStop(1,"#5f6e4a");g.fillStyle=sk;g.fillRect(0,0,w,h);
+    g.fillStyle="#6f7a52";g.beginPath();g.moveTo(0,150);g.quadraticCurveTo(50,110,90,140);g.lineTo(90,200);g.lineTo(0,210);g.fill();
+    g.beginPath();g.moveTo(w,140);g.quadraticCurveTo(205,105,170,135);g.lineTo(170,200);g.lineTo(w,205);g.fill();
+    g.strokeStyle="#c9a36a";g.lineWidth=3;g.beginPath();g.moveTo(10,175);g.bezierCurveTo(30,160,40,190,70,170);g.stroke();
+    g.fillStyle="#2a2016";g.beginPath();g.ellipse(128,128,60,78,0,0,7);g.fill();
+    g.beginPath();g.moveTo(58,150);g.quadraticCurveTo(40,260,30,352);g.lineTo(226,352);g.quadraticCurveTo(216,260,198,150);g.fill();
+    g.fillStyle="#3b2a18";g.beginPath();g.moveTo(40,352);g.quadraticCurveTo(60,230,128,215);g.quadraticCurveTo(196,230,216,352);g.fill();
+    g.fillStyle="#d9a86a";g.beginPath();g.ellipse(128,125,40,52,0,0,7);g.fill();
+    g.beginPath();g.moveTo(98,180);g.lineTo(158,180);g.lineTo(170,240);g.quadraticCurveTo(128,262,86,240);g.fill();
+    g.fillStyle="#c58f55";g.beginPath();g.ellipse(128,135,6,14,0,0,7);g.fill();
+    g.fillStyle="#3a2412";for(const x of [112,144]){g.beginPath();g.ellipse(x,115,7,3.5,0,0,7);g.fill()}
+    g.strokeStyle="#7a3f26";g.lineWidth=2.5;g.beginPath();g.moveTo(114,152);g.quadraticCurveTo(128,160,143,151);g.stroke();
+    g.fillStyle="#d9a86a";g.beginPath();g.ellipse(120,300,46,16,-.15,0,7);g.fill();g.beginPath();g.ellipse(140,292,40,14,.1,0,7);g.fill();
+    g.fillStyle="rgba(60,40,10,.25)";g.fillRect(0,0,w,h);
+  });
+  function buildExtra(kind){
+    const g=new THREE.Group();
+    if(kind==="bazen"){
+      g.position.set(3.55,1.305,.55);
+      const tile=new THREE.MeshStandardMaterial({map:tileTex,roughness:.6});
+      for(const [w,d,x,z] of [[2.7,.14,0,-.73],[2.7,.14,0,.73],[.14,1.6,-1.28,0],[.14,1.6,1.28,0]])g.add(mesh(box(w,.42,d),tile,x,.21,z));
+      g.add(mesh(box(2.5,.04,1.36),M(0x2a9fd0),0,.02,0));
+      const water=mesh(new THREE.PlaneGeometry(2.42,1.32),new THREE.MeshStandardMaterial({map:waterTex,roughness:.1,metalness:.2,transparent:true,opacity:.92}),0,.34,0);water.rotation.x=-Math.PI/2;g.add(water);g.userData.water=water;
+      for(const x of [.85,1.05]){const r=mesh(cyl(.025,.025,.7,6),brassMat,x,.62,-.66);g.add(r);const top=mesh(new THREE.TorusGeometry(.12,.025,6,10,Math.PI),brassMat,x,.97,-.54);top.rotation.y=Math.PI/2;g.add(top)}
+      const ring=mesh(new THREE.TorusGeometry(.26,.09,8,16),M(0xe2453c),-.55,.38,.1);ring.rotation.x=-Math.PI/2;g.add(ring);g.userData.ring=ring;
+      for(let i=0;i<4;i++){const st=mesh(new THREE.TorusGeometry(.26,.095,8,3,.35),M(0xffffff),-.55,.38,.1);st.rotation.set(-Math.PI/2,0,i*Math.PI/2);g.add(st);ring.userData.st=(ring.userData.st||[]).concat(st)}
+      const duck=new THREE.Group();const dy=M(0xffd23a);const db=mesh(sph(.13,10,8),dy,0,.06,0);db.scale.set(1.3,.8,1);duck.add(db);duck.add(mesh(sph(.08,10,8),dy,.1,.17,0));const bk=mesh(cone(.035,.09,6),M(0xf08a24),.2,.16,0);bk.rotation.z=-Math.PI/2;duck.add(bk);duck.add(mesh(sph(.015,6,4),M(0x111111),.15,.2,.05));duck.position.set(.45,.36,.25);g.add(duck);g.userData.duck=duck;
+      const towel=mesh(box(.7,.03,.4),M(0xe24a7a),2.1,.02,.5);g.add(towel);
+    }
+    if(kind==="terarium"){
+      g.position.set(-4.15,1.305,-.85);
+      g.add(mesh(box(1.7,.8,.75),M(0x4a2e1c),0,.4,0));
+      g.add(mesh(box(1.6,.06,.68),M(0xd9b77a),0,.83,0));
+      const tank=mesh(box(1.6,.8,.68),glassMat,0,1.2,0);g.add(tank);
+      for(const [w,h,d,x,y] of [[1.64,.05,.72,0,1.6],[1.64,.05,.72,0,.8]])g.add(mesh(box(w,h,d),M(0x22262c),x,y,0));
+      for(const [x,z] of [[-.8,-.34],[.8,-.34],[-.8,.34],[.8,.34]])g.add(mesh(box(.04,.8,.04),M(0x22262c),x,1.2,z));
+      g.add(mesh(sph(.16,8,6,Math.PI*.5),M(0x7a7066),.45,.86,-.1));
+      const br=mesh(cyl(.035,.05,.9,6),M(0x6b4a2a),-.35,1.05,-.15);br.rotation.z=1.1;g.add(br);
+      for(let i=0;i<3;i++){const l=mesh(cone(.07,.35,5),M(0x3f8a4a),-.65+i*.08,1,-.2);l.rotation.z=(i-1)*.4;g.add(l)}
+      const snakeM=M(0x2f8a3a);const snake=mesh(new THREE.TorusGeometry(.13,.035,6,18,Math.PI*3.3),snakeM,-.15,.9,.05);snake.rotation.x=-Math.PI/2;g.add(snake);
+      const sh=mesh(sph(.055,8,6),snakeM,-.02,.93,.13);sh.scale.set(1.4,.8,1);g.add(sh);g.userData.snakeHead=sh;
+      const turtle=new THREE.Group();turtle.add(mesh(sph(.14,10,8,Math.PI*.5),M(0x6b5a2a),0,0,0));turtle.add(mesh(sph(.05,8,6),M(0x8aa05a),.17,.03,0));for(const [x,z] of [[-.09,-.1],[.09,-.1],[-.09,.1],[.09,.1]])turtle.add(mesh(sph(.035,6,4),M(0x8aa05a),x,0,z));turtle.position.set(.3,.86,.15);g.add(turtle);
+      const liz=new THREE.Group();const lm=M(0xd08a2a);const lb=mesh(box(.22,.05,.07),lm);liz.add(lb);liz.add(mesh(box(.08,.045,.06),lm,.14,.01,0));const lt=mesh(cone(.03,.22,5),lm,-.21,0,0);lt.rotation.z=Math.PI/2;liz.add(lt);for(const [x,z] of [[-.06,-.06],[.06,-.06],[-.06,.06],[.06,.06]])liz.add(mesh(box(.03,.02,.06),lm,x,-.02,z*1.2));liz.position.set(.48,1.03,-.1);liz.rotation.y=.6;g.add(liz);
+      const lamp=new THREE.PointLight(0xffd59a,.5,2.2,2);lamp.position.set(0,1.5,0);g.add(lamp);
+    }
+    if(kind==="monalisa"){
+      g.position.set(-2.75,2.86,-1.33);
+      g.add(mesh(box(1,1.32,.06),M(0x8a5a1a),0,0,0));
+      g.add(mesh(box(.9,1.22,.07),brassMat,0,0,.01));
+      g.add(mesh(new THREE.PlaneGeometry(.76,1.06),new THREE.MeshBasicMaterial({map:monaTex}),0,0,.05));
+      const spot=mesh(cyl(.05,.09,.16,8),M(0x22262c),0,.78,.18);spot.rotation.x=-.9;g.add(spot);
+      const rope=mesh(cyl(.02,.02,1.3,6),M(0xa0202a),0,-1.05,.55);rope.rotation.z=Math.PI/2;g.add(rope);
+      for(const x of [-.65,.65])g.add(mesh(cyl(.04,.06,.85,8),brassMat,x,-1.13,.55));
+    }
+    return g;
+  }
+  let extrasNow=[];
   const avatarSlot=new THREE.Group();interior.add(avatarSlot);
   const petSlot=new THREE.Group();interior.add(petSlot);
   let av=null,pet=null;
@@ -710,6 +829,8 @@ const Game=(()=>{
     const occ=occupant(n);const r=rng(n*48271+11);
     const sm=sofaMats[Math.floor(r()*sofaMats.length)];sofaParts.forEach(p=>p.material=sm);
     plant.visible=r()<.7;shelf.visible=r()<.75;picFrame.visible=r()<.8;cases.forEach(c=>c.visible=r()<.7);
+    extrasSlot.clear();extrasNow=(occ.extras||[]).map(k=>{const g=buildExtra(k);extrasSlot.add(g);return g});
+    const xs=new Set(occ.extras||[]);if(xs.has("terarium"))plant.visible=false;if(xs.has("monalisa"))picFrame.visible=false;
     mug.visible=occ.avatar.item==="hrnek"||r()<.25;
     avatarSlot.clear();petSlot.clear();
     av=buildAvatar(occ.avatar);av.g.position.set(-.1,1.82,-.75);av.waves=!!occ.nick;avatarSlot.add(av.g);
@@ -776,11 +897,12 @@ const Game=(()=>{
   /* ---------- LOOP ---------- */
   function resize(){W=canvas.clientWidth||1;H=canvas.clientHeight||1;portrait=W/H<.85;renderer.setSize(W,H,false);camera.aspect=W/H;camera.fov=portrait?60:46;camera.updateProjectionMatrix()}
   new ResizeObserver(resize).observe(canvas);resize();
+  let speed=1,tspeed=1;
   let last=performance.now(),active=true,lastCenter=null,lastFocus=-2,shift=0,tshift=0;const onFocus=[];
   const wrap=(v,span,c)=>{const lo=c-span/2;return lo+(((v-lo)%span)+span)%span};
   function frame(now){
     const dt=Math.min(.05,(now-last)/1000);last=now;
-    if(!reduce)travel+=dt*11;
+    speed+=(tspeed-speed)*Math.min(1,dt*.8);if(!reduce)travel+=dt*11*speed;
     if(fly){fly.t+=dt;const u=Math.min(1,fly.t/fly.dur);const e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;cx=fly.x0+(fly.x1-fly.x0)*e;
       z=Math.max(0,Math.min(1,fly.z0+(fly.z1-fly.z0)*e+fly.bump*Math.sin(Math.PI*u)));tx=cx;tz=z;if(u>=1)fly=null}
     else{if(!ptrs.size&&Math.abs(vx)>.01){tx=clampX(tx+vx);vx*=.9;if(Math.abs(vx)<.05&&tz<.5)snap()}
@@ -796,6 +918,7 @@ const Game=(()=>{
     const pose=camPose(cx,z);camera.position.set(...pose.p);camera.lookAt(...pose.l);
     const bx=Math.round(cx/50)*50;ground.position.x=bx;ballast.position.x=bx;rails[0].position.x=bx;rails[1].position.x=bx;
     sky.position.x=cx;hillsMid.position.x=cx*.7+wrap(-travel*.3,600,0);
+    if(lmKey){lmFar.position.set(cx+wrap(-.12*cx-14,520,0),0,-92);lmNear.position.set(cx+wrap(-.4*cx+16,300,0),0,-34);lmT+=dt;if(lmFar.userData.spin)lmFar.userData.spin(lmT)}
     dummy.rotation.set(0,0,0);
     for(let i=0;i<SL;i++){dummy.position.set(wrap(i*SLSP-travel,SL*SLSP,cx),.13,0);dummy.scale.set(1,1,1);dummy.updateMatrix();sleepers.setMatrixAt(i,dummy.matrix)}sleepers.instanceMatrix.needsUpdate=true;
     for(let i=0;i<TR;i++){const t=treeData[i];dummy.position.set(wrap(t.o-travel,600,cx),3*t.s,t.z);dummy.scale.set(t.s,t.s,t.s);dummy.updateMatrix();trees.setMatrixAt(i,dummy.matrix)}trees.instanceMatrix.needsUpdate=true;
@@ -813,6 +936,7 @@ const Game=(()=>{
     if(driverAv&&loco.visible&&!reduce){driverAv.t+=dt;driverAv.armR.rotation.set(0,0,-2.6+Math.sin(driverAv.t*5)*.35);driverAv.head.rotation.y=Math.sin(driverAv.t*.8)*.25}
     if(av&&interior.visible){av.t+=dt;if(av.waves&&!reduce){const w=Math.sin(av.t*7)*.35;av.armR.rotation.set(0,0,-2.6+w)}av.head.rotation.y=reduce?0:Math.sin(av.t*.9)*.18}
     if(pet&&pet.tail&&!reduce)pet.tail.rotation.x=Math.sin(now/260)*.5;
+    if(interior.visible&&!reduce)for(const g of extrasNow){const u=g.userData;if(u.duck){u.duck.position.y=.36+Math.sin(now/420)*.02;u.duck.rotation.y=Math.sin(now/1500)*.6;u.ring.position.y=.38+Math.sin(now/500+1)*.015;for(const st of u.ring.userData.st)st.position.y=u.ring.position.y;u.water.material.map.offset.x=(now/9000)%1}if(u.snakeHead)u.snakeHead.position.y=.93+Math.max(0,Math.sin(now/700))*.05}
     shift+=(tshift-shift)*Math.min(1,reduce?1:dt*6);
     if(Math.abs(shift)>.002)camera.setViewOffset(W,H,0,shift*H,W,H);else if(camera.view&&camera.view.enabled)camera.clearViewOffset();
     renderer.render(scene,camera);
@@ -825,6 +949,7 @@ const Game=(()=>{
   return{ok:true,
     setN(n){n=Math.max(1,n);if(n===N)return;N=n;for(const s of slots)s.n=-1;lastCenter=null;lastFocus=-2;tx=clampX(tx)},
     flyTo,zoomTo,setActive,
+    setStop(on,id,name){tspeed=on?0:1;if(reduce)speed=tspeed;setLandmark(on?id:null,name)},
     setShift(v){tshift=v},
     setDriver(d){const key=d?JSON.stringify(d.avatar||{})+(d.nick||""):"";if(key===driverKey)return;driverKey=key;driverSlot.clear();driverAv=null;cabLight.intensity=0;
       if(!d)return;driverAv=buildAvatar(d.avatar||seededAvatar(hashStr(d.nick||"strojvedouci")));driverAv.waves=true;driverSlot.add(driverAv.g);castAll(driverAv.g);cabLight.intensity=1.1},
@@ -849,6 +974,7 @@ const Game=(()=>{
 /* ================= HUD ================= */
 function renderHud(){
   const I=info();
+  if(typeof Game!=="undefined"&&Game.ok&&Game.setStop)Game.setStop(!!I.head.waiting,I.head.node,I.head.waiting?nodeName(I.head.node):"");
   $("#sFollowers").textContent=fmt(S.followers);
   {const w=Math.max(0,(S.igFollowers|0)-S.followers),el=$("#sWaiting");el.hidden=!ONLINE||!w;el.textContent=`+${fmt(w)} ještě nenastoupilo`}
   $("#sLength").textContent=fmtKm(I.pos,0)+" km";
@@ -1329,6 +1455,7 @@ function bindIg(A){
 }
 let ADMIN_REC=null;
 let TFILTER="",RELINK=null;
+let XOPEN=null;const EXTRA_LIST=[["bazen","Bazén"],["terarium","Terárium (had, želva, ještěrka)"],["monalisa","Mona Lisa"]];
 function ticketsCardHtml(){
   if(!ONLINE){
     return `<div class="card"><h3>Jízdenky</h3>
@@ -1343,7 +1470,7 @@ function ticketsCardHtml(){
     <input type="text" id="tFilter" placeholder="Hledat nick nebo vagón" value="${esc(TFILTER)}" autocomplete="off">
     <div class="tblbox" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th>Vagón</th><th>Nick</th><th>Stav</th><th></th></tr></thead><tbody>
     ${list.slice(0,300).map(t=>`<tr><td class="num">${t.wagon?fmt(t.wagon):(t.lastWagon?"("+fmt(t.lastWagon)+")":"–")}</td><td>@${esc(t.nick)}${t.public?"":' <span class="muted" style="font-size:.78rem">skrytý</span>'}</td><td style="font-size:.82rem">${STATUS_TXT[t.status]||t.status}<br><span class="muted">${fmtDT(t.createdAt)}</span></td>
-      <td style="white-space:nowrap"><button class="btn small" type="button" data-thide="${esc(t.nick)}" data-pub="${t.public?0:1}">${t.public?"Skrýt nick":"Zobrazit"}</button> <button class="btn small" type="button" data-relink="${esc(t.nick)}">Nový odkaz</button> <button class="btn small" type="button" data-ren="${esc(t.nick)}">Opravit nick</button> <span data-tdw="${esc(t.nick)}"><button class="btn small danger" type="button" data-tdelon="${esc(t.nick)}">Smazat</button></span>${RENAME===t.nick?`<div class="row-f" style="margin-top:6px;white-space:normal"><input type="text" id="renTo" value="${esc(t.nick)}" autocomplete="off" style="font-size:.85rem"><button class="btn small primary" type="button" id="renGo">Uložit</button><button class="btn small" type="button" id="renNo">Zrušit</button></div>`:""}${RELINK&&RELINK.nick===t.nick?`<div style="margin-top:6px;white-space:normal"><input type="text" readonly value="${esc(RELINK.link)}" id="relinkOut" style="font-size:.78rem"><p class="fine">Pošli tenhle odkaz do DM @${esc(t.nick)}. Starý odkaz přestal platit.</p></div>`:""}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">${q?"Nic nenalezeno.":"Zatím nikdo nemá jízdenku."}</td></tr>`}
+      <td style="white-space:nowrap"><button class="btn small" type="button" data-thide="${esc(t.nick)}" data-pub="${t.public?0:1}">${t.public?"Skrýt nick":"Zobrazit"}</button> <button class="btn small" type="button" data-relink="${esc(t.nick)}">Nový odkaz</button> <button class="btn small" type="button" data-ren="${esc(t.nick)}">Opravit nick</button> <button class="btn small" type="button" data-xtog="${esc(t.nick)}">Přání${t.extras&&t.extras.length?" ("+t.extras.length+")":""}</button> <span data-tdw="${esc(t.nick)}"><button class="btn small danger" type="button" data-tdelon="${esc(t.nick)}">Smazat</button></span>${XOPEN===t.nick?`<div class="row-f" style="margin-top:6px;white-space:normal;gap:12px">${EXTRA_LIST.map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;font-size:.88rem"><input type="checkbox" data-xk="${k}" data-xn="${esc(t.nick)}" ${(t.extras||[]).includes(k)?"checked":""}>${l}</label>`).join("")}</div>`:""}${RENAME===t.nick?`<div class="row-f" style="margin-top:6px;white-space:normal"><input type="text" id="renTo" value="${esc(t.nick)}" autocomplete="off" style="font-size:.85rem"><button class="btn small primary" type="button" id="renGo">Uložit</button><button class="btn small" type="button" id="renNo">Zrušit</button></div>`:""}${RELINK&&RELINK.nick===t.nick?`<div style="margin-top:6px;white-space:normal"><input type="text" readonly value="${esc(RELINK.link)}" id="relinkOut" style="font-size:.78rem"><p class="fine">Pošli tenhle odkaz do DM @${esc(t.nick)}. Starý odkaz přestal platit.</p></div>`:""}</td></tr>`).join("")||`<tr><td colspan="4" class="muted">${q?"Nic nenalezeno.":"Zatím nikdo nemá jízdenku."}</td></tr>`}
     </tbody></table></div>${list.length>300?`<p class="fine">Zobrazeno 300 z ${fmt(list.length)}. Zúži hledání.</p>`:""}</div>`;
 }
 function bindTickets(A){
@@ -1354,6 +1481,8 @@ function bindTickets(A){
   A.querySelectorAll("[data-thide]").forEach(b=>b.onclick=()=>act({nick:b.dataset.thide,public:b.dataset.pub==="1"},b.dataset.pub==="1"?"Nick je vidět":"Nick je skrytý"));
   A.querySelectorAll("[data-relink]").forEach(b=>b.onclick=async()=>{try{const out=await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body:{action:"ticket-relink",nick:b.dataset.relink}});
     RELINK={nick:out.nick,link:`${location.origin}/#j=${out.nick}~${out.token}`};renderAdmin();const i=$("#relinkOut");if(i){i.focus();i.select()}}catch(e){if(e.status===401)return adminLogout();toast(e.message)}});
+  A.querySelectorAll("[data-xtog]").forEach(b=>b.onclick=()=>{XOPEN=XOPEN===b.dataset.xtog?null:b.dataset.xtog;renderAdmin()});
+  A.querySelectorAll("[data-xk]").forEach(c=>c.onchange=()=>{const nick=c.dataset.xn;const list=[...A.querySelectorAll(`[data-xn="${CSS.escape(nick)}"]`)].filter(x=>x.checked).map(x=>x.dataset.xk);act({nick,extras:list},list.length?`@${nick} má ve vagónu: ${list.map(k=>EXTRA_LIST.find(e=>e[0]===k)[1].split(" ")[0]).join(", ")}`:`@${nick} už nemá žádné přání`)});
   A.querySelectorAll("[data-ren]").forEach(b=>b.onclick=()=>{RENAME=b.dataset.ren;renderAdmin();const i=$("#renTo");if(i){i.focus();i.select()}});
   const rg=$("#renGo");if(rg)rg.onclick=async()=>{const to=$("#renTo").value.trim().replace(/^@+/,"").toLowerCase();const from=RENAME;
     try{const t=await renameAdmin(from,to,LAST_EXPORT.includes(to));RENAME=null;await adminLoad();renderAdmin();toast(`@${from} → @${t.nick}${t.status==="verified"?" · ověřeno":""}`)}catch(e){if(e.status===401)return adminLogout();toast(e.message)}};

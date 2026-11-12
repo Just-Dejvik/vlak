@@ -13,7 +13,7 @@ import sys
 p = sys.argv[1]; s = open(p).read()
 a = "  return{ok:true,"
 assert a in s, "nenašel jsem konec Game()"
-s = s.replace(a, "  window.__G={avatarSlot,petSlot,interior,camera,scene,slots,loco,driverSlot};\n" + a, 1)
+s = s.replace(a, "  window.__G={avatarSlot,petSlot,interior,camera,scene,slots,loco,driverSlot,extrasSlot,lmFar,lmNear,stationSign};\n" + a, 1)
 s = s.replace("g.fillText(location.host,540,1575,1000)", 'g.fillText("vlak-followeru.vercel.app",540,1575,1000)')
 open(p, "w").write(s)
 PY
