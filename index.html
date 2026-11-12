@@ -781,7 +781,7 @@ const Game=(()=>{
       const sh=mesh(sph(.055,8,6),snakeM,-.02,.93,.13);sh.scale.set(1.4,.8,1);g.add(sh);g.userData.snakeHead=sh;
       const turtle=new THREE.Group();turtle.add(mesh(sph(.14,10,8,Math.PI*.5),M(0x6b5a2a),0,0,0));turtle.add(mesh(sph(.05,8,6),M(0x8aa05a),.17,.03,0));for(const [x,z] of [[-.09,-.1],[.09,-.1],[-.09,.1],[.09,.1]])turtle.add(mesh(sph(.035,6,4),M(0x8aa05a),x,0,z));turtle.position.set(.3,.86,.15);g.add(turtle);
       const liz=new THREE.Group();const lm=M(0xd08a2a);const lb=mesh(box(.22,.05,.07),lm);liz.add(lb);liz.add(mesh(box(.08,.045,.06),lm,.14,.01,0));const lt=mesh(cone(.03,.22,5),lm,-.21,0,0);lt.rotation.z=Math.PI/2;liz.add(lt);for(const [x,z] of [[-.06,-.06],[.06,-.06],[-.06,.06],[.06,.06]])liz.add(mesh(box(.03,.02,.06),lm,x,-.02,z*1.2));liz.position.set(.48,1.03,-.1);liz.rotation.y=.6;g.add(liz);
-      const lamp=new THREE.PointLight(0xffd59a,.5,2.2,2);lamp.position.set(0,1.5,0);g.add(lamp);
+      g.add(mesh(box(1.2,.06,.12),new THREE.MeshBasicMaterial({color:0xfff1c4}),0,1.57,0));
     }
     if(kind==="monalisa"){
       g.position.set(-2.75,2.86,-1.33);
