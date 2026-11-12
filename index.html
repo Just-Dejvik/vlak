@@ -1295,18 +1295,17 @@ function igCardHtml(){
     <p style="font-size:1.05rem">Propojeno: <b>@${esc(IG.username)}</b> · followerů: <b>${fmt(IG.followers||0)}</b></p>
     <p class="fine">${days!=null?`Klíč se sám prodlužuje, když Správu otevřeš aspoň jednou za pár týdnů (teď platí ještě ${fmt(days)} dní).`:"Systémový klíč nevyprší."}</p>
     <p class="fine">Počet followerů se na webu aktualizuje sám, zhruba každých 15 minut.</p>
-    <details${IG_CM?" open":""}><summary style="cursor:pointer;font-weight:700;margin:6px 0">Komentáře pod videi (přání, nápady…)</summary>
-      ${IG_MEDIA?`<p class="fine">Vyber videa v kartě Výhybka (zaškrtávátka) a pak:</p>`:`<p class="fine">Nejdřív v kartě Výhybka načti příspěvky a zaškrtni videa.</p>`}
-      <div class="row-f"><button class="btn small" type="button" id="igCm"${IG_PICK.size&&!IG_BUSY?"":" disabled"}>${IG_BUSY==="cm"?"Načítám…":"Načíst komentáře"}</button>${IG_CM?`<button class="btn small primary" type="button" id="igCmCopy">Zkopírovat vše</button>`:""}</div>
-      ${IG_CM?`<p class="fine">${fmt(IG_CM.length)} komentářů · 🎫 = má jízdenku (číslo vagónu)</p><div style="max-height:360px;overflow:auto;font-size:.88rem;line-height:1.5;border:1px solid var(--line);border-radius:10px;padding:8px 10px">${IG_CM.map(c=>`<div><b>@${esc(c.nick)}</b>${c.wagon?` <span class="muted">🎫 ${fmt(c.wagon)}</span>`:""}: ${esc(c.text)}</div>`).join("")}</div>`:""}
-      <div class="err" id="igCmErr"></div></details><div class="row-f"><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
+<div class="row-f"><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
 }
 function igVoteHtml(){
   if(!IG||!IG.connected)return `<p class="fine">Hlasy z komentářů se počítají samy, když propojíš Instagram (karta Instagram).</p>`;
   const v=S.vote;let h=`<div style="margin:12px 0;padding:12px;border:1px dashed var(--line);border-radius:12px"><b>Hlasy z komentářů</b>`;
   if(!IG_MEDIA)h+=`<p class="fine">Načti poslední příspěvky a vyber video (nebo víc videí), pod kterými se hlasuje.</p><button class="btn small" type="button" id="igMedia"${IG_BUSY?" disabled":""}>${IG_BUSY==="media"?"Načítám…":"Načíst příspěvky"}</button>`;
   else{h+=`<div style="display:grid;gap:6px;margin:8px 0;max-height:300px;overflow:auto">${IG_MEDIA.map(m=>`<label style="display:flex;gap:10px;align-items:center;font-size:.85rem;cursor:pointer"><input type="checkbox" data-igm="${m.id}"${IG_PICK.has(m.id)?" checked":""}>${m.thumb?`<img src="${esc(m.thumb)}" alt="" style="width:42px;height:56px;object-fit:cover;border-radius:6px">`:""}<span><b>${esc(new Date(m.timestamp).toLocaleDateString("cs-CZ",{day:"numeric",month:"numeric"}))}</b> · ${fmt(m.comments)} komentářů<br><span class="muted">${esc(m.caption||"(bez popisku)")}</span></span></label>`).join("")}</div>
-    <button class="btn small primary" type="button" id="igCount"${IG_PICK.size&&!IG_BUSY?"":" disabled"}>${IG_BUSY==="count"?"Počítám…":"Spočítat hlasy"}</button>`;
+    <button class="btn small primary" type="button" id="igCount"${IG_PICK.size&&!IG_BUSY?"":" disabled"}>${IG_BUSY==="count"?"Počítám…":"Spočítat hlasy"}</button><div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)"><b>Komentáře (přání, nápady…)</b>
+      <div class="row-f"><button class="btn small" type="button" id="igCm"${IG_PICK.size&&!IG_BUSY?"":" disabled"}>${IG_BUSY==="cm"?"Načítám…":"Načíst komentáře"}</button>${IG_CM?`<button class="btn small primary" type="button" id="igCmCopy">Zkopírovat vše</button>`:""}</div>
+      ${IG_CM?`<p class="fine">${fmt(IG_CM.length)} komentářů · 🎫 = má jízdenku (číslo vagónu)</p><div style="max-height:360px;overflow:auto;font-size:.88rem;line-height:1.5;border:1px solid var(--line);border-radius:10px;padding:8px 10px">${IG_CM.map(c=>`<div><b>@${esc(c.nick)}</b>${c.wagon?` <span class="muted">🎫 ${fmt(c.wagon)}</span>`:""}: ${esc(c.text)}</div>`).join("")}</div>`:""}
+      <div class="err" id="igCmErr"></div></div>`;
     if(IG_COUNT&&IG_COUNT.at===v.at){const c=IG_COUNT;
       h+=`<div class="tblbox" style="margin-top:10px"><table class="tbl"><thead><tr><th>Směr</th><th>Cestující s jízdenkou</th><th>Všichni</th></tr></thead><tbody>${v.options.map(o=>`<tr><td>${esc(nodeName(o.to))}</td><td><b>${fmt(c.riders[o.to]||0)}</b></td><td>${fmt(c.all[o.to]||0)}</td></tr>`).join("")}</tbody></table></div>
       <p class="fine">${fmt(c.comments)} komentářů od ${fmt(c.people)} lidí · každý má 1 hlas (platí poslední komentář) · ${fmt(c.ambiguous)} komentářů zmínilo víc směrů, ty se nepočítají.</p>
