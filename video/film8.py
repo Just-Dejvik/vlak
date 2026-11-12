@@ -64,11 +64,11 @@ def ring_html(tag=None):
 async def shot(pg, name):
     if name == "y1_hook":   # 0–4,99: Tak tohle jsem ještě neviděl! Zachar chce do vagónu… BAZÉN!
         await train(pg)
-        await pg.evaluate("()=>{Game.flyTo(480,.55)}"); await steps(pg, 150)
+        await pg.evaluate("()=>{Game.flyTo(533,.6)}"); await steps(pg, 200)
         await pg.evaluate(ov('<div class="ttl huge">Tohle jsem<br><y>neviděl!</y></div>'))
         await setfull(pg, ring_html('🏊 Bazén!'))
         await pg.evaluate(fx(ease + "const c=document.querySelector('canvas');const k=t>3.75?Math.exp(-(t-3.75)*3):0;c.style.transform=`translate(${Math.sin(t*63)*26*k}px,${Math.cos(t*51)*18*k}px) scale(${1+.05*k})`;" + ring_js(-1.75, 1.55, .68, 3.8, None)))
-        cues = {0: "()=>{Game.flyTo(530,.5)}",
+        cues = {0: "()=>{Game.flyTo(541,.6)}",
                 T(2.2): ov('<div class="eb">@karaulovzachar · vagón 541</div><div class="ttl">Zachar chce<br><y>do vagónu…</y></div>'),
                 T(2.3): "()=>{Game.flyTo(541,0)}",
                 T(3.75): ov('<div class="eb">@karaulovzachar · vagón 541</div><div class="ttl huge"><y>Bazén!</y></div>')}
@@ -83,7 +83,7 @@ async def shot(pg, name):
         await film.record(pg, name, 2.6, cues=cues)
     elif name == "y3_comments":   # 7,42–14,62: ptal jsem se vás… přes 200 komentářů. Vybral jsem tři nejšílenější.
         await train(pg)
-        await pg.evaluate("()=>{Game.flyTo(200,.3)}"); await steps(pg, 150)
+        await pg.evaluate("()=>{Game.flyTo(200,.75)}"); await steps(pg, 150)
         await pg.evaluate(ov('<div class="eb">Minulé video</div><div class="ttl">Co chceš<br><y>ve vagónu?</y></div>'))
         cms = [("🐍 terárium", 70, 560), ("🍕 pizza automat", 420, 700), ("🏊 bazén", 110, 860), ("🎮 PlayStation", 470, 1010), ("🖼️ Mona Lisa", 90, 1160), ("🛋️ vířivka", 520, 1300), ("🐶 další pes", 140, 1450)]
         top = [("1.", "🏊 Bazén"), ("2.", "🖼️ Mona Lisa"), ("3.", "🐍 Terárium")]
