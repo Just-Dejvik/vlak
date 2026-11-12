@@ -1278,7 +1278,7 @@ function bindDriver(A){
   const s=$("#drSet");if(s)s.onclick=()=>{const n=$("#drNick").value.trim().replace(/^@+/,"").toLowerCase();if(!n){$("#drErr").textContent="Napiš nick.";return}set(n,`Strojvedoucí: @${n}`)};
 }
 // --- Instagram: propojení, počet followerů, hlasy z komentářů ---
-let IG=null,IG_MEDIA=null,IG_PICK=new Set(),IG_COUNT=null,IG_BUSY="";
+let IG=null,IG_MEDIA=null,IG_PICK=new Set(),IG_COUNT=null,IG_BUSY="",IG_CM=null;
 const igApi=(method,b)=>api("/api/ig",{method,headers:{"x-admin-password":ADMIN_PW||""},body:b});
 async function igLoad(){try{IG=await igApi("GET")}catch(e){IG={connected:false,error:e.message}}}
 function igCardHtml(){
@@ -1294,7 +1294,12 @@ function igCardHtml(){
   return `<div class="card"><h3>Instagram</h3>
     <p style="font-size:1.05rem">Propojeno: <b>@${esc(IG.username)}</b> · followerů: <b>${fmt(IG.followers||0)}</b></p>
     <p class="fine">${days!=null?`Klíč se sám prodlužuje, když Správu otevřeš aspoň jednou za pár týdnů (teď platí ještě ${fmt(days)} dní).`:"Systémový klíč nevyprší."}</p>
-    <p class="fine">Počet followerů se na webu aktualizuje sám, zhruba každých 15 minut.</p><div class="row-f"><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
+    <p class="fine">Počet followerů se na webu aktualizuje sám, zhruba každých 15 minut.</p>
+    <details${IG_CM?" open":""}><summary style="cursor:pointer;font-weight:700;margin:6px 0">Komentáře pod videi (přání, nápady…)</summary>
+      ${IG_MEDIA?`<p class="fine">Vyber videa v kartě Výhybka (zaškrtávátka) a pak:</p>`:`<p class="fine">Nejdřív v kartě Výhybka načti příspěvky a zaškrtni videa.</p>`}
+      <div class="row-f"><button class="btn small" type="button" id="igCm"${IG_PICK.size&&!IG_BUSY?"":" disabled"}>${IG_BUSY==="cm"?"Načítám…":"Načíst komentáře"}</button>${IG_CM?`<button class="btn small primary" type="button" id="igCmCopy">Zkopírovat vše</button>`:""}</div>
+      ${IG_CM?`<p class="fine">${fmt(IG_CM.length)} komentářů · 🎫 = má jízdenku (číslo vagónu)</p><div style="max-height:360px;overflow:auto;font-size:.88rem;line-height:1.5;border:1px solid var(--line);border-radius:10px;padding:8px 10px">${IG_CM.map(c=>`<div><b>@${esc(c.nick)}</b>${c.wagon?` <span class="muted">🎫 ${fmt(c.wagon)}</span>`:""}: ${esc(c.text)}</div>`).join("")}</div>`:""}
+      <div class="err" id="igCmErr"></div></details><div class="row-f"><button class="btn small danger" type="button" id="igOff">Odpojit</button></div></div>`;
 }
 function igVoteHtml(){
   if(!IG||!IG.connected)return `<p class="fine">Hlasy z komentářů se počítají samy, když propojíš Instagram (karta Instagram).</p>`;
@@ -1316,8 +1321,10 @@ function bindIg(A){
   const off=$("#igOff");if(off)off.onclick=()=>busy("off",async()=>{await igApi("POST",{action:"disconnect"});IG=null;IG_MEDIA=null;IG_COUNT=null;await igLoad();toast("Instagram odpojen")},"#igErr");
   const fol=$("#igFol");if(fol)fol.onclick=()=>{S.igFollowers=IG.followers||0;save(`Followerů: ${fmt(S.igFollowers)}`)};
   const md=$("#igMedia");if(md)md.onclick=()=>busy("media",async()=>{IG_MEDIA=(await igApi("POST",{action:"media"})).media;if(IG_MEDIA[0])IG_PICK=new Set([IG_MEDIA[0].id])},"#igVErr");
-  A.querySelectorAll("[data-igm]").forEach(c=>c.onchange=()=>{c.checked?IG_PICK.add(c.dataset.igm):IG_PICK.delete(c.dataset.igm);const b=$("#igCount");if(b)b.disabled=!IG_PICK.size});
+  A.querySelectorAll("[data-igm]").forEach(c=>c.onchange=()=>{c.checked?IG_PICK.add(c.dataset.igm):IG_PICK.delete(c.dataset.igm);const b=$("#igCount");if(b)b.disabled=!IG_PICK.size;const c2=$("#igCm");if(c2)c2.disabled=!IG_PICK.size});
   const cnt=$("#igCount");if(cnt)cnt.onclick=()=>busy("count",async()=>{IG_COUNT=await igApi("POST",{action:"count",media:[...IG_PICK]})},"#igVErr");
+  const cmb=$("#igCm");if(cmb)cmb.onclick=()=>busy("cm",async()=>{IG_CM=(await igApi("POST",{action:"comments",media:[...IG_PICK]})).comments},"#igCmErr");
+  const cmc=$("#igCmCopy");if(cmc)cmc.onclick=async()=>{const t=IG_CM.map(c=>`@${c.nick}${c.wagon?` (vagón ${c.wagon})`:""}: ${c.text}`).join("\n");try{await navigator.clipboard.writeText(t);toast("Zkopírováno, vlož to do chatu")}catch(e){toast("Kopírování nejde, označ text ručně")}};
   const use=k=>()=>{if(!IG_COUNT||!S.vote)return;S.vote.options.forEach(o=>{o.votes=IG_COUNT[k][o.to]||0});save(k==="riders"?"Hlasy cestujících uloženy":"Všechny hlasy uloženy")};
   const ur=$("#igUseR");if(ur)ur.onclick=use("riders");const ua=$("#igUseA");if(ua)ua.onclick=use("all");
 }

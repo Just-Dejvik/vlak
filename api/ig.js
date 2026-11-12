@@ -17,6 +17,17 @@ export default wrap(async (req, res) => {
   if (b.action === 'disconnect') { await clearToken(); return send(res, 200, { ok: true }); }
   if (b.action === 'media') return send(res, 200, { media: await recentMedia() });
 
+  if (b.action === 'comments') {
+    const db = await readJSON('tickets.json');
+    const tickets = (db ? db.data : emptyDb()).tickets;
+    const ids = (Array.isArray(b.media) ? b.media : [b.media]).filter(Boolean).slice(0, 5);
+    if (!ids.length) throw new HttpError(400, 'Vyber video.');
+    const list = (await Promise.all(ids.map(allComments))).flat()
+      .map((c) => { const n = String(c.username || '').toLowerCase(); const t = tickets[n]; return { nick: n, text: c.text, ts: c.ts, wagon: t && (t.status === 'pending' || t.status === 'verified') ? t.wagon : null }; })
+      .sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+    return send(res, 200, { comments: list });
+  }
+
   if (b.action === 'count') {
     const [st, db, stat] = await Promise.all([readJSON('state.json'), readJSON('tickets.json'), status()]);
     const state = st ? st.data : seedState();
