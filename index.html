@@ -626,7 +626,7 @@ const Game=(()=>{
   function drawStation(name){const g=stC.getContext("2d");g.fillStyle="#1f4f8a";g.fillRect(0,0,768,128);g.strokeStyle="#fff";g.lineWidth=6;g.strokeRect(8,8,752,112);g.fillStyle="#fff";g.font="800 76px 'Big Shoulders Display','Arial Narrow',sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText(name.toUpperCase(),384,68);stT.needsUpdate=true}
   const LM={
     berlin(){const far=new THREE.Group(),near=new THREE.Group();
-      const conc=M(0xe6e2da),steel=new THREE.MeshStandardMaterial({color:0xaab3bd,roughness:.25,metalness:.75,flatShading:true});
+      const conc=M(0xe6e2da),steel=new THREE.MeshStandardMaterial({color:0xc9d0d8,roughness:.35,metalness:.3,flatShading:true});
       far.add(mesh(cyl(1.1,2,30,12),conc,0,15,0));
       for(let i=0;i<3;i++){const a=i*2.094;const leg=mesh(box(1.2,5,3.6),conc,Math.cos(a)*1.6,2.5,Math.sin(a)*1.6);leg.rotation.y=-a;far.add(leg)}
       far.add(mesh(sph(3.6,20,14),steel,0,32,0));far.add(mesh(cyl(3.68,3.68,.9,20),M(0x3a4048),0,32.3,0));
@@ -918,7 +918,7 @@ const Game=(()=>{
     const pose=camPose(cx,z);camera.position.set(...pose.p);camera.lookAt(...pose.l);
     const bx=Math.round(cx/50)*50;ground.position.x=bx;ballast.position.x=bx;rails[0].position.x=bx;rails[1].position.x=bx;
     sky.position.x=cx;hillsMid.position.x=cx*.7+wrap(-travel*.3,600,0);
-    if(lmKey){lmFar.position.set(cx+wrap(-.12*cx-14,520,0),0,-92);lmNear.position.set(cx+wrap(-.4*cx+16,300,0),0,-34);lmT+=dt;if(lmFar.userData.spin)lmFar.userData.spin(lmT)}
+    if(lmKey){const P=pose.p,Lk=pose.l,at=zz=>P[0]+(Lk[0]-P[0])*(P[2]-zz)/Math.max(.1,P[2]-Lk[2]);lmFar.position.set(at(-92)+wrap(-.12*cx-14,520,0),0,-92);lmNear.position.set(at(-34)+wrap(-.4*cx+16,300,0),0,-34);lmT+=dt;if(lmFar.userData.spin)lmFar.userData.spin(lmT)}
     dummy.rotation.set(0,0,0);
     for(let i=0;i<SL;i++){dummy.position.set(wrap(i*SLSP-travel,SL*SLSP,cx),.13,0);dummy.scale.set(1,1,1);dummy.updateMatrix();sleepers.setMatrixAt(i,dummy.matrix)}sleepers.instanceMatrix.needsUpdate=true;
     for(let i=0;i<TR;i++){const t=treeData[i];dummy.position.set(wrap(t.o-travel,600,cx),3*t.s,t.z);dummy.scale.set(t.s,t.s,t.s);dummy.updateMatrix();trees.setMatrixAt(i,dummy.matrix)}trees.instanceMatrix.needsUpdate=true;
