@@ -756,7 +756,7 @@ const Game=(()=>{
   function buildExtra(kind){
     const g=new THREE.Group();
     if(kind==="bazen"){
-      g.position.set(3.55,1.305,.55);
+      g.position.set(-1.75,1.305,.68);g.scale.setScalar(.72);
       const tile=new THREE.MeshStandardMaterial({map:tileTex,roughness:.6});
       for(const [w,d,x,z] of [[2.7,.14,0,-.73],[2.7,.14,0,.73],[.14,1.6,-1.28,0],[.14,1.6,1.28,0]])g.add(mesh(box(w,.42,d),tile,x,.21,z));
       g.add(mesh(box(2.5,.04,1.36),M(0x2a9fd0),0,.02,0));
@@ -765,10 +765,9 @@ const Game=(()=>{
       const ring=mesh(new THREE.TorusGeometry(.26,.09,8,16),M(0xe2453c),-.55,.38,.1);ring.rotation.x=-Math.PI/2;g.add(ring);g.userData.ring=ring;
       for(let i=0;i<4;i++){const st=mesh(new THREE.TorusGeometry(.26,.095,8,3,.35),M(0xffffff),-.55,.38,.1);st.rotation.set(-Math.PI/2,0,i*Math.PI/2);g.add(st);ring.userData.st=(ring.userData.st||[]).concat(st)}
       const duck=new THREE.Group();const dy=M(0xffd23a);const db=mesh(sph(.13,10,8),dy,0,.06,0);db.scale.set(1.3,.8,1);duck.add(db);duck.add(mesh(sph(.08,10,8),dy,.1,.17,0));const bk=mesh(cone(.035,.09,6),M(0xf08a24),.2,.16,0);bk.rotation.z=-Math.PI/2;duck.add(bk);duck.add(mesh(sph(.015,6,4),M(0x111111),.15,.2,.05));duck.position.set(.45,.36,.25);g.add(duck);g.userData.duck=duck;
-      const towel=mesh(box(.7,.03,.4),M(0xe24a7a),2.1,.02,.5);g.add(towel);
     }
     if(kind==="terarium"){
-      g.position.set(-4.15,1.305,-.85);
+      g.position.set(2.55,1.305,-.95);g.scale.setScalar(.72);
       g.add(mesh(box(1.7,.8,.75),M(0x4a2e1c),0,.4,0));
       g.add(mesh(box(1.6,.06,.68),M(0xd9b77a),0,.83,0));
       const tank=mesh(box(1.6,.8,.68),glassMat,0,1.2,0);g.add(tank);
@@ -784,7 +783,7 @@ const Game=(()=>{
       g.add(mesh(box(1.2,.06,.12),new THREE.MeshBasicMaterial({color:0xfff1c4}),0,1.57,0));
     }
     if(kind==="monalisa"){
-      g.position.set(-2.75,2.86,-1.33);
+      g.position.set(-2.4,2.86,-1.33);
       g.add(mesh(box(1,1.32,.06),M(0x8a5a1a),0,0,0));
       g.add(mesh(box(.9,1.22,.07),brassMat,0,0,.01));
       g.add(mesh(new THREE.PlaneGeometry(.76,1.06),new THREE.MeshBasicMaterial({map:monaTex}),0,0,.05));
@@ -830,11 +829,11 @@ const Game=(()=>{
     const sm=sofaMats[Math.floor(r()*sofaMats.length)];sofaParts.forEach(p=>p.material=sm);
     plant.visible=r()<.7;shelf.visible=r()<.75;picFrame.visible=r()<.8;cases.forEach(c=>c.visible=r()<.7);
     extrasSlot.clear();extrasNow=(occ.extras||[]).map(k=>{const g=buildExtra(k);extrasSlot.add(g);return g});
-    const xs=new Set(occ.extras||[]);if(xs.has("terarium"))plant.visible=false;if(xs.has("monalisa"))picFrame.visible=false;
+    const xs=new Set(occ.extras||[]);if(xs.has("terarium"))shelf.visible=false;if(xs.has("monalisa"))picFrame.visible=false;
     mug.visible=occ.avatar.item==="hrnek"||r()<.25;
     avatarSlot.clear();petSlot.clear();
     av=buildAvatar(occ.avatar);av.g.position.set(-.1,1.82,-.75);av.waves=!!occ.nick;avatarSlot.add(av.g);
-    pet=null;if(occ.avatar.pet&&occ.avatar.pet!=="zadny"){pet=buildPet(occ.avatar.pet);petSlot.add(pet.g)}
+    pet=null;if(occ.avatar.pet&&occ.avatar.pet!=="zadny"){pet=buildPet(occ.avatar.pet);petSlot.add(pet.g)}petSlot.position.x=xs.has("bazen")?-1.4:0;
     warm.position.set(wagonX(n)+1.2,2.9,.6);
   }
 
