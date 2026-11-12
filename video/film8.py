@@ -101,7 +101,7 @@ async def shot(pg, name):
         await film.record(pg, name, 7.3, cues=cues)
     elif name == "y4_mona":   # 14,62–19,89: Lukáš chtěl Monu Lisu. Tady ji má, i s provazem…
         await train(pg)
-        await pg.evaluate("()=>{Game.flyTo(380,.5)}"); await steps(pg, 150)
+        await pg.evaluate("()=>{Game.flyTo(394,.5)}"); await steps(pg, 150)
         await pg.evaluate(ov('<div class="eb">@dudonlukas · vagón 401</div><div class="ttl">Lukáš chtěl<br><y>Monu Lisu</y></div>'))
         await setfull(pg, ring_html('🖼️ Mona Lisa'))
         await pg.evaluate(fx(ease + ring_js(-2.4, 2.75, -1.33, 2.0, True, 200)))
@@ -111,10 +111,12 @@ async def shot(pg, name):
         await film.record(pg, name, 5.4, cues=cues)
     elif name == "y5_terra":   # 19,89–25,88: A Sýr chtěl terárium s hadem, želvou a ještěrkou. Všichni tři už jedou s ním.
         await train(pg)
-        await pg.evaluate("()=>{Game.flyTo(240,.5)}"); await steps(pg, 150)
+        await pg.evaluate("()=>{Game.flyTo(256,.5)}"); await steps(pg, 150)
+        # kamera trochu doprava, ať je terárium celé v záběru (jen pro video)
+        await pg.evaluate("()=>{const c=__G.camera;window.__pan=0;const o=c.lookAt.bind(c);c.lookAt=(x,y,z)=>{c.position.x+=window.__pan;o(x+window.__pan,y,z)}}")
         await pg.evaluate(ov('<div class="eb">@mr__chesee · vagón 264</div><div class="ttl">Sýr chtěl<br><y>terárium</y></div>'))
         await setfull(pg, ring_html('🐍 🐢 🦎') + '<div class="feat"><div id="f0">🐍 had</div><div id="f1">🐢 želva</div><div id="f2">🦎 ještěrka</div></div>')
-        await pg.evaluate(fx(ease + ring_js(2.35, 2.1, -.95, 1.6, True, 190) + "const A=[2.1,2.7,3.25];for(let i=0;i<3;i++){const k=t-A[i];const e=document.getElementById('f'+i);e.style.opacity=k<0?0:1;e.style.transform=`scale(${k<0?.4:(k<.3?B(k/.3):1)})`}"))
+        await pg.evaluate(fx(ease + "window.__pan=1.3*E((t-1.3)/.9);"+ring_js(2.35, 2.1, -.95, 2.2, True, 190) + "const A=[2.4,2.9,3.4];for(let i=0;i<3;i++){const k=t-A[i];const e=document.getElementById('f'+i);e.style.opacity=k<0?0:1;e.style.transform=`scale(${k<0?.4:(k<.3?B(k/.3):1)})`}"))
         cues = {0: "()=>{Game.flyTo(264,0)}",
                 T(3.86): ov('<div class="eb">@mr__chesee · vagón 264</div><div class="ttl">Všichni tři<br><y>jedou s ním!</y></div>')}
         await film.record(pg, name, 6.1, cues=cues)
