@@ -92,6 +92,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--lamp);outline:none}
 .ovpin::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:rgba(20,32,44,.82)}
 .ovpin.head{background:var(--signal)}.ovpin.head::after{border-top-color:var(--signal)}
 .ovpin.me{background:#ffd23f;color:#1e2a33}.ovpin.me::after{border-top-color:#ffd23f}
+.ovcap{position:absolute;left:50%;top:calc(var(--st) + 112px);transform:translateX(-50%);text-align:center;background:rgba(20,32,44,.78);color:#fff;border-radius:16px;padding:10px 18px 11px;width:max-content;max-width:calc(100% - 32px);backdrop-filter:blur(6px)}
+.ovcap b{display:block;font:900 26px/1 "Big Shoulders Display","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.01em}
+.ovcap span{display:block;margin-top:5px;font:500 12px/1.35 "IBM Plex Mono",monospace;color:#d6e4ec}
 .ov-on #prevW,.ov-on #nextW,.ov-on #editBtn,.ov-on #zoomBtn{display:none}
 .lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;background:rgba(255,252,245,.95);border:1.5px solid var(--lamp);color:var(--ink);box-shadow:0 4px 14px rgba(30,42,51,.18);border-radius:999px;padding:3px 10px;will-change:transform}
 .lbl.me{background:var(--lamp);color:#1d1408;font-weight:600}
@@ -847,53 +850,66 @@ const Game=(()=>{
   /* ---------- CELÝ VLAK: pohled shora, vlak stočený do spirály ---------- */
   const ovScene=new THREE.Scene();ovScene.background=new THREE.Color(0xbfe3f5);ovScene.fog=new THREE.Fog(0xbfe3f5,1800,5200);
   ovScene.add(new THREE.HemisphereLight(0xdff1ff,0x4d6d38,.62));{const l=new THREE.DirectionalLight(0xfff2dc,.75);l.position.set(-400,700,500);ovScene.add(l)}
-  const ovCam=new THREE.PerspectiveCamera(48,1,1,9000);
-  {const g=mesh(new THREE.CircleGeometry(6000,72),M(0x6a9e4c));g.rotation.x=-Math.PI/2;ovScene.add(g)}
+  const ovCam=new THREE.PerspectiveCamera(48,1,2,60000);
+  const ovGround=mesh(new THREE.CircleGeometry(60000,72),M(0x6a9e4c));ovGround.rotation.x=-Math.PI/2;ovScene.add(ovGround);
   const ovBody=box(WL,2.95,3);ovBody.translate(0,2.68,0);const ovRoofG=box(WL+.3,.5,3.4);ovRoofG.translate(0,4.3,0);
-  let ovCap=0,ovWag=null,ovRoof=null,ovStrip=null,ovTrees=null,ovLoco=null,ovLm=null,ovN=-1,ovLmKey=null,ovMine=-1,ovR=100,ovHead=null,ovTail=null,ovMinePos=null;
-  let ovOn=false,ovYaw=.7,ovPitch=.95,ovDist=800,ovTDist=800,ovTPitch=.95,ovIntro=0,ovIdle=0;const ovCbs=[];
-  const SPG=24,SPR0=28,SPB=SPG/(2*Math.PI);
-  function ovPath(L){const xs=[],zs=[];let th=SPR0/SPB,acc=0,px=Math.cos(th)*SPR0,pz=Math.sin(th)*SPR0;xs.push(px);zs.push(pz);
-    while(acc<L){const r=SPB*th;th+=1/Math.max(r,1);const nr=SPB*th,nx=Math.cos(th)*nr,nz=Math.sin(th)*nr;acc+=Math.hypot(nx-px,nz-pz);px=nx;pz=nz;xs.push(px);zs.push(pz)}
+  let ovAim=new THREE.Vector3(),ovSamples=[],ovHeadDir=[1,0],ovC=new THREE.Vector3(),ovLen=1000,ovWid=300,ovHouses=null,ovRoofs=null,ovCap=0,ovWag=null,ovRoof=null,ovStrip=null,ovTrees=null,ovLoco=null,ovLm=null,ovN=-1,ovLmKey=null,ovMine=-1,ovR=100,ovHead=null,ovTail=null,ovMinePos=null;
+  let ovOn=false,ovYaw=Math.PI,ovT=0,ovPitch=.95,ovDist=800,ovTDist=800,ovTPitch=.95,ovIntro=0,ovIdle=0;const ovCbs=[];
+  // had: kolej se vlní krajinou (směr se kolébá tam a zpět), ocas vzadu, lokomotiva vpředu
+  function ovPath(L){const xs=[0],zs=[0];const m=Math.max(2,Math.min(9,Math.round(L/3200))),Pp=L/m,TH=1.5;let px=0,pz=0;
+    for(let a=1;a<=L+2;a++){const th=TH*Math.sin(2*Math.PI*a/Pp)+.25*Math.sin(2*Math.PI*a/(Pp*2.7)+1);px+=Math.cos(th);pz+=Math.sin(th);xs.push(px);zs.push(pz)}
     return{xs,zs,at(a){const i=Math.max(0,Math.min(xs.length-2,Math.floor(a)));const f=Math.min(1,Math.max(0,a-i));const x=xs[i]+(xs[i+1]-xs[i])*f,z=zs[i]+(zs[i+1]-zs[i])*f;return{x,z,dx:xs[i+1]-xs[i],dz:zs[i+1]-zs[i]}}}}
   function ovBuild(){
     const n=N,L=n*STEP+30;const P=ovPath(L);ovN=n;
     if(n>ovCap){if(ovWag){ovScene.remove(ovWag,ovRoof);ovWag.dispose();ovRoof.dispose()}ovCap=Math.max(n+256,1024);
       ovWag=new THREE.InstancedMesh(ovBody,new THREE.MeshStandardMaterial({roughness:.6,metalness:.1,flatShading:true}),ovCap);ovRoof=new THREE.InstancedMesh(ovRoofG,new THREE.MeshStandardMaterial({roughness:.7,flatShading:true}),ovCap);ovScene.add(ovWag,ovRoof)}
     ovWag.count=ovRoof.count=n;const sp=specialsMap();const mine=myTicket?+myTicket.wagon:-1;const c=new THREE.Color();ovMine=-1;
-    for(let k=1;k<=n;k++){const q=P.at((n-k)*STEP+STEP/2+4);dummy.position.set(q.x,0,q.z);dummy.rotation.set(0,Math.atan2(-q.dz,q.dx),0);dummy.scale.set(1,1,1);dummy.updateMatrix();ovWag.setMatrixAt(k-1,dummy.matrix);ovRoof.setMatrixAt(k-1,dummy.matrix);
+    for(let k=1;k<=n;k++){const q=P.at((n-k)*STEP+STEP/2+4);dummy.position.set(q.x,0,q.z);dummy.rotation.set(0,Math.atan2(-q.dz,q.dx),0);dummy.scale.set(1,2.6,3.2);dummy.updateMatrix();ovWag.setMatrixAt(k-1,dummy.matrix);ovRoof.setMatrixAt(k-1,dummy.matrix);
       if(k===mine){c.set(0xffd23f);ovMinePos=new THREE.Vector3(q.x,6,q.z);ovMine=k}else if(sp.has(k))c.copy(specialMat.color);else{const r=rng(k*2654435761);c.copy(bodyMats[Math.floor(r()*bodyMats.length)].color)}ovWag.setColorAt(k-1,c);ovRoof.setColorAt(k-1,c.multiplyScalar(k===mine?1:.78))}
     ovWag.instanceMatrix.needsUpdate=ovRoof.instanceMatrix.needsUpdate=true;if(ovWag.instanceColor)ovWag.instanceColor.needsUpdate=true;if(ovRoof.instanceColor)ovRoof.instanceColor.needsUpdate=true;
-    const h=P.at(n*STEP+11);if(!ovLoco){ovLoco=loco.clone();ovScene.add(ovLoco)}ovLoco.visible=true;ovLoco.position.set(h.x,0,h.z);ovLoco.rotation.set(0,Math.atan2(-h.dz,h.dx),0);ovHead=new THREE.Vector3(h.x,8,h.z);const t=P.at(4);ovTail=new THREE.Vector3(t.x,6,t.z);
+    const h=P.at(n*STEP+11);if(!ovLoco){ovLoco=loco.clone();ovScene.add(ovLoco)}ovLoco.visible=true;ovLoco.position.set(h.x,0,h.z);ovLoco.rotation.set(0,Math.atan2(-h.dz,h.dx),0);ovLoco.scale.set(1.6,2.6,3.2);ovHead=new THREE.Vector3(h.x,8,h.z);const t=P.at(4);ovTail=new THREE.Vector3(t.x,6,t.z);
     // štěrkové lože pod kolejí
     if(ovStrip){ovScene.remove(ovStrip);ovStrip.geometry.dispose()}
-    const pos=[],idx=[];const E=L+24;for(let a=0,i=0;a<=E;a+=3,i++){const q=P.at(a),l=Math.hypot(q.dx,q.dz)||1,nx=-q.dz/l,nz=q.dx/l;pos.push(q.x+nx*2.4,.06,q.z+nz*2.4,q.x-nx*2.4,.06,q.z-nz*2.4);if(i){const b=i*2;idx.push(b-2,b-1,b,b-1,b+1,b)}}
+    const pos=[],idx=[];const E=L+24;for(let a=0,i=0;a<=E;a+=3,i++){const q=P.at(a),l=Math.hypot(q.dx,q.dz)||1,nx=-q.dz/l,nz=q.dx/l;pos.push(q.x+nx*8,.06,q.z+nz*8,q.x-nx*8,.06,q.z-nz*8);if(i){const b=i*2;idx.push(b-2,b-1,b,b-1,b+1,b)}}
     const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();ovStrip=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:0xa0927c,side:THREE.DoubleSide}));ovScene.add(ovStrip);
-    ovR=SPB*(SPR0/SPB+0)+0;const last=P.at(E);ovR=Math.max(60,Math.hypot(last.x,last.z)+12);
-    if(!ovTrees){ovTrees=new THREE.InstancedMesh(cone(1.6,6,7),M(0x2f6e3c),700);ovScene.add(ovTrees)}
-    const r=rng(77);for(let i=0;i<700;i++){const a=r()*Math.PI*2,d=ovR+25+Math.pow(r(),.7)*Math.max(500,ovR*2.2),sc=1.6+r()*2.4;dummy.position.set(Math.cos(a)*d,3*sc,Math.sin(a)*d);dummy.rotation.set(0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();ovTrees.setMatrixAt(i,dummy.matrix)}ovTrees.instanceMatrix.needsUpdate=true;
+    let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(let i=0;i<P.xs.length;i+=5){const x=P.xs[i],z=P.zs[i];if(x<x0)x0=x;if(x>x1)x1=x;if(z<z0)z0=z;if(z>z1)z1=z}
+    ovSamples=[];for(let i=0;i<P.xs.length;i+=120)ovSamples.push(new THREE.Vector3(P.xs[i],4,P.zs[i]));ovSamples.push(new THREE.Vector3(P.xs[P.xs.length-1],4,P.zs[P.zs.length-1]));
+    ovC.set((x0+x1)/2,0,(z0+z1)/2);ovLen=x1-x0;ovWid=z1-z0;ovR=Math.hypot(ovLen,ovWid)/2;ovGround.position.set(ovC.x,0,ovC.z);
+    const occ=new Set(),CL=40,key=(x,z)=>Math.floor(x/CL)+","+Math.floor(z/CL);for(let i=0;i<P.xs.length;i+=10)for(const dx of [-1,0,1])for(const dz of [-1,0,1])occ.add(key(P.xs[i]+dx*CL,P.zs[i]+dz*CL));
+    const TRN=1800;if(!ovTrees){ovTrees=new THREE.InstancedMesh(cone(1.6,6,7),M(0x2f6e3c),TRN);ovScene.add(ovTrees)}
+    const r=rng(77),pad=Math.max(900,ovWid);let ti=0;for(let i=0;i<TRN*3&&ti<TRN;i++){const x=x0-pad+r()*(ovLen+2*pad),z=z0-pad+r()*(ovWid+2*pad);if(occ.has(key(x,z)))continue;if(r()<.45&&Math.abs(Math.sin(x/700)+Math.cos(z/500))<.6)continue;const sc=3+r()*5;dummy.position.set(x,3*sc,z);dummy.rotation.set(0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();ovTrees.setMatrixAt(ti++,dummy.matrix)}ovTrees.count=ti;ovTrees.instanceMatrix.needsUpdate=true;
+    // vesnice podél trati
+    const HV=10,HP=9;if(!ovHouses){ovHouses=new THREE.InstancedMesh(box(3.2,2.4,3),M(0xf3ead8),HV*HP);ovRoofs=new THREE.InstancedMesh(cone(2.5,1.7,4),M(0xc4553e),HV*HP);ovScene.add(ovHouses,ovRoofs)}
+    let hi=0;const rh=rng(11);for(let v=0;v<HV;v++){const q=P.at(L*(v+.5)/HV),l=Math.hypot(q.dx,q.dz)||1,side=v%2?1:-1,bx=q.x-q.dz/l*side*70,bz=q.z+q.dx/l*side*70;
+      for(let k=0;k<HP;k++){const hx=bx+(rh()-.5)*80,hz=bz+(rh()-.5)*80,sc=3.2+rh()*1.5,ry=rh()*3;dummy.rotation.set(0,ry,0);dummy.scale.set(sc,sc,sc);dummy.position.set(hx,1.2*sc,hz);dummy.updateMatrix();ovHouses.setMatrixAt(hi,dummy.matrix);dummy.rotation.set(0,ry+Math.PI/4,0);dummy.position.set(hx,3.25*sc,hz);dummy.updateMatrix();ovRoofs.setMatrixAt(hi,dummy.matrix);hi++}}
+    ovHouses.instanceMatrix.needsUpdate=ovRoofs.instanceMatrix.needsUpdate=true;dummy.rotation.set(0,0,0);ovHeadDir=[h.dx,h.dz];
     ovLmKey=null;
   }
   function ovLandmark(){if(ovLmKey===lmKey)return;ovLmKey=lmKey;if(ovLm){ovScene.remove(ovLm);ovLm=null}const id=lmKey&&lmKey.split("|")[0];if(!id||!LM[id]||!ovHead)return;
-    const b=LM[id]();b.far.scale.setScalar(2.5);b.near.scale.setScalar(2.5);ovLm=new THREE.Group();ovLm.add(b.far,b.near);const d=Math.hypot(ovHead.x,ovHead.z)||1;const o=ovHead.clone().multiplyScalar((d+70)/d);b.near.position.set(o.x,0,o.z);const o2=ovHead.clone().multiplyScalar((d+150)/d);b.far.position.set(o2.x,0,o2.z);ovScene.add(ovLm)}
-  const ovPins=document.createElement("div");ovPins.id="ovPins";ovPins.hidden=true;labelsEl.parentNode.insertBefore(ovPins,labelsEl.nextSibling);
+    const b=LM[id]();b.far.scale.setScalar(4);b.near.scale.setScalar(4);ovLm=new THREE.Group();ovLm.add(b.far,b.near);const l=Math.hypot(...ovHeadDir)||1,fx=ovHeadDir[0]/l,fz=ovHeadDir[1]/l,nx=-fz,nz=fx;
+    b.near.position.set(ovHead.x+nx*110+fx*60,0,ovHead.z+nz*110+fz*60);b.far.position.set(ovHead.x-nx*170+fx*220,0,ovHead.z-nz*170+fz*220);ovScene.add(ovLm)}
+  const ovPins=document.createElement("div");ovPins.id="ovPins";ovPins.hidden=true;labelsEl.parentNode.insertBefore(ovPins,labelsEl.nextSibling);ovPins.innerHTML='<div class="ovcap"><b>Takhle dlouhý je náš vlak</b><span id="ovCapN"></span></div>';
   function ovPin(id,txt,cls){let e=ovPins.querySelector("#"+id);if(!e){e=document.createElement("div");e.id=id;e.className="ovpin "+(cls||"");ovPins.appendChild(e)}if(e.textContent!==txt)e.textContent=txt;return e}
   function placePin(e,v){if(!v){e.style.display="none";return}const p=v.clone().project(ovCam);if(p.z>1){e.style.display="none";return}e.style.display="";e.style.transform=`translate(${((p.x*.5+.5)*W).toFixed(1)}px,${((-p.y*.5+.5)*H).toFixed(1)}px) translate(-50%,-100%)`}
   function ovFrame(dt){
     ovIntro=Math.min(1,ovIntro+dt/1.8);const e=1-Math.pow(1-ovIntro,3);
-    if(!ptrs.size){ovIdle+=dt;if(ovIdle>2.5&&!reduce)ovYaw+=dt*.05}
+    ovT+=dt;if(!ptrs.size){ovIdle+=dt;if(ovIdle>2.5&&!reduce)ovYaw+=(Math.PI+.22*Math.sin(ovT*.22)-ovYaw)*Math.min(1,dt*.35)}
     ovDist+=(ovTDist-ovDist)*Math.min(1,dt*5);ovPitch+=(ovTPitch-ovPitch)*Math.min(1,dt*5);
-    const pitch=.28+(ovPitch-.28)*e,dist=ovDist*(.35+.65*e);const tx0=ovHead?ovHead.x*(1-e):0,tz0=ovHead?ovHead.z*(1-e):0;
+    const pitch=.22+(ovPitch-.22)*e,dist=ovDist*(.08+.92*e);const hx=ovHead?ovHead.x:0,hz=ovHead?ovHead.z:0;const tx0=hx+(ovAim.x-hx)*e,tz0=hz+(ovAim.z-hz)*e;
     ovCam.position.set(tx0+Math.cos(ovYaw)*Math.cos(pitch)*dist,Math.sin(pitch)*dist,tz0+Math.sin(ovYaw)*Math.cos(pitch)*dist);ovCam.lookAt(tx0,0,tz0);
-    if(lmFar.userData.spin&&ovLm){}
     renderer.render(ovScene,ovCam);
     placePin(ovPin("pHead","Lokomotiva","head"),ovHead);placePin(ovPin("pTail","№ "+fmt(N)+" · konec vlaku"),ovTail);
     placePin(ovPin("pMine","Ty · № "+fmt(ovMine),"me"),ovMine>0?ovMinePos:null);
   }
-  function fitOv(){const a=W/H;const f=ovCam.fov*Math.PI/360;const need=ovR*1.15/Math.tan(f)/Math.min(1,a);ovTDist=Math.min(5200,need);ovTPitch=portrait?.95:.8}
+  function fitOv(){const a=W/H,t=Math.tan(ovCam.fov*Math.PI/360);ovTPitch=portrait?.8:.62;const p=ovTPitch,top=portrait?.42:.55,bot=-.8,side=.9,v=new THREE.Vector3();
+    ovAim.copy(ovC);let d=Math.max(ovLen*Math.sin(p)/(2*t),ovWid/(2*t*a))*.5;ovCam.far=1e6;ovCam.updateProjectionMatrix();
+    const span=()=>{ovCam.position.set(ovAim.x-Math.cos(p)*d,Math.sin(p)*d,ovAim.z);ovCam.lookAt(ovAim);ovCam.updateMatrixWorld();let ok=true,y0=1,y1=-1;for(const q of ovSamples){v.copy(q).project(ovCam);if(Math.abs(v.x)>side||v.z>1)ok=false;y0=Math.min(y0,v.y);y1=Math.max(y1,v.y)}return{ok,y0,y1}};
+    for(let it=0;it<80;it++){const r=span();if(r.ok&&r.y1<=top&&r.y0>=bot)break;
+      const sh=(top+bot)/2-(r.y0+r.y1)/2;if(r.ok&&r.y1-r.y0<=top-bot&&Math.abs(sh)>.01){ovAim.x-=sh*d*t/Math.sin(p)*.5;continue}d*=1.05}
+    ovTDist=d;ovCam.far=d*2+ovLen*2;ovCam.updateProjectionMatrix();ovScene.fog.near=d*.9;ovScene.fog.far=d*1.6+ovLen*1.3}
   function setOverview(on){on=!!on;if(on===ovOn)return;
     canvas.style.transition="opacity .22s";canvas.style.opacity=0;
-    setTimeout(()=>{ovOn=on;if(on){fly=null;if(ovN!==N||!ovWag)ovBuild();else{const m=myTicket?+myTicket.wagon:-1;if(m!==ovMine)ovBuild()}ovLandmark();ovCam.aspect=W/H;ovCam.fov=portrait?60:46;ovCam.updateProjectionMatrix();fitOv();ovDist=ovTDist;ovPitch=ovTPitch;ovIntro=reduce?1:0;ovIdle=0;labelsEl.hidden=true;ovPins.hidden=false}
+    setTimeout(()=>{ovOn=on;if(on){fly=null;if(ovN!==N||!ovWag)ovBuild();else{const m=myTicket?+myTicket.wagon:-1;if(m!==ovMine)ovBuild()}ovLandmark();ovCam.aspect=W/H;ovCam.fov=portrait?60:46;ovCam.updateProjectionMatrix();fitOv();ovDist=ovTDist;ovPitch=ovTPitch;ovIntro=reduce?1:0;ovIdle=0;ovYaw=Math.PI;ovT=0;labelsEl.hidden=true;ovPins.hidden=false}
       else{labelsEl.hidden=false;ovPins.hidden=true;lastFocus=-2;lastCenter=null}
       canvas.style.opacity=1;ovCbs.forEach(f=>f(on))},230)}
   function ovTap(x,y){const r=canvas.getBoundingClientRect();v2.set((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);ray.setFromCamera(v2,ovCam);
@@ -921,7 +937,7 @@ const Game=(()=>{
   canvas.addEventListener("pointerdown",e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ovOn){moved=0;ovIdle=0;if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);z0=ovTDist}return}fly=null;vx=0;moved=0;lastT=performance.now();canvas.classList.add("drag");
     if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);z0=tz}hideHint()});
   canvas.addEventListener("pointermove",e=>{if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId);const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
-    if(ovOn){ovIdle=0;if(ptrs.size===2){const [a,b]=[...ptrs.values()];ovTDist=Math.max(ovR*.18,Math.min(ovR*5,z0*pinch0/Math.max(20,Math.hypot(a.x-b.x,a.y-b.y))));return}ovYaw+=dx*.006;ovTPitch=Math.max(.3,Math.min(1.5,ovTPitch+dy*.004));return}
+    if(ovOn){ovIdle=0;if(ptrs.size===2){const [a,b]=[...ptrs.values()];ovTDist=Math.max(60,Math.min(ovR*4,z0*pinch0/Math.max(20,Math.hypot(a.x-b.x,a.y-b.y))));return}ovYaw+=dx*.006;ovTPitch=Math.max(.12,Math.min(1.5,ovTPitch+dy*.004));return}
     if(ptrs.size===2){const [a,b]=[...ptrs.values()];tz=Math.max(0,Math.min(1,z0-(Math.hypot(a.x-b.x,a.y-b.y)-pinch0)/300));return}
     const sc=(.02+z*.085)*(900/Math.max(380,Math.min(W,1400)));
     const now=performance.now();tx=clampX(tx-dx*sc);vx=-dx*sc/Math.max(8,now-lastT)*16;lastT=now;
@@ -929,7 +945,7 @@ const Game=(()=>{
   function up(e){const wasTap=moved<8&&ptrs.size===1;ptrs.delete(e.pointerId);canvas.classList.remove("drag");if(ovOn){if(wasTap)ovTap(e.clientX,e.clientY);return}if(wasTap)tap(e.clientX,e.clientY);else if(tz<.5&&Math.abs(vx)<.4)snap()}
   canvas.addEventListener("pointerup",up);canvas.addEventListener("pointercancel",e=>{ptrs.delete(e.pointerId);canvas.classList.remove("drag")});
   let wheelT=0;
-  canvas.addEventListener("wheel",e=>{e.preventDefault();if(ovOn){ovIdle=0;ovTDist=Math.max(ovR*.18,Math.min(ovR*5,ovTDist*Math.exp(e.deltaY*.0015)));return}hideHint();fly=null;if(Math.abs(e.deltaX)>Math.abs(e.deltaY))tx=clampX(tx+e.deltaX*(.02+z*.06));else{tz=Math.max(0,Math.min(1,tz+e.deltaY*.0012));clearTimeout(wheelT);wheelT=setTimeout(()=>{if(tz<.5)snap()},180)}},{passive:false});
+  canvas.addEventListener("wheel",e=>{e.preventDefault();if(ovOn){ovIdle=0;ovTDist=Math.max(60,Math.min(ovR*4,ovTDist*Math.exp(e.deltaY*.0015)));return}hideHint();fly=null;if(Math.abs(e.deltaX)>Math.abs(e.deltaY))tx=clampX(tx+e.deltaX*(.02+z*.06));else{tz=Math.max(0,Math.min(1,tz+e.deltaY*.0012));clearTimeout(wheelT);wheelT=setTimeout(()=>{if(tz<.5)snap()},180)}},{passive:false});
   canvas.tabIndex=0;
   canvas.addEventListener("keydown",e=>{const n=nearestWagon(tx);if(e.key==="ArrowLeft"){flyTo(n+1,tz);e.preventDefault()}if(e.key==="ArrowRight"){flyTo(n-1,tz);e.preventDefault()}if(e.key==="+"||e.key==="=")zoomTo(0);if(e.key==="-")zoomTo(1)});
   function snap(){const n=nearestWagon(tx);tx=wagonX(n===0?0:n)}
@@ -1065,7 +1081,8 @@ $("#editBtn").onclick=()=>{openSheet("jizdenka");editMode()};
 const kmFmt=n=>(n*25/1000).toLocaleString("cs-CZ",{maximumFractionDigits:1});
 $("#allBtn").onclick=()=>{if(!Game.ok)return;Game.setOverview(!Game.overview())};
 if(Game.ok)Game.onOverview(on=>{document.body.classList.toggle("ov-on",on);$("#allL").textContent=on?" Zpět k vlaku":" Celý vlak";$("#allBtn").setAttribute("aria-label",on?"Zpět k vlaku":"Celý vlak shora");
-  if(on){const n=wagonCount();$("#ctxA").textContent="Celý vlak shora";$("#ctxB").innerHTML=`<em>${fmt(n)}</em> vagónů · ${kmFmt(n)} km vlaku`}});
+  if(on){const n=wagonCount();$("#ctxA").textContent="Takhle dlouhý je náš vlak";$("#ctxB").innerHTML=`<em>${fmt(n)}</em> vagónů · ${kmFmt(n)} km`;
+    const c=$("#ovCapN");if(c)c.innerHTML=`${fmt(n)} vagónů × 25 m = <b style="display:inline;font:inherit;color:#ffd23f">${kmFmt(n)} km</b><br>Ve skutečnosti jede rovně dál, tady se jen vlní, ať se vejde.`}});
 $("#zoomBtn").onclick=()=>{if(!Game.ok)return;if(Game.focus()>0)Game.zoomTo(1);else{const c=Game.center();Game.flyTo(Math.max(1,c),0)}};
 $("#prevW").onclick=()=>{const c=Game.center();Game.flyTo(c+1,Game.focus()>0?0:Game.zoom)};
 $("#nextW").onclick=()=>{const c=Game.center();Game.flyTo(c-1,c-1<1?.6:(Game.focus()>0?0:Game.zoom))};
