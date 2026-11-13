@@ -21,11 +21,11 @@ EXTRA = r"""
 .ruler:before,.ruler:after{content:"";position:absolute;top:-34px;width:8px;height:60px;background:#ffd23f}
 .ruler:before{left:-4px}.ruler:after{right:-4px}
 .ruler b{position:absolute;left:50%;top:-112px;transform:translateX(-50%);background:#ffd23f;color:#1e2a33;border-radius:999px;padding:12px 30px;font:900 70px/1 BS,sans-serif;white-space:nowrap}
-.bars{position:absolute;left:70px;right:70px;top:1220px;display:grid;gap:26px}
-.bar{display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:20px;font:900 64px/1 BS,sans-serif;text-transform:uppercase;color:#1e2a33;background:#fff;border-radius:26px;padding:18px 26px;box-shadow:0 10px 26px rgba(0,0,0,.18)}
-.bar i{display:block;height:56px;border-radius:16px;background:#7d9bb0;width:0}
-.bar.win i{background:#f0a03a}.bar.win{color:#b5600a;border:6px solid #f0a03a}
-.bar span{text-align:right}
+.vbars{position:absolute;left:70px;right:70px;top:1220px;display:grid;gap:26px}
+.vbar{display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:20px;font:900 64px/1 BS,sans-serif;text-transform:uppercase;color:#1e2a33;background:#fff;border-radius:26px;padding:18px 26px;box-shadow:0 10px 26px rgba(0,0,0,.18)}
+.vbar i{display:block;height:56px;border-radius:16px;background:#7d9bb0;width:0}
+.vbar.win i{background:#f0a03a}.vbar.win{color:#b5600a;border:6px solid #f0a03a}
+.vbar span{text-align:right}
 """
 
 STATE = ("()=>{ONLINE=true;S.kmPerPassenger=1;S.followers=%d;S.peak=%d;S.route=%s;S.vote={at:'berlin',deadline:'',options:%s};renderHud()}"
@@ -100,7 +100,7 @@ async def shot(pg, name):
         await pg.evaluate(STATE.replace("renderHud()", "renderMap()"))
         await pg.evaluate(ov('<div class="eb">Výhybka v Berlíně</div><div class="ttl">Kam<br><y>dál?</y></div>'))
         await pg.evaluate("h=>{document.getElementById('xtra').innerHTML=h}",
-                          '<div class="bars">' + ''.join(f'<div class="bar{" win" if i == 0 else ""}" id="b{i}" style="opacity:0"><div>{n}</div><i id="bi{i}"></i><span id="bn{i}">0</span></div>' for i, (_, n, _v) in enumerate(VOTES)) + '</div>')
+                          '<div class="vbars">' + ''.join(f'<div class="vbar{" win" if i == 0 else ""}" id="b{i}" style="opacity:0"><div>{n}</div><i id="bi{i}"></i><span id="bn{i}">0</span></div>' for i, (_, n, _v) in enumerate(VOTES)) + '</div>')
         js = ease + "const V=%s;const mx=Math.max(...V,1);for(let i=0;i<3;i++){const k=t-2.8-i*.15;document.getElementById('b'+i).style.opacity=k<0?0:1;const u=E(Math.max(0,k)/.9);document.getElementById('bi'+i).style.width=(V[i]/mx*100*u)+'%%';document.getElementById('bn'+i).textContent=Math.round(V[i]*u)}" % json.dumps([v for *_, v in VOTES])
         await pg.evaluate(fx(js))
         cues = {T(2.78): ov('<div class="eb">Zatím vede</div><div class="ttl huge"><y>Paříž!</y></div>')}
@@ -110,7 +110,7 @@ async def shot(pg, name):
         await pg.evaluate(STATE.replace("renderHud()", "renderMap()"))
         await pg.evaluate(ov('<div class="eb">Výhybka v Berlíně</div><div class="ttl">Kodaň? Hamburk?<br><y>Ještě je šance!</y></div>'))
         await pg.evaluate("h=>{document.getElementById('xtra').innerHTML=h}",
-                          '<div class="bars">' + ''.join(f'<div class="bar{" win" if i == 0 else ""}"><div>{n}</div><i style="width:{v / 18 * 100:.0f}%"></i><span>{v}</span></div>' for i, (_, n, v) in enumerate(VOTES)) + '</div>'
+                          '<div class="vbars">' + ''.join(f'<div class="vbar{" win" if i == 0 else ""}"><div>{n}</div><i style="width:{v / 18 * 100:.0f}%"></i><span>{v}</span></div>' for i, (_, n, v) in enumerate(VOTES)) + '</div>'
                           '<div style="position:absolute;left:0;right:0;top:1640px;text-align:center"><div class="stampG" id="st" style="background:#3f8a5c;box-shadow:0 10px 0 #2b6342">💬 Napiš, kam chceš ty!</div></div>')
         js = ease + "const s=t-2.1;document.getElementById('st').style.transform=`rotate(-4deg) scale(${s<0?0:(s<.35?B(s/.35):1)})`"
         await pg.evaluate(fx(js))
