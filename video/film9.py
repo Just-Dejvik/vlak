@@ -21,10 +21,10 @@ EXTRA = r"""
 .ruler:before,.ruler:after{content:"";position:absolute;top:-34px;width:8px;height:60px;background:#ffd23f}
 .ruler:before{left:-4px}.ruler:after{right:-4px}
 .ruler b{position:absolute;left:50%;top:-112px;transform:translateX(-50%);background:#ffd23f;color:#1e2a33;border-radius:999px;padding:12px 30px;font:900 70px/1 BS,sans-serif;white-space:nowrap}
-.bars{position:absolute;left:80px;right:80px;top:1250px;display:grid;gap:26px}
-.bar{display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:20px;font:900 64px/1 BS,sans-serif;text-transform:uppercase;color:#fff;text-shadow:0 4px 0 rgba(20,40,60,.35)}
-.bar i{display:block;height:64px;border-radius:18px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.2);width:0}
-.bar.win i{background:#ffd23f}.bar.win{color:#ffd23f}
+.bars{position:absolute;left:70px;right:70px;top:1220px;display:grid;gap:26px}
+.bar{display:grid;grid-template-columns:260px 1fr 110px;align-items:center;gap:20px;font:900 64px/1 BS,sans-serif;text-transform:uppercase;color:#1e2a33;background:#fff;border-radius:26px;padding:18px 26px;box-shadow:0 10px 26px rgba(0,0,0,.18)}
+.bar i{display:block;height:56px;border-radius:16px;background:#7d9bb0;width:0}
+.bar.win i{background:#f0a03a}.bar.win{color:#b5600a;border:6px solid #f0a03a}
 .bar span{text-align:right}
 """
 
@@ -111,7 +111,7 @@ async def shot(pg, name):
         await pg.evaluate(ov('<div class="eb">Výhybka v Berlíně</div><div class="ttl">Kodaň? Hamburk?<br><y>Ještě je šance!</y></div>'))
         await pg.evaluate("h=>{document.getElementById('xtra').innerHTML=h}",
                           '<div class="bars">' + ''.join(f'<div class="bar{" win" if i == 0 else ""}"><div>{n}</div><i style="width:{v / 18 * 100:.0f}%"></i><span>{v}</span></div>' for i, (_, n, v) in enumerate(VOTES)) + '</div>'
-                          '<div style="position:absolute;left:0;right:0;top:1580px;text-align:center"><div class="stampG" id="st" style="background:#3f8a5c;box-shadow:0 10px 0 #2b6342">💬 Napiš, kam chceš ty!</div></div>')
+                          '<div style="position:absolute;left:0;right:0;top:1640px;text-align:center"><div class="stampG" id="st" style="background:#3f8a5c;box-shadow:0 10px 0 #2b6342">💬 Napiš, kam chceš ty!</div></div>')
         js = ease + "const s=t-2.1;document.getElementById('st').style.transform=`rotate(-4deg) scale(${s<0?0:(s<.35?B(s/.35):1)})`"
         await pg.evaluate(fx(js))
         await film.record(pg, name, 4.5, cues={T(2.1): ov('<div class="eb">Hlasuj v komentářích</div><div class="ttl">Kam chceš<br><y>ty?</y></div>')})
