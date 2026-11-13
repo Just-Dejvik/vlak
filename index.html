@@ -87,6 +87,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--lamp);outline:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
 #gl.drag{cursor:grabbing}
 #labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#ovPins{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ovpin{position:absolute;left:0;top:0;background:rgba(20,32,44,.82);color:#fff;font:600 12px/1 "IBM Plex Mono",monospace;padding:6px 9px;border-radius:7px;white-space:nowrap;margin-top:-6px}
+.ovpin::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:rgba(20,32,44,.82)}
+.ovpin.head{background:var(--signal)}.ovpin.head::after{border-top-color:var(--signal)}
+.ovpin.me{background:#ffd23f;color:#1e2a33}.ovpin.me::after{border-top-color:#ffd23f}
+.ov-on #prevW,.ov-on #nextW,.ov-on #editBtn,.ov-on #zoomBtn{display:none}
 .lbl{position:absolute;left:0;top:0;transform:translate(-50%,-100%);font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;background:rgba(255,252,245,.95);border:1.5px solid var(--lamp);color:var(--ink);box-shadow:0 4px 14px rgba(30,42,51,.18);border-radius:999px;padding:3px 10px;will-change:transform}
 .lbl.me{background:var(--lamp);color:#1d1408;font-weight:600}
 .lbl.big{font-size:15px;padding:6px 14px;display:grid;justify-items:center;line-height:1.25;border-radius:12px}
@@ -268,6 +274,7 @@ textarea{min-height:90px;resize:vertical}
       <div class="plate" aria-live="polite"><span class="a" id="ctxA">Pohled na vlak</span><span class="b" id="ctxB">–</span></div>
       <button class="btn icon navbtn" type="button" id="nextW" aria-label="Vagón blíž k lokomotivě"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>
       <button class="btn navbtn" type="button" id="editBtn" hidden>Upravit<span class="lg"> panáčka</span></button>
+      <button class="btn navbtn" type="button" id="allBtn" aria-label="Celý vlak shora"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-4px"><path d="M12 3a9 9 0 109 9"/><path d="M12 7a5 5 0 105 5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg><span id="allL"> Celý vlak</span></button>
       <button class="btn icon navbtn" type="button" id="zoomBtn" aria-label="Nahlédnout dovnitř"><svg id="zoomIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M11 8v6M8 11h6"/></svg></button>
     </div>
     <nav class="dock" aria-label="Menu hry">
@@ -495,7 +502,7 @@ const STATUS_TXT={pending:"Čeká na ověření",verified:"Ověřený cestujíc�
 const Game=(()=>{
   const canvas=$("#gl"),labelsEl=$("#labels");
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const stub={ok:false,setN(){},flyTo(){},refreshWagon(){},setActive(){},focus:()=>-1,zoomTo(){},zoom:1,center:()=>1,onFocus(){},N:1};
+  const stub={ok:false,setOverview(){},overview:()=>false,onOverview(){},refreshOverview(){},setN(){},flyTo(){},refreshWagon(){},setActive(){},focus:()=>-1,zoomTo(){},zoom:1,center:()=>1,onFocus(){},N:1};
   const fail=msg=>{canvas.insertAdjacentHTML("afterend",`<div class="nogl">${msg}</div>`);return stub};
   if(!window.THREE)return fail("3D scénu se nepodařilo načíst. Zbytek hry funguje v menu dole.");
   let renderer;
@@ -837,6 +844,62 @@ const Game=(()=>{
     warm.position.set(wagonX(n)+1.2,2.9,.6);
   }
 
+  /* ---------- CELÝ VLAK: pohled shora, vlak stočený do spirály ---------- */
+  const ovScene=new THREE.Scene();ovScene.background=new THREE.Color(0xbfe3f5);ovScene.fog=new THREE.Fog(0xbfe3f5,1800,5200);
+  ovScene.add(new THREE.HemisphereLight(0xdff1ff,0x4d6d38,.62));{const l=new THREE.DirectionalLight(0xfff2dc,.75);l.position.set(-400,700,500);ovScene.add(l)}
+  const ovCam=new THREE.PerspectiveCamera(48,1,1,9000);
+  {const g=mesh(new THREE.CircleGeometry(6000,72),M(0x6a9e4c));g.rotation.x=-Math.PI/2;ovScene.add(g)}
+  const ovBody=box(WL,2.95,3);ovBody.translate(0,2.68,0);const ovRoofG=box(WL+.3,.5,3.4);ovRoofG.translate(0,4.3,0);
+  let ovCap=0,ovWag=null,ovRoof=null,ovStrip=null,ovTrees=null,ovLoco=null,ovLm=null,ovN=-1,ovLmKey=null,ovMine=-1,ovR=100,ovHead=null,ovTail=null,ovMinePos=null;
+  let ovOn=false,ovYaw=.7,ovPitch=.95,ovDist=800,ovTDist=800,ovTPitch=.95,ovIntro=0,ovIdle=0;const ovCbs=[];
+  const SPG=24,SPR0=28,SPB=SPG/(2*Math.PI);
+  function ovPath(L){const xs=[],zs=[];let th=SPR0/SPB,acc=0,px=Math.cos(th)*SPR0,pz=Math.sin(th)*SPR0;xs.push(px);zs.push(pz);
+    while(acc<L){const r=SPB*th;th+=1/Math.max(r,1);const nr=SPB*th,nx=Math.cos(th)*nr,nz=Math.sin(th)*nr;acc+=Math.hypot(nx-px,nz-pz);px=nx;pz=nz;xs.push(px);zs.push(pz)}
+    return{xs,zs,at(a){const i=Math.max(0,Math.min(xs.length-2,Math.floor(a)));const f=Math.min(1,Math.max(0,a-i));const x=xs[i]+(xs[i+1]-xs[i])*f,z=zs[i]+(zs[i+1]-zs[i])*f;return{x,z,dx:xs[i+1]-xs[i],dz:zs[i+1]-zs[i]}}}}
+  function ovBuild(){
+    const n=N,L=n*STEP+30;const P=ovPath(L);ovN=n;
+    if(n>ovCap){if(ovWag){ovScene.remove(ovWag,ovRoof);ovWag.dispose();ovRoof.dispose()}ovCap=Math.max(n+256,1024);
+      ovWag=new THREE.InstancedMesh(ovBody,new THREE.MeshStandardMaterial({roughness:.6,metalness:.1,flatShading:true}),ovCap);ovRoof=new THREE.InstancedMesh(ovRoofG,new THREE.MeshStandardMaterial({roughness:.7,flatShading:true}),ovCap);ovScene.add(ovWag,ovRoof)}
+    ovWag.count=ovRoof.count=n;const sp=specialsMap();const mine=myTicket?+myTicket.wagon:-1;const c=new THREE.Color();ovMine=-1;
+    for(let k=1;k<=n;k++){const q=P.at((n-k)*STEP+STEP/2+4);dummy.position.set(q.x,0,q.z);dummy.rotation.set(0,Math.atan2(-q.dz,q.dx),0);dummy.scale.set(1,1,1);dummy.updateMatrix();ovWag.setMatrixAt(k-1,dummy.matrix);ovRoof.setMatrixAt(k-1,dummy.matrix);
+      if(k===mine){c.set(0xffd23f);ovMinePos=new THREE.Vector3(q.x,6,q.z);ovMine=k}else if(sp.has(k))c.copy(specialMat.color);else{const r=rng(k*2654435761);c.copy(bodyMats[Math.floor(r()*bodyMats.length)].color)}ovWag.setColorAt(k-1,c);ovRoof.setColorAt(k-1,c.multiplyScalar(k===mine?1:.78))}
+    ovWag.instanceMatrix.needsUpdate=ovRoof.instanceMatrix.needsUpdate=true;if(ovWag.instanceColor)ovWag.instanceColor.needsUpdate=true;if(ovRoof.instanceColor)ovRoof.instanceColor.needsUpdate=true;
+    const h=P.at(n*STEP+11);if(!ovLoco){ovLoco=loco.clone();ovScene.add(ovLoco)}ovLoco.visible=true;ovLoco.position.set(h.x,0,h.z);ovLoco.rotation.set(0,Math.atan2(-h.dz,h.dx),0);ovHead=new THREE.Vector3(h.x,8,h.z);const t=P.at(4);ovTail=new THREE.Vector3(t.x,6,t.z);
+    // štěrkové lože pod kolejí
+    if(ovStrip){ovScene.remove(ovStrip);ovStrip.geometry.dispose()}
+    const pos=[],idx=[];const E=L+24;for(let a=0,i=0;a<=E;a+=3,i++){const q=P.at(a),l=Math.hypot(q.dx,q.dz)||1,nx=-q.dz/l,nz=q.dx/l;pos.push(q.x+nx*2.4,.06,q.z+nz*2.4,q.x-nx*2.4,.06,q.z-nz*2.4);if(i){const b=i*2;idx.push(b-2,b-1,b,b-1,b+1,b)}}
+    const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();ovStrip=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:0xa0927c,side:THREE.DoubleSide}));ovScene.add(ovStrip);
+    ovR=SPB*(SPR0/SPB+0)+0;const last=P.at(E);ovR=Math.max(60,Math.hypot(last.x,last.z)+12);
+    if(!ovTrees){ovTrees=new THREE.InstancedMesh(cone(1.6,6,7),M(0x2f6e3c),700);ovScene.add(ovTrees)}
+    const r=rng(77);for(let i=0;i<700;i++){const a=r()*Math.PI*2,d=ovR+25+Math.pow(r(),.7)*Math.max(500,ovR*2.2),sc=1.6+r()*2.4;dummy.position.set(Math.cos(a)*d,3*sc,Math.sin(a)*d);dummy.rotation.set(0,0,0);dummy.scale.set(sc,sc,sc);dummy.updateMatrix();ovTrees.setMatrixAt(i,dummy.matrix)}ovTrees.instanceMatrix.needsUpdate=true;
+    ovLmKey=null;
+  }
+  function ovLandmark(){if(ovLmKey===lmKey)return;ovLmKey=lmKey;if(ovLm){ovScene.remove(ovLm);ovLm=null}const id=lmKey&&lmKey.split("|")[0];if(!id||!LM[id]||!ovHead)return;
+    const b=LM[id]();b.far.scale.setScalar(2.5);b.near.scale.setScalar(2.5);ovLm=new THREE.Group();ovLm.add(b.far,b.near);const d=Math.hypot(ovHead.x,ovHead.z)||1;const o=ovHead.clone().multiplyScalar((d+70)/d);b.near.position.set(o.x,0,o.z);const o2=ovHead.clone().multiplyScalar((d+150)/d);b.far.position.set(o2.x,0,o2.z);ovScene.add(ovLm)}
+  const ovPins=document.createElement("div");ovPins.id="ovPins";ovPins.hidden=true;labelsEl.parentNode.insertBefore(ovPins,labelsEl.nextSibling);
+  function ovPin(id,txt,cls){let e=ovPins.querySelector("#"+id);if(!e){e=document.createElement("div");e.id=id;e.className="ovpin "+(cls||"");ovPins.appendChild(e)}if(e.textContent!==txt)e.textContent=txt;return e}
+  function placePin(e,v){if(!v){e.style.display="none";return}const p=v.clone().project(ovCam);if(p.z>1){e.style.display="none";return}e.style.display="";e.style.transform=`translate(${((p.x*.5+.5)*W).toFixed(1)}px,${((-p.y*.5+.5)*H).toFixed(1)}px) translate(-50%,-100%)`}
+  function ovFrame(dt){
+    ovIntro=Math.min(1,ovIntro+dt/1.8);const e=1-Math.pow(1-ovIntro,3);
+    if(!ptrs.size){ovIdle+=dt;if(ovIdle>2.5&&!reduce)ovYaw+=dt*.05}
+    ovDist+=(ovTDist-ovDist)*Math.min(1,dt*5);ovPitch+=(ovTPitch-ovPitch)*Math.min(1,dt*5);
+    const pitch=.28+(ovPitch-.28)*e,dist=ovDist*(.35+.65*e);const tx0=ovHead?ovHead.x*(1-e):0,tz0=ovHead?ovHead.z*(1-e):0;
+    ovCam.position.set(tx0+Math.cos(ovYaw)*Math.cos(pitch)*dist,Math.sin(pitch)*dist,tz0+Math.sin(ovYaw)*Math.cos(pitch)*dist);ovCam.lookAt(tx0,0,tz0);
+    if(lmFar.userData.spin&&ovLm){}
+    renderer.render(ovScene,ovCam);
+    placePin(ovPin("pHead","Lokomotiva","head"),ovHead);placePin(ovPin("pTail","№ "+fmt(N)+" · konec vlaku"),ovTail);
+    placePin(ovPin("pMine","Ty · № "+fmt(ovMine),"me"),ovMine>0?ovMinePos:null);
+  }
+  function fitOv(){const a=W/H;const f=ovCam.fov*Math.PI/360;const need=ovR*1.15/Math.tan(f)/Math.min(1,a);ovTDist=Math.min(5200,need);ovTPitch=portrait?.95:.8}
+  function setOverview(on){on=!!on;if(on===ovOn)return;
+    canvas.style.transition="opacity .22s";canvas.style.opacity=0;
+    setTimeout(()=>{ovOn=on;if(on){fly=null;if(ovN!==N||!ovWag)ovBuild();else{const m=myTicket?+myTicket.wagon:-1;if(m!==ovMine)ovBuild()}ovLandmark();ovCam.aspect=W/H;ovCam.fov=portrait?60:46;ovCam.updateProjectionMatrix();fitOv();ovDist=ovTDist;ovPitch=ovTPitch;ovIntro=reduce?1:0;ovIdle=0;labelsEl.hidden=true;ovPins.hidden=false}
+      else{labelsEl.hidden=false;ovPins.hidden=true;lastFocus=-2;lastCenter=null}
+      canvas.style.opacity=1;ovCbs.forEach(f=>f(on))},230)}
+  function ovTap(x,y){const r=canvas.getBoundingClientRect();v2.set((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);ray.setFromCamera(v2,ovCam);
+    if(ovLoco&&ray.intersectObject(ovLoco,true).length){setOverview(false);setTimeout(()=>{cx=tx=wagonX(0);z=tz=1;flyTo(0,.6)},240);return}
+    const h=ray.intersectObject(ovWag,false)[0];if(h&&h.instanceId!=null){const n=h.instanceId+1;setOverview(false);setTimeout(()=>{cx=tx=wagonX(n);z=tz=1;flyTo(n,0)},240)}}
+
   /* ---------- CAMERA ---------- */
   let cx=wagonX(0),tx=cx,z=1,tz=1,vx=0,fly=null,W=1,H=1,portrait=false,travel=0;
   const clampX=x=>Math.max(wagonX(N)-2,Math.min(wagonX(0)+4,x));
@@ -855,17 +918,18 @@ const Game=(()=>{
 
   /* ---------- INPUT ---------- */
   const ptrs=new Map();let pinch0=0,z0=0,moved=0,lastT=0;
-  canvas.addEventListener("pointerdown",e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});fly=null;vx=0;moved=0;lastT=performance.now();canvas.classList.add("drag");
+  canvas.addEventListener("pointerdown",e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ovOn){moved=0;ovIdle=0;if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);z0=ovTDist}return}fly=null;vx=0;moved=0;lastT=performance.now();canvas.classList.add("drag");
     if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);z0=tz}hideHint()});
   canvas.addEventListener("pointermove",e=>{if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId);const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
+    if(ovOn){ovIdle=0;if(ptrs.size===2){const [a,b]=[...ptrs.values()];ovTDist=Math.max(ovR*.18,Math.min(ovR*5,z0*pinch0/Math.max(20,Math.hypot(a.x-b.x,a.y-b.y))));return}ovYaw+=dx*.006;ovTPitch=Math.max(.3,Math.min(1.5,ovTPitch+dy*.004));return}
     if(ptrs.size===2){const [a,b]=[...ptrs.values()];tz=Math.max(0,Math.min(1,z0-(Math.hypot(a.x-b.x,a.y-b.y)-pinch0)/300));return}
     const sc=(.02+z*.085)*(900/Math.max(380,Math.min(W,1400)));
     const now=performance.now();tx=clampX(tx-dx*sc);vx=-dx*sc/Math.max(8,now-lastT)*16;lastT=now;
     if(Math.abs(dy)>Math.abs(dx)*1.3)tz=Math.max(0,Math.min(1,tz+dy/420))});
-  function up(e){const wasTap=moved<8&&ptrs.size===1;ptrs.delete(e.pointerId);canvas.classList.remove("drag");if(wasTap)tap(e.clientX,e.clientY);else if(tz<.5&&Math.abs(vx)<.4)snap()}
+  function up(e){const wasTap=moved<8&&ptrs.size===1;ptrs.delete(e.pointerId);canvas.classList.remove("drag");if(ovOn){if(wasTap)ovTap(e.clientX,e.clientY);return}if(wasTap)tap(e.clientX,e.clientY);else if(tz<.5&&Math.abs(vx)<.4)snap()}
   canvas.addEventListener("pointerup",up);canvas.addEventListener("pointercancel",e=>{ptrs.delete(e.pointerId);canvas.classList.remove("drag")});
   let wheelT=0;
-  canvas.addEventListener("wheel",e=>{e.preventDefault();hideHint();fly=null;if(Math.abs(e.deltaX)>Math.abs(e.deltaY))tx=clampX(tx+e.deltaX*(.02+z*.06));else{tz=Math.max(0,Math.min(1,tz+e.deltaY*.0012));clearTimeout(wheelT);wheelT=setTimeout(()=>{if(tz<.5)snap()},180)}},{passive:false});
+  canvas.addEventListener("wheel",e=>{e.preventDefault();if(ovOn){ovIdle=0;ovTDist=Math.max(ovR*.18,Math.min(ovR*5,ovTDist*Math.exp(e.deltaY*.0015)));return}hideHint();fly=null;if(Math.abs(e.deltaX)>Math.abs(e.deltaY))tx=clampX(tx+e.deltaX*(.02+z*.06));else{tz=Math.max(0,Math.min(1,tz+e.deltaY*.0012));clearTimeout(wheelT);wheelT=setTimeout(()=>{if(tz<.5)snap()},180)}},{passive:false});
   canvas.tabIndex=0;
   canvas.addEventListener("keydown",e=>{const n=nearestWagon(tx);if(e.key==="ArrowLeft"){flyTo(n+1,tz);e.preventDefault()}if(e.key==="ArrowRight"){flyTo(n-1,tz);e.preventDefault()}if(e.key==="+"||e.key==="=")zoomTo(0);if(e.key==="-")zoomTo(1)});
   function snap(){const n=nearestWagon(tx);tx=wagonX(n===0?0:n)}
@@ -894,13 +958,14 @@ const Game=(()=>{
   }
 
   /* ---------- LOOP ---------- */
-  function resize(){W=canvas.clientWidth||1;H=canvas.clientHeight||1;portrait=W/H<.85;renderer.setSize(W,H,false);camera.aspect=W/H;camera.fov=portrait?60:46;camera.updateProjectionMatrix()}
+  function resize(){W=canvas.clientWidth||1;H=canvas.clientHeight||1;portrait=W/H<.85;renderer.setSize(W,H,false);camera.aspect=W/H;camera.fov=portrait?60:46;camera.updateProjectionMatrix();if(ovOn){ovCam.aspect=W/H;ovCam.fov=camera.fov;ovCam.updateProjectionMatrix();fitOv()}}
   new ResizeObserver(resize).observe(canvas);resize();
   let speed=1,tspeed=1;
   let last=performance.now(),active=true,lastCenter=null,lastFocus=-2,shift=0,tshift=0;const onFocus=[];
   const wrap=(v,span,c)=>{const lo=c-span/2;return lo+(((v-lo)%span)+span)%span};
   function frame(now){
     const dt=Math.min(.05,(now-last)/1000);last=now;
+    if(ovOn){ovFrame(dt);if(active)requestAnimationFrame(frame);return}
     speed+=(tspeed-speed)*Math.min(1,dt*.8);if(!reduce)travel+=dt*11*speed;
     if(fly){fly.t+=dt;const u=Math.min(1,fly.t/fly.dur);const e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;cx=fly.x0+(fly.x1-fly.x0)*e;
       z=Math.max(0,Math.min(1,fly.z0+(fly.z1-fly.z0)*e+fly.bump*Math.sin(Math.PI*u)));tx=cx;tz=z;if(u>=1)fly=null}
@@ -946,8 +1011,9 @@ const Game=(()=>{
   document.addEventListener("visibilitychange",()=>setActive(!document.hidden&&!$("#game").hidden));
   requestAnimationFrame(frame);
   return{ok:true,
-    setN(n){n=Math.max(1,n);if(n===N)return;N=n;for(const s of slots)s.n=-1;lastCenter=null;lastFocus=-2;tx=clampX(tx)},
+    setN(n){n=Math.max(1,n);if(n===N)return;N=n;if(ovOn)ovBuild();else ovN=-1;for(const s of slots)s.n=-1;lastCenter=null;lastFocus=-2;tx=clampX(tx)},
     flyTo,zoomTo,setActive,
+    setOverview,overview:()=>ovOn,onOverview(f){ovCbs.push(f)},refreshOverview(){if(ovOn){ovBuild();ovLandmark()}else ovN=-1},
     setStop(on,id,name){tspeed=on?0:1;if(reduce)speed=tspeed;setLandmark(on?id:null,name)},
     setShift(v){tshift=v},
     setDriver(d){const key=d?JSON.stringify(d.avatar||{})+(d.nick||""):"";if(key===driverKey)return;driverKey=key;driverSlot.clear();driverAv=null;cabLight.intensity=0;
@@ -996,6 +1062,10 @@ function setCtx(focusN,center){
 if(Game.ok)Game.onFocus(setCtx);
 function editMode(){if(isPhone()){$("#sheet").classList.add("half");Game.setShift(.2)}const c=$("#tvujCestujici");if(c)c.scrollIntoView({block:"start"})}
 $("#editBtn").onclick=()=>{openSheet("jizdenka");editMode()};
+const kmFmt=n=>(n*25/1000).toLocaleString("cs-CZ",{maximumFractionDigits:1});
+$("#allBtn").onclick=()=>{if(!Game.ok)return;Game.setOverview(!Game.overview())};
+if(Game.ok)Game.onOverview(on=>{document.body.classList.toggle("ov-on",on);$("#allL").textContent=on?" Zpět k vlaku":" Celý vlak";$("#allBtn").setAttribute("aria-label",on?"Zpět k vlaku":"Celý vlak shora");
+  if(on){const n=wagonCount();$("#ctxA").textContent="Celý vlak shora";$("#ctxB").innerHTML=`<em>${fmt(n)}</em> vagónů · ${kmFmt(n)} km vlaku`}});
 $("#zoomBtn").onclick=()=>{if(!Game.ok)return;if(Game.focus()>0)Game.zoomTo(1);else{const c=Game.center();Game.flyTo(Math.max(1,c),0)}};
 $("#prevW").onclick=()=>{const c=Game.center();Game.flyTo(c+1,Game.focus()>0?0:Game.zoom)};
 $("#nextW").onclick=()=>{const c=Game.center();Game.flyTo(c-1,c-1<1?.6:(Game.focus()>0?0:Game.zoom))};
