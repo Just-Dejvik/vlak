@@ -52,29 +52,31 @@ async def train(pg):
     await pg.evaluate(STATE)
     await pg.evaluate(film3.NODRV)
 
+VB = "if(window.__V)__vb(...window.__V);"
+
 def pop(ids, times):
     return "const A=%s;const I=%s;for(let i=0;i<I.length;i++){const k=t-A[i];const e=document.getElementById(I[i]);if(!e)continue;e.style.opacity=k<0?0:1;e.style.transform=`scale(${k<0?.4:(k<.3?B(k/.3):1)})`}" % (json.dumps(times), json.dumps(ids))
 
 async def shot(pg, name):
     if name == "p1_win":   # 0–3,88: Hlasování skončilo… a vyhrála PAŘÍŽ!
         await pg.evaluate(MAP)
-        await pg.evaluate("()=>{const [x,y,w]=__fit(['berlin','pariz','kodan','hamburk']);__vb(x,y,w)}")
+        await pg.evaluate("()=>{window.__V=__fit(['berlin','pariz','kodan','hamburk'],1.2);__vb(...__V)}")
         await pg.evaluate(ov('<div class="eb">Výhybka v Berlíně</div><div class="ttl">Hlasování<br><y>skončilo…</y></div>'))
         await pg.evaluate("h=>{document.getElementById('xtra').innerHTML=h}",
                           f'<div style="position:absolute;left:0;right:0;top:1290px;text-align:center"><div class="stampG" id="st" style="font-size:120px;padding:30px 60px">🇫🇷 PAŘÍŽ!</div><div id="vv" style="margin-top:40px;font:800 56px IS,sans-serif;color:#1e2a33;opacity:0">přibližně {VOTES} hlasů</div></div>')
-        js = ease + "const s=t-2.86;document.getElementById('st').style.transform=`rotate(-4deg) scale(${s<0?0:(s<.35?B(s/.35):1)})`;document.getElementById('vv').style.opacity=s<.3?0:1;const c=document.getElementById('mapbox');const k=s>0?Math.exp(-s*3):0;c.style.transform=`translate(${Math.sin(t*61)*20*k}px,${Math.cos(t*47)*14*k}px)`"
+        js = ease + VB + "const s=t-2.86;document.getElementById('st').style.transform=`rotate(-4deg) scale(${s<0?0:(s<.35?B(s/.35):1)})`;document.getElementById('vv').style.opacity=s<.3?0:1;const c=document.getElementById('mapbox');const k=s>0?Math.exp(-s*3):0;c.style.transform=`translate(${Math.sin(t*61)*20*k}px,${Math.cos(t*47)*14*k}px)`"
         await pg.evaluate(fx(js))
         cues = {T(1.72): ov('<div class="eb">Výsledek hlasování</div><div class="ttl">A vyhrála…</div>'),
                 T(2.86): ov('<div class="eb">Výsledek hlasování</div><div class="ttl huge"><y>Paříž!</y></div>')}
         await film.record(pg, name, 3.9, cues=cues)
     elif name == "p2_route":   # 3,88–9,86: Z Berlína je to přes Hannover, Kolín nad Rýnem a Brusel přes 1 200 km.
         await pg.evaluate(MAP)
-        await pg.evaluate("()=>{const [x,y,w]=__fit(['berlin','pariz']);__vb(x,y,w)}")
+        await pg.evaluate("()=>{window.__V=null;renderMap()}")
         await pg.evaluate(ov('<div class="eb">Berlín → Paříž</div><div class="ttl">Cesta do<br><y>Paříže</y></div>'))
         cities = [("c0", "Berlín"), ("c1", "Hannover"), ("c2", "Kolín n. R."), ("c3", "Brusel"), ("c4", "Lille"), ("c5", "Paříž")]
         await pg.evaluate("h=>{document.getElementById('xtra').innerHTML=h}",
                           '<div class="cities">' + ''.join(f'<span id="{i}"{" class=end" if i == "c5" else ""}>{n}</span>' for i, n in cities) + '</div><div class="bigkm" id="km">1 220 km</div>')
-        js = ease + pop([i for i, _ in cities], [0.15, 1.3, 2.2, 3.0, 3.6, 4.1]) + ";const k=t-4.4;const e=document.getElementById('km');e.style.opacity=k<0?0:1;e.style.transform=`scale(${k<0?.5:(k<.3?B(k/.3):1)})`"
+        js = ease + VB + pop([i for i, _ in cities], [0.15, 1.3, 2.2, 3.0, 3.6, 4.1]) + ";const k=t-4.4;const e=document.getElementById('km');e.style.opacity=k<0?0:1;e.style.transform=`scale(${k<0?.5:(k<.3?B(k/.3):1)})`"
         await pg.evaluate(fx(js))
         await film.record(pg, name, 6.0, cues={T(2.03): ov('<div class="eb">Berlín → Paříž</div><div class="ttl">Přes<br><y>1 200 km</y></div>')})
     elif name == "p3_catch":   # 9,86–15,10: Jenže je tu háček. Vlak jede jen tolik kilometrů, kolik je nás.
@@ -96,16 +98,16 @@ async def shot(pg, name):
         await film.record(pg, name, 3.3, cues={0: "()=>{Game.flyTo(36,.7)}"})
     elif name == "p5_missing":   # 18,35–22,08: A do Paříže nám chybí ještě asi 650 lidí.
         await pg.evaluate(MAP)
-        await pg.evaluate("()=>{const [x,y,w]=__fit(['berlin','pariz']);__vb(x,y,w)}")
+        await pg.evaluate("()=>{window.__V=null;renderMap()}")
         await pg.evaluate(ov('<div class="eb">Lokomotiva je za Hannoverem</div><div class="ttl">Do Paříže<br><y>chybí</y></div>'))
         await pg.evaluate("h=>{document.getElementById('xtra').innerHTML=h}",
                           f'<div class="miss"><div class="k">chybí ještě</div><div class="n" id="mn">0</div><div class="u">cestujících</div></div>')
-        js = ease + f"document.getElementById('mn').textContent='~'+Math.round(E(Math.max(0,t-.6)/1.6)*{MISS}).toLocaleString('cs-CZ')"
+        js = ease + VB + f"document.getElementById('mn').textContent='~'+Math.round(E(Math.max(0,t-.6)/1.6)*{MISS}).toLocaleString('cs-CZ')"
         await pg.evaluate(fx(js))
         await film.record(pg, name, 3.8)
     elif name == "p6_eiffel":   # 22,08–27,97: Takže pokud chcete vidět Eiffelovku… pošlete video kamarádům a vezměte je do vlaku!
         await train(pg)
-        await pg.evaluate("()=>{Game.setStop(true,'pariz','Paříž');Game.flyTo(0,.6)}"); await steps(pg, 220)
+        await pg.evaluate("()=>{Game.setStop(true,'pariz','Paříž');Game.flyTo(0,.6);Game.setShift(-.13)}"); await steps(pg, 220)
         await pg.evaluate(ov('<div class="eb">Cíl: Paříž</div><div class="ttl">Chcete vidět<br><y>Eiffelovku?</y></div>'))
         await setfull(pg, '<div class="share"><span id="sh">📤 Pošli kamarádům</span></div>')
         js = ease + "const s=t-2.57;document.getElementById('sh').style.transform=`scale(${s<0?0:(s<.35?B(s/.35):1)})`"
@@ -122,7 +124,7 @@ async def shot(pg, name):
                                                T(4.13): ov('<div class="eb">Na webu</div><div class="ttl">Tlačítko<br><y>Podpořit</y></div>')})
     elif name == "p8_star":   # 34,20–39,23: a kdo přispěje, dostane hvězdičku u svého vagónu a bude v seznamu podporovatelů.
         await train(pg)
-        await pg.evaluate("()=>{Game.flyTo(%d,.6)}" % SUP); await steps(pg, 200)
+        await pg.evaluate("()=>{Game.flyTo(%d,.6);Game.setShift(-.12)}" % SUP); await steps(pg, 200)
         await pg.evaluate(ov('<div class="eb">Pro podporovatele</div><div class="ttl">Hvězdička<br><y>u vagónu ⭐</y></div>'))
         await film.record(pg, name, 5.1, cues={0: "()=>{Game.flyTo(%d,0)}" % SUP,
                                                T(2.6): ov('<div class="eb">Pro podporovatele</div><div class="ttl">Seznam<br><y>podporovatelů</y></div>')})
