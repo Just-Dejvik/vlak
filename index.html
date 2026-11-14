@@ -1701,7 +1701,7 @@ function route(){
 }
 window.addEventListener("hashchange",route);
 async function loadWorld(){
-  const r=await fetch("/api/world",{cache:"no-store"});if(!r.ok)throw 0;const d=await r.json();
+  const r=await fetch("/api/world");if(!r.ok)throw 0;const d=await r.json();
   if(!d||!d.online||!d.state||!d.state.nodes)throw 0;return d;
 }
 async function init(){
@@ -1714,7 +1714,7 @@ async function init(){
   const draft=ONLINE?null:lsGet(KEY);if(draft){try{S=JSON.parse(draft);localDraft=true}catch(e){S=clone(BASE)}}else S=clone(BASE);
   if(ONLINE){try{ADMIN_PW=sessionStorage.getItem(ADMKEY)}catch(e){}}
   loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();if(Game.ok)Game.setDriver(DRIVER);if(PENDING_TRANSFER)applyTransfer();else refreshMy();
-  if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;HIDDEN=new Set(d.hidden||[]);if(Game.ok)Game.setDriver(DRIVER);renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},30000);
+  if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;HIDDEN=new Set(d.hidden||[]);if(Game.ok)Game.setDriver(DRIVER);renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},60000);
   const h=location.hash.slice(1);
   let seen=false;try{seen=sessionStorage.getItem(SEENKEY)==="1"}catch(e){}
   if(h!=="sprava"&&!SHEETS[h]&&!seen)openBoarding();

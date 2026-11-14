@@ -5,16 +5,28 @@ import { send, wrap } from '../lib/http.js';
 import { cachedFollowers } from '../lib/ig.js';
 import { ensureMap } from '../lib/europe.js';
 
+// Poslední úspěšná odpověď: když úložiště vypadne, ukážeme vlak tak, jak byl naposledy.
+let lastGood = null;
+let lastAt = 0;
+const SNAP_MS = 20_000;
+
 export default wrap(async (req, res) => {
   if (req.method !== 'GET') return send(res, 405, { error: 'Jen GET.' });
-  const [st, db, igN] = await Promise.all([
+  if (lastGood && Date.now() - lastAt < SNAP_MS) return send(res, 200, lastGood, CACHE);
+  let st, db, igN;
+  try {
+    [st, db, igN] = await Promise.all([
     readJSON('state.json', { fresh: false }),
     readJSON('tickets.json', { fresh: false }),
     cachedFollowers(),
   ]);
+  } catch (e) {
+    if (lastGood) return send(res, 200, { ...lastGood, stale: true }, 'public, max-age=0, s-maxage=60');
+    throw e;
+  }
   const tickets = db ? db.data : emptyDb();
   const state = ensureMap(st ? st.data : seedState());
-  send(res, 200, {
+  lastGood = {
     online: true,
     state: {
       ...state,
@@ -28,5 +40,9 @@ export default wrap(async (req, res) => {
     counts: counts(tickets),
     driver: driverView(state, tickets),
     recovering: !!tickets.recovering,
-  }, 'public, max-age=0, s-maxage=30, stale-while-revalidate=300');
+  };
+  lastAt = Date.now();
+  send(res, 200, lastGood, CACHE);
 });
+
+const CACHE = 'public, max-age=0, s-maxage=60, stale-while-revalidate=600, stale-if-error=86400';

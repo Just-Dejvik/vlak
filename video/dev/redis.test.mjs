@@ -6,7 +6,8 @@ globalThis.fetch = async (url, opt) => {
   calls++;
   const cmd = JSON.parse(opt.body);
   let result;
-  if (cmd[0] === 'MGET') result = cmd.slice(1).map((k) => db.get(k) ?? null);
+  if (cmd[0] === 'GET') result = db.get(cmd[1]) ?? null;
+  else if (cmd[0] === 'MGET') result = cmd.slice(1).map((k) => db.get(k) ?? null);
   else if (cmd[0] === 'EVAL') {
     const [, , , k1, k2, expect, val, ver] = cmd;
     if ((db.get(k2) ?? '') !== expect) result = 0; else { db.set(k1, val); db.set(k2, ver); result = 1; }
@@ -27,4 +28,10 @@ assert.deepEqual(Object.keys(final).sort(), ['a', 'n1', 'n2', 'n3']);
 // veřejné čtení se drží v paměti
 const before = calls; await readJSON('state.json', { fresh: false }); await readJSON('state.json', { fresh: false });
 assert.ok(calls - before <= 1);
+// čerstvé čtení beze změny: jen malá verze, ne celý dokument; vrací vlastní kopii
+let mgets = 0; const f0 = globalThis.fetch; globalThis.fetch = async (u, o) => { if (JSON.parse(o.body)[0] === 'MGET') mgets++; return f0(u, o); };
+const a1 = await readJSON('tickets.json'); a1.data.tickets.zz = {};
+const a2 = await readJSON('tickets.json');
+assert.equal(mgets, 0); assert.equal(a2.data.tickets.zz, undefined);
+globalThis.fetch = f0;
 console.log('redis OK', results.length);
