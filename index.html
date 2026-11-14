@@ -133,6 +133,7 @@ button.stat:hover{border-color:var(--lamp)}
 .dock::-webkit-scrollbar{display:none}
 .sup-card{border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:12px 0;background:var(--glass)}.sup-card h3{margin:0 0 4px;font-size:1rem}
 .dock button.sup{color:#c2410c}
+.sup-list{display:flex;flex-wrap:wrap;gap:6px}.sup-list span{background:#fff3d6;border:1px solid #f0c060;color:#8a5a00;border-radius:999px;padding:4px 10px;font:600 .82rem var(--mono)}
 .dock button{white-space:nowrap;appearance:none;border:0;background:none;color:var(--muted);border-radius:11px;padding:7px 10px;display:grid;justify-items:center;gap:3px;cursor:pointer;min-width:58px;position:relative;font-size:.68rem;font-weight:600;letter-spacing:.02em}
 .dock button svg{width:22px;height:22px}
 .dock button:hover,.dock button[aria-pressed=true]{color:var(--ink);background:var(--panel-2)}
@@ -971,7 +972,7 @@ const Game=(()=>{
       const L=lbl(i++);if(L.txt!==html){L.d.innerHTML=html;L.txt=html}if(L.cls!==cls){L.d.className=cls;L.cls=cls}L.d.style.transform=`translate(${px.toFixed(1)}px,${py.toFixed(1)}px) translate(-50%,-100%)`;L.d.hidden=false};
     if(DRIVER&&loco.visible&&(focusN===0||z>.3)){const big=focusN===0&&z<.4;set(loco.position.x+3.6,big?5.5:5.6,big?`<small>strojvedoucí</small>${DRIVER.nick?"@"+esc(DRIVER.nick):"tajemný cestující"}`:`🚂 ${DRIVER.nick?"@"+esc(DRIVER.nick):"strojvedoucí"}`,big?"lbl big drv":"lbl drv")}
     if(focusN>0&&z<.4){const occ=occupant(focusN);const x=wagonX(focusN)-.1;
-      if(occ.nick)set(x,3.6,`<small>${occ.me?"Tohle jsi ty · ":""}vagón № ${fmt(focusN)}</small>@${esc(occ.nick)}${occ.me&&myTicket.status==="pending"?"<small>čeká na ověření</small>":(occ.me&&!occ.public?"<small>nick vidíš jen ty</small>":"")}`,"lbl big"+(occ.me?" me":""));
+      if(occ.nick)set(x,3.6,`<small>${occ.me?"Tohle jsi ty · ":""}vagón № ${fmt(focusN)}</small>${isSupporter(occ.nick)?"⭐ ":""}@${esc(occ.nick)}${isSupporter(occ.nick)?"<small>podporovatel vlaku 💛</small>":""}${occ.me&&myTicket.status==="pending"?"<small>čeká na ověření</small>":(occ.me&&!occ.public?"<small>nick vidíš jen ty</small>":"")}`,"lbl big"+(occ.me?" me":""));
       else set(x,3.6,`<small>vagón № ${fmt(focusN)}</small>${!ONLINE||HIDDEN.has(focusN)?"cestující se skrytým nickem":(RECOVERING?"čeká na návrat cestujícího":"volný vagón")}`,"lbl big anon");
     }else if(z>.3){const nm=publicNicks();
       for(const s of slots){if(!s.g.visible||s.n<1)continue;const n=nm.get(s.n);if(!n)continue;const me=myTicket&&+myTicket.wagon===s.n;set(s.g.position.x,s.sign.visible?6.1:5.1,(me?"Ty · ":"")+"@"+esc(n),"lbl"+(me?" me":""))}}
@@ -1291,13 +1292,17 @@ function sheetChron(el){
   ${c.task?`<div class="task"><span class="eyebrow">Úkol</span><p style="margin-top:4px">${esc(c.task)}</p></div>`:""}${c.voteResult?`<p class="vres">Výhybka: ${esc(c.voteResult)}</p>`:""}</article>`}).join("")||`<p class="muted">Kronika je zatím prázdná.</p>`;
 }
 const KOFI="https://ko-fi.com/vlakfolloweru";
+const supporters=()=>Array.isArray(S.supporters)?S.supporters:[];
+function isSupporter(n){return !!n&&supporters().includes(String(n).toLowerCase())}
 function sheetSupport(el){
   el.innerHTML=`<p>Vlak followerů je zadarmo a bez reklam. Web, úložiště jízdenek a servery ale stojí peníze, a čím víc nás je, tím víc. Každá koruna jde na provoz, aby vlak jel dál. ☕🚂</p>
   <div class="sup-card"><h3>Převodem z banky</h3><p class="fine" style="margin:0 0 10px">Naskenuj kód v bankovní aplikaci. Bez poplatků, peníze dojdou celé. Kód je na 100 Kč, částku si můžeš změnit.</p>
     <img src="podpora-qr.jpg" alt="QR platba na účet projektu Vlak followerů" width="496" height="705" style="width:min(220px,62vw);height:auto;display:block;margin:0 auto;border-radius:14px;border:1px solid var(--line)"></div>
   <div class="sup-card"><h3>Kartou nebo PayPalem</h3><p class="fine" style="margin:0 0 10px">Přes Ko-fi, funguje i ze zahraničí.</p>
     <a class="btn primary" href="${KOFI}" target="_blank" rel="noopener" style="width:100%;justify-content:center">☕ Podpořit na Ko-fi</a></div>
-  <p class="fine">Podpora je dobrovolná a nic neodemyká. Vagón máš ve vlaku stejně, jestli přispěješ, nebo ne. Díky, že jedeš s námi! 💛</p>`;
+  <div class="sup-card"><h3>⭐ Podporovatelé vlaku</h3>${supporters().length?`<p class="fine" style="margin:0 0 10px">Děkujeme! Jejich vagón má ve vlaku hvězdičku.</p><div class="sup-list">${supporters().map(n=>`<span>@${esc(n)}</span>`).join("")}</div>`:`<p class="fine" style="margin:0">Zatím tu nikdo není, můžeš být první! Napiš svůj instagramový nick do zprávy u příspěvku a přidáme tě sem.</p>`}
+    ${supporters().length?`<p class="fine" style="margin:10px 0 0">Chceš tu být taky? Napiš svůj instagramový nick do zprávy u příspěvku.</p>`:""}</div>
+  <p class="fine">Podpora je dobrovolná. Vagón máš ve vlaku stejně, jestli přispěješ, nebo ne, podporovatelé dostanou jen hvězdičku a poděkování. Díky, že jedeš s námi! 💛</p>`;
 }
 function sheetGoal(el){
   const I=info();const pct=I.pos/EARTH_KM*100;const left=needFor(EARTH_KM);let cur=false;
@@ -1487,6 +1492,13 @@ function bindCheck(A){
     catch(e){btn.disabled=false;btn.textContent="Spustit kontrolu";if(e.status===401)return adminLogout();$("#fErr").textContent=e.message}};
 }
 function driverPool(){const ok=ADMIN_TICKETS.filter(t=>t.status==="verified");return ok.length?{list:ok,kind:"ověřených"}:{list:ADMIN_TICKETS.filter(t=>t.status==="pending"),kind:"čekajících na ověření"}}
+function supCardHtml(){
+  if(!ONLINE)return "";
+  return `<div class="card"><h3>⭐ Podporovatelé</h3><p class="muted" style="font-size:.9rem">Kdo přispěl a chce být vidět (napsal nick do zprávy na Ko-fi nebo k platbě). Jeden nick na řádek. Na webu budou v kartě Podpoř vlak a jejich vagón dostane hvězdičku.</p>
+    <div class="field"><textarea id="supList" rows="5" placeholder="nick.podporovatele" style="width:100%;font:500 .9rem var(--mono)">${esc(supporters().join("\n"))}</textarea></div>
+    <div class="row-f"><button class="btn primary" type="button" id="supSave">Uložit podporovatele</button></div></div>`;
+}
+function bindSup(A){const b=$("#supSave");if(b)b.onclick=()=>{const list=[...new Set($("#supList").value.split(/[\s,;]+/).map(x=>x.trim().replace(/^@+/,"").toLowerCase()).filter(x=>/^[a-z0-9._]{1,30}$/.test(x)))];S.supporters=list;save(`Podporovatelé uloženi (${list.length})`)}}
 function driverCardHtml(){
   if(!ONLINE)return "";
   const cur=S.driver&&S.driver.nick;const t=cur&&ADMIN_TICKETS.find(x=>x.nick===cur);const p=driverPool();
@@ -1616,6 +1628,7 @@ function renderAdmin(){
     </div>
     ${igCardHtml()}
     ${driverCardHtml()}
+    ${supCardHtml()}
     <div class="card"><h3>Výhybka · ${esc(nodeName(v.at))}</h3>
       <p class="muted" style="font-size:.9rem">Trasa: ${S.route.map(id=>esc(nodeName(id))).join(" → ")}</p>
       <div class="tblbox"><table class="tbl"><thead><tr><th>Směr</th><th>Hlasy</th><th></th></tr></thead><tbody>
@@ -1690,7 +1703,7 @@ function bindAdmin(){
     if(!name||!km||isNaN(lat)||isNaN(lon)){$("#nErr").textContent="Vyplň název, kilometry a obě souřadnice.";return}
     let id=name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")||"st";while(S.nodes[id])id+="2";
     S.nodes[id]={name,lon,lat,lab:"r"};S.edges.push([from,id,km]);if(S.vote&&S.vote.at===from&&!S.route.includes(id))S.vote.options.push({to:id,votes:0});save(`Stanice ${name} přidána`)};
-  bindTickets(A);bindCheck(A);bindDriver(A);bindTypos(A);bindIg(A);
+  bindTickets(A);bindCheck(A);bindDriver(A);bindSup(A);bindTypos(A);bindIg(A);
   const lo=$("#aLogout");if(lo)lo.onclick=()=>{adminLogout();toast("Odhlášeno")};
   $("#dCopy").onclick=()=>{const ta=$("#dJson");const txt=JSON.stringify(S,null,2);const fb=()=>{ta.focus();ta.select();toast("Označeno, zkopíruj Ctrl+C")};if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Data zkopírována"),fb);else fb()};
   $("#dLoad").onclick=()=>{try{const d=JSON.parse($("#dJson").value);if(!d.nodes||!d.route||typeof d.followers!=="number")throw 0;S=d;save("Data načtena")}catch(e){$("#dErr").textContent="Tohle nejsou platná data vlaku. Zkontroluj, že je vložený celý JSON."}};
