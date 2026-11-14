@@ -131,6 +131,8 @@ button.stat:hover{border-color:var(--lamp)}
 .navbtn{background:var(--glass);backdrop-filter:blur(6px)}
 .dock{justify-self:center;display:flex;gap:4px;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:5px;max-width:100%;overflow-x:auto;scrollbar-width:none;backdrop-filter:blur(8px)}
 .dock::-webkit-scrollbar{display:none}
+.sup-card{border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:12px 0;background:var(--glass)}.sup-card h3{margin:0 0 4px;font-size:1rem}
+.dock button.sup{color:#c2410c}
 .dock button{white-space:nowrap;appearance:none;border:0;background:none;color:var(--muted);border-radius:11px;padding:7px 10px;display:grid;justify-items:center;gap:3px;cursor:pointer;min-width:58px;position:relative;font-size:.68rem;font-weight:600;letter-spacing:.02em}
 .dock button svg{width:22px;height:22px}
 .dock button:hover,.dock button[aria-pressed=true]{color:var(--ink);background:var(--panel-2)}
@@ -286,6 +288,7 @@ textarea{min-height:90px;resize:vertical}
       <button type="button" data-open="trasa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19c4 0 4-6 8-6s4-6 8-6"/><circle cx="4" cy="19" r="2"/><circle cx="20" cy="7" r="2"/></svg><span>Trasa</span></button>
       <button type="button" data-open="hlasovani"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V11M12 11L5 4M12 11l7-7"/></svg><span>Hlasování</span><i class="dot" id="voteDot" hidden></i></button>
       <button type="button" data-open="kronika"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11"/></svg><span>Kronika</span></button>
+      <button type="button" data-open="podpora" class="sup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h13v5a5 5 0 01-5 5H9a5 5 0 01-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 010 5H17"/><path d="M8 3v3M12 3v3"/></svg><span>Podpořit</span></button>
       <button type="button" data-open="cil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></svg><span>Cíl</span></button>
     </nav>
   </div>
@@ -1131,7 +1134,7 @@ function closeBoarding(){$("#boarding").hidden=true;try{sessionStorage.setItem(S
 /* ================= SHEETS ================= */
 const SHEETS={
   jizdenka:{t:"Jízdenka",r:sheetTicket},najit:{t:"Najít cestujícího",r:sheetFind},trasa:{t:"Trasa",r:sheetRoute},
-  hlasovani:{t:"Hlasování",r:sheetVote},kronika:{t:"Kronika",r:sheetChron},cil:{t:"Cíl: objet Zemi",r:sheetGoal},info:{t:"Pravidla a soukromí",r:sheetInfo},sdilet:{t:"Sdílet můj vagón",r:sheetShare}
+  hlasovani:{t:"Hlasování",r:sheetVote},kronika:{t:"Kronika",r:sheetChron},cil:{t:"Cíl: objet Zemi",r:sheetGoal},info:{t:"Pravidla a soukromí",r:sheetInfo},podpora:{t:"Podpoř vlak",r:sheetSupport},sdilet:{t:"Sdílet můj vagón",r:sheetShare}
 };
 let openKey=null;
 function openSheet(k,fresh){if(!SHEETS[k])return;$("#sheet").classList.remove("half");Game.setShift(0);if(k==="jizdenka"&&!myTicket){openBoarding();return}
@@ -1286,6 +1289,15 @@ function sheetChron(el){
   const I=info();const list=[...S.chronicle].map((c,i)=>({...c,i})).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||b.i-a.i);
   el.innerHTML=list.map(c=>{const km=I.nodeKm[c.node];return`<article class="entry"><div class="meta"><b>${esc(nodeName(c.node))}</b><span>${esc(fmtDate(c.date))}</span>${km!=null?`<span>${fmtKm(km,0)}. km</span>`:""}</div><h3>${esc(c.title)}</h3><p>${esc(c.text)}</p>
   ${c.task?`<div class="task"><span class="eyebrow">Úkol</span><p style="margin-top:4px">${esc(c.task)}</p></div>`:""}${c.voteResult?`<p class="vres">Výhybka: ${esc(c.voteResult)}</p>`:""}</article>`}).join("")||`<p class="muted">Kronika je zatím prázdná.</p>`;
+}
+const KOFI="https://ko-fi.com/vlakfolloweru";
+function sheetSupport(el){
+  el.innerHTML=`<p>Vlak followerů je zadarmo a bez reklam. Web, úložiště jízdenek a servery ale stojí peníze, a čím víc nás je, tím víc. Každá koruna jde na provoz, aby vlak jel dál. ☕🚂</p>
+  <div class="sup-card"><h3>Převodem z banky</h3><p class="fine" style="margin:0 0 10px">Naskenuj kód v bankovní aplikaci. Bez poplatků, peníze dojdou celé. Kód je na 100 Kč, částku si můžeš změnit.</p>
+    <img src="podpora-qr.jpg" alt="QR platba na účet projektu Vlak followerů" width="496" height="705" style="width:min(220px,62vw);height:auto;display:block;margin:0 auto;border-radius:14px;border:1px solid var(--line)"></div>
+  <div class="sup-card"><h3>Kartou nebo PayPalem</h3><p class="fine" style="margin:0 0 10px">Přes Ko-fi, funguje i ze zahraničí.</p>
+    <a class="btn primary" href="${KOFI}" target="_blank" rel="noopener" style="width:100%;justify-content:center">☕ Podpořit na Ko-fi</a></div>
+  <p class="fine">Podpora je dobrovolná a nic neodemyká. Vagón máš ve vlaku stejně, jestli přispěješ, nebo ne. Díky, že jedeš s námi! 💛</p>`;
 }
 function sheetGoal(el){
   const I=info();const pct=I.pos/EARTH_KM*100;const left=needFor(EARTH_KM);let cur=false;
