@@ -55,6 +55,9 @@ def morph_js(t0, n=GW):
       for(let i=0;i<40;i++){{const e=document.getElementById('cf'+i);if(!e)break;const q=k-1.05;if(q<0){{e.style.opacity=0;continue}}const a=i*2.399,v=700+((i*97)%500);e.style.opacity=Math.max(0,1-q/1.6);e.style.transform=`translate(${{Math.cos(a)*v*q}}px,${{Math.sin(a)*v*q*.7+900*q*q}}px) rotate(${{i*40+q*720}}deg)`}}
       for(let i=0;i<10;i++){{const e=document.getElementById('sk'+i);if(!e)break;const q=k+.6-i*.05;e.style.opacity=q<0||q>.9?0:Math.sin(q/.9*Math.PI);e.style.transform=`scale(${{.5+q}}) rotate(${{q*90}}deg)`}}}}"""
 
+# Vlastní kamera u vagónu (3/4 pohled zblízka); o = [px,py,pz,lx,ly,lz] relativně ke středu vagónu.
+CAM = """(o)=>{const c=__G.camera;window.__cam=o;if(!c.__p){c.__p=1;const L=c.lookAt.bind(c);c.lookAt=(x,y,z)=>{const q=window.__cam;const s=q&&__G.slots.find(v=>v.n===%d&&v.g.visible);if(!s)return L(x,y,z);const X=s.g.position.x;c.position.set(X+q[0],q[1],q[2]);L(X+q[3],q[4],q[5])}}}""" % GW
+
 def morph_html():
     cols = ["#ffd23f", "#ffb020", "#fff3b0", "#e8a317", "#ffffff"]
     cf = ''.join(f'<div class="cf" id="cf{i}" style="left:540px;top:900px;background:{cols[i % 5]}"></div>' for i in range(40))
@@ -64,10 +67,12 @@ def morph_html():
 async def shot(pg, name):
     if name == "g_test":   # zkouška proměny
         await train(pg)
-        await pg.evaluate(f"()=>{{Game.flyTo({GW},.56)}}"); await steps(pg, 220)
+        await pg.evaluate(f"()=>{{Game.flyTo({GW},.6)}}"); await steps(pg, 220)
+        await pg.evaluate(CAM, [8.5, 2.6, 9.5, -1.5, 2.9, 0])
+        await steps(pg, 5)
         await pg.evaluate(ov('<div class="eb">Pro podporovatele</div><div class="ttl">Vagón se mění<br><y>na ZLATÝ</y></div>'))
         await setfull(pg, morph_html())
-        await pg.evaluate(fx(ease + morph_js(1.0)))
+        await pg.evaluate(fx(ease + "{const k=Math.max(0,t-.2);window.__cam=[8.5-k*.5,2.6+k*.05,9.5-k*.6,-1.5,2.9,0]}" + morph_js(1.0)))
         await film.record(pg, name, 4.0, cues={T(2.1): ov('<div class="eb">Pro podporovatele</div><div class="ttl huge"><y>ZLATÝ!</y> ✨</div>')})
 
 async def main():
