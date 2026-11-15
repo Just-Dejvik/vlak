@@ -540,6 +540,11 @@ const Game=(()=>{
   const specialMat=new THREE.MeshStandardMaterial({color:0xc98b2e,roughness:.45,metalness:.35,flatShading:true});
   const roofMat=M(0x5b626d),underMat=M(0x2a2e35);
   const brassMat=new THREE.MeshStandardMaterial({color:0xc9973f,roughness:.35,metalness:.7});
+  /* zlatý vagón pro podporovatele */
+  const goldMat=new THREE.MeshStandardMaterial({color:0xf3c443,roughness:.22,metalness:.55,emissive:0x5a3a00,emissiveIntensity:.35,flatShading:true});
+  const goldRoofMat=new THREE.MeshStandardMaterial({color:0xd9a520,roughness:.3,metalness:.6,emissive:0x3a2400,emissiveIntensity:.3,flatShading:true});
+  const sparkTex=canvasTex(64,64,(g,w,h)=>{const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,"rgba(255,255,255,1)");r.addColorStop(.25,"rgba(255,240,180,.7)");r.addColorStop(1,"rgba(255,220,120,0)");g.fillStyle=r;g.fillRect(0,0,w,h);g.fillStyle="#fff";g.beginPath();g.moveTo(32,0);g.lineTo(35,29);g.lineTo(64,32);g.lineTo(35,35);g.lineTo(32,64);g.lineTo(29,35);g.lineTo(0,32);g.lineTo(29,29);g.fill()});
+  const isGold=n=>{try{const o=occupant(n);return !!(o&&o.nick&&isSupporter(o.nick))}catch{return false}};
   const wheelMat=new THREE.MeshStandardMaterial({color:0x1a1f2a,roughness:.5,metalness:.6});
 
   function canvasTex(w,h,draw){const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");draw(g,w,h);const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t}
@@ -708,6 +713,8 @@ const Game=(()=>{
     s.spokes=[];for(const bx of [-WL/2+2.3,WL/2-2.3]){g.add(mesh(box(2.8,.5,2.3),underMat,bx,.72,0));for(const o of [-.75,.75]){const w=mesh(cyl(.48,.48,.2,16),wheelMat,bx+o,.53,1.22);w.rotation.x=Math.PI/2;g.add(w);const sp=mesh(box(.12,.8,.04),brassMat,bx+o,.53,1.33);g.add(sp);s.spokes.push(sp)}}
     g.add(mesh(box(GAP+.2,.22,.4),underMat,WL/2+GAP/2,1.0,0));
     s.signC=texCanvas(512,80);s.sign=mesh(new THREE.PlaneGeometry(6,.94),new THREE.MeshBasicMaterial({map:s.signC.t,transparent:true}),0,5.15,.6);g.add(s.sign);
+    s.sparks=new THREE.Group();s.sparks.visible=false;g.add(s.sparks);
+    for(let i=0;i<9;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTex,color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));sp.position.set(-WL/2+.6+Math.random()*(WL-1.2),1.4+Math.random()*3.1,1.6);sp.scale.setScalar(.5);sp.userData.ph=Math.random()*6.28;sp.userData.sp=1.5+Math.random()*2;s.sparks.add(sp)}
     for(const m of [s.back,s.fLow,s.fUp,s.roof,...s.pillars,...s.wins]){m.userData.slot=s;pickables.push(m)}
     return s;
   }
@@ -719,10 +726,10 @@ const Game=(()=>{
   function configure(s,n){
     s.n=n;s.g.visible=true;s.g.position.x=wagonX(n);
     const sp=specialsMap().get(n);const r=rng(n*2654435761);
-    const bm=sp?specialMat:bodyMats[Math.floor(r()*bodyMats.length)];
-    for(const m of [s.back,s.endA,s.endB,s.fLow,s.fUp,...s.pillars])m.material=bm;
+    const gold=isGold(n);s.gold=gold;const bm0=sp?specialMat:bodyMats[Math.floor(r()*bodyMats.length)];const bm=gold?goldMat:bm0;s.baseMat=bm0;
+    for(const m of [s.back,s.endA,s.endB,s.fLow,s.fUp,...s.pillars])m.material=bm;s.roof.material=gold?goldRoofMat:roofMat;s.sparks.visible=gold;
     for(const w of s.wins){w.material=r()<.86?winMats[Math.floor(r()*winMats.length)]:darkWinMat}
-    drawPlate(s,n,!!sp);s.sign.visible=!!sp;if(sp)drawSign(s,sp);s.front.visible=true;
+    drawPlate(s,n,!!sp||gold);s.sign.visible=!!sp;if(sp)drawSign(s,sp);s.front.visible=true;
   }
   function updatePool(center,force){const R=Math.floor(POOL/2);
     for(let n=center-R;n<=center+R;n++){const s=slots[((n%POOL)+POOL)%POOL];if(n<1||n>N){s.g.visible=false;s.n=-1;continue}if(s.n!==n||force)configure(s,n)}}
@@ -858,7 +865,7 @@ const Game=(()=>{
   const ovGround=mesh(new THREE.CircleGeometry(60000,72),M(0x6a9e4c));ovGround.rotation.x=-Math.PI/2;ovScene.add(ovGround);
   const ovBody=box(WL,2.95,3);ovBody.translate(0,2.68,0);const ovRoofG=box(WL+.3,.5,3.4);ovRoofG.translate(0,4.3,0);
   let ovAimT=new THREE.Vector3(),ovP=null,ovAim=new THREE.Vector3(),ovSamples=[],ovHeadDir=[1,0],ovC=new THREE.Vector3(),ovLen=1000,ovWid=300,ovHouses=null,ovRoofs=null,ovCap=0,ovWag=null,ovRoof=null,ovStrip=null,ovTrees=null,ovLoco=null,ovLm=null,ovN=-1,ovLmKey=null,ovMine=-1,ovR=100,ovHead=null,ovTail=null,ovMinePos=null;
-  let ovLookOn=false,ovOn=false,ovYaw=Math.PI,ovT=0,ovPitch=.95,ovDist=800,ovTDist=800,ovTPitch=.95,ovIntro=0,ovIdle=0;const ovCbs=[];
+  let goldKey="",ovLookOn=false,ovOn=false,ovYaw=Math.PI,ovT=0,ovPitch=.95,ovDist=800,ovTDist=800,ovTPitch=.95,ovIntro=0,ovIdle=0;const ovCbs=[];
   // had: kolej se vlní krajinou (směr se kolébá tam a zpět), ocas vzadu, lokomotiva vpředu
   function ovPath(L){const xs=[0],zs=[0];const m=Math.max(2,Math.min(9,Math.round(L/3200))),Pp=L/m,TH=1.5;let px=0,pz=0;
     for(let a=1;a<=L+2;a++){const th=TH*Math.sin(2*Math.PI*a/Pp)+.25*Math.sin(2*Math.PI*a/(Pp*2.7)+1);px+=Math.cos(th);pz+=Math.sin(th);xs.push(px);zs.push(pz)}
@@ -869,7 +876,7 @@ const Game=(()=>{
       ovWag=new THREE.InstancedMesh(ovBody,new THREE.MeshStandardMaterial({roughness:.6,metalness:.1,flatShading:true}),ovCap);ovRoof=new THREE.InstancedMesh(ovRoofG,new THREE.MeshStandardMaterial({roughness:.7,flatShading:true}),ovCap);ovScene.add(ovWag,ovRoof)}
     ovWag.count=ovRoof.count=n;const sp=specialsMap();const mine=myTicket?+myTicket.wagon:-1;const c=new THREE.Color();ovMine=-1;
     for(let k=1;k<=n;k++){const q=P.at((n-k)*STEP+STEP/2+4);dummy.position.set(q.x,0,q.z);dummy.rotation.set(0,Math.atan2(-q.dz,q.dx),0);dummy.scale.set(1,4,6);dummy.updateMatrix();ovWag.setMatrixAt(k-1,dummy.matrix);ovRoof.setMatrixAt(k-1,dummy.matrix);
-      if(k===mine){c.set(0xffd23f);ovMinePos=new THREE.Vector3(q.x,6,q.z);ovMine=k}else if(sp.has(k))c.copy(specialMat.color);else{const r=rng(k*2654435761);c.copy(bodyMats[Math.floor(r()*bodyMats.length)].color)}ovWag.setColorAt(k-1,c);ovRoof.setColorAt(k-1,c.multiplyScalar(k===mine?1:.78))}
+      if(k===mine){c.set(0xffd23f);ovMinePos=new THREE.Vector3(q.x,6,q.z);ovMine=k}else if(isGold(k))c.set(0xffc21a);else if(sp.has(k))c.copy(specialMat.color);else{const r=rng(k*2654435761);c.copy(bodyMats[Math.floor(r()*bodyMats.length)].color)}ovWag.setColorAt(k-1,c);ovRoof.setColorAt(k-1,c.multiplyScalar(k===mine?1:.78))}
     ovWag.instanceMatrix.needsUpdate=ovRoof.instanceMatrix.needsUpdate=true;if(ovWag.instanceColor)ovWag.instanceColor.needsUpdate=true;if(ovRoof.instanceColor)ovRoof.instanceColor.needsUpdate=true;
     const h=P.at(n*STEP+11);if(!ovLoco){ovLoco=loco.clone();ovScene.add(ovLoco)}ovLoco.visible=true;ovLoco.position.set(h.x,0,h.z);ovLoco.rotation.set(0,Math.atan2(-h.dz,h.dx),0);ovLoco.scale.set(1.6,4,6);ovHead=new THREE.Vector3(h.x,8,h.z);const t=P.at(4);ovTail=new THREE.Vector3(t.x,6,t.z);
     // štěrkové lože pod kolejí
@@ -995,7 +1002,10 @@ const Game=(()=>{
       cx+=(tx-cx)*Math.min(1,dt*(reduce?60:7));z+=(tz-z)*Math.min(1,dt*(reduce?60:5))}
     cx=clampX(cx);
     const center=nearestWagon(cx);
+    const gk=(Array.isArray(S.supporters)?S.supporters.join(","):"")+"|"+(typeof ROSTER_MAP!=="undefined"?ROSTER_MAP.size:0)+"|"+(myTicket?myTicket.wagon+myTicket.nick:"");
+    if(gk!==goldKey){goldKey=gk;updatePool(Math.max(1,center),true);lastCenter=center}
     if(center!==lastCenter){updatePool(Math.max(1,center),false);lastCenter=center}
+    if(!reduce)for(const sl of slots)if(sl.gold&&sl.g.visible)for(const sp of sl.sparks.children){const v=Math.max(0,Math.sin(now/1000*sp.userData.sp+sp.userData.ph));sp.material.opacity=Math.pow(v,10);sp.scale.setScalar(.25+.55*Math.pow(v,4))}
     const focusN=z<.5&&center>0?center:(z<.5?0:-1);
     if(focusN!==lastFocus){for(const s of slots)s.front.visible=true;
       if(focusN>0){fillInterior(focusN);const s=slots[focusN%POOL];if(s.n===focusN)s.front.visible=false;warm.intensity=.9}
@@ -1300,9 +1310,9 @@ function sheetSupport(el){
     <img src="podpora-qr.jpg" alt="QR platba na účet projektu Vlak followerů" width="496" height="705" style="width:min(220px,62vw);height:auto;display:block;margin:0 auto;border-radius:14px;border:1px solid var(--line)"></div>
   <div class="sup-card"><h3>Kartou nebo PayPalem</h3><p class="fine" style="margin:0 0 10px">Přes Ko-fi, funguje i ze zahraničí.</p>
     <a class="btn primary" href="${KOFI}" target="_blank" rel="noopener" style="width:100%;justify-content:center">☕ Podpořit na Ko-fi</a></div>
-  <div class="sup-card"><h3>⭐ Podporovatelé vlaku</h3>${supporters().length?`<p class="fine" style="margin:0 0 10px">Děkujeme! Jejich vagón má ve vlaku hvězdičku.</p><div class="sup-list">${supporters().map(n=>`<span>@${esc(n)}</span>`).join("")}</div>`:`<p class="fine" style="margin:0">Zatím tu nikdo není, můžeš být první! Napiš svůj instagramový nick do zprávy u příspěvku a přidáme tě sem.</p>`}
+  <div class="sup-card"><h3>⭐ Podporovatelé vlaku</h3>${supporters().length?`<p class="fine" style="margin:0 0 10px">Děkujeme! Jejich vagón ve vlaku září zlatě. ✨</p><div class="sup-list">${supporters().map(n=>`<span>@${esc(n)}</span>`).join("")}</div>`:`<p class="fine" style="margin:0">Zatím tu nikdo není, můžeš být první! Napiš svůj instagramový nick do zprávy u příspěvku, přidáme tě sem a tvůj vagón bude zlatý. ✨</p>`}
     ${supporters().length?`<p class="fine" style="margin:10px 0 0">Chceš tu být taky? Napiš svůj instagramový nick do zprávy u příspěvku.</p>`:""}</div>
-  <p class="fine">Podpora je dobrovolná. Vagón máš ve vlaku stejně, jestli přispěješ, nebo ne, podporovatelé dostanou jen hvězdičku a poděkování. Díky, že jedeš s námi! 💛</p>`;
+  <p class="fine">Podpora je dobrovolná. Vagón máš ve vlaku stejně, jestli přispěješ, nebo ne, podporovatelé dostanou zlatý vagón a poděkování. Díky, že jedeš s námi! 💛</p>`;
 }
 function sheetGoal(el){
   const I=info();const pct=I.pos/EARTH_KM*100;const left=needFor(EARTH_KM);let cur=false;
@@ -1494,7 +1504,7 @@ function bindCheck(A){
 function driverPool(){const ok=ADMIN_TICKETS.filter(t=>t.status==="verified");return ok.length?{list:ok,kind:"ověřených"}:{list:ADMIN_TICKETS.filter(t=>t.status==="pending"),kind:"čekajících na ověření"}}
 function supCardHtml(){
   if(!ONLINE)return "";
-  return `<div class="card"><h3>⭐ Podporovatelé</h3><p class="muted" style="font-size:.9rem">Kdo přispěl a chce být vidět (napsal nick do zprávy na Ko-fi nebo k platbě). Jeden nick na řádek. Na webu budou v kartě Podpoř vlak a jejich vagón dostane hvězdičku.</p>
+  return `<div class="card"><h3>⭐ Podporovatelé</h3><p class="muted" style="font-size:.9rem">Kdo přispěl a chce být vidět (napsal nick do zprávy na Ko-fi nebo k platbě). Jeden nick na řádek. Na webu budou v kartě Podpoř vlak a jejich vagón bude zlatý.</p>
     <div class="field"><textarea id="supList" rows="5" placeholder="nick.podporovatele" style="width:100%;font:500 .9rem var(--mono)">${esc(supporters().join("\n"))}</textarea></div>
     <div class="row-f"><button class="btn primary" type="button" id="supSave">Uložit podporovatele</button></div></div>`;
 }
