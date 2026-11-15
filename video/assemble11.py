@@ -17,7 +17,7 @@ PLAN = [
     ("q6_gold", 5.1, 1640, [("Tak jsem udělal tohle:", "Tak jsem udělal tohle:"), ("kdo vlak podpoří,", "kdo vlak podpoří,"), ("tomu se vagón promění…", "tomu se vagón promění…"), ("na ZLATÝ.", "na ZLATÝ!")]),
     ("q7_first", 5.2, 1700, [("Bude zářit v celém vlaku, a zlatý vagón zatím nemá nikdo.", "Bude zářit v celém vlaku a zlatý vagón zatím nemá nikdo."), ("Kdo bude první?", "Kdo bude první?")]),
     ("q8_btn", 4.45, 1700, [("Tlačítko Podpořit najdeš na webu,", "Tlačítko Podpořit najdeš na webu,"), ("odkaz je v profilu.", "odkaz je v profilu."), ("Stačí i dvacka.", "Stačí i dvacka.")]),
-    ("q9_share", 4.9, 1700, [("A kdo nemůže,", "A kdo nemůže,"), ("nevadí:", "nevadí:"), ("sdílej video,", "sdílej video,"), ("to pomůže taky.", "to pomůže taky. 💛")]),
+    ("q9_share", 4.9, 1700, [("A kdo nemůže,", "A kdo nemůže,"), ("nevadí:", "nevadí:"), ("sdílej video,", "sdílej video,"), ("to pomůže taky.", "to pomůže taky.")]),
 ]
 if len(sys.argv) > 3:  # vlastní časy začátků vět v sekundách, oddělené čárkou
     MANUAL = [float(x) for x in sys.argv[3].split(",")]
