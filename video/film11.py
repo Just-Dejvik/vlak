@@ -25,7 +25,7 @@ EXTRA = r"""
 """
 
 def roster():
-    r = json.loads(film3.roster(300))
+    r = json.loads(film3.roster(560))
     r[GW - 1][1] = GNICK
     return json.dumps(r)
 
