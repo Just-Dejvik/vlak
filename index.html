@@ -547,6 +547,10 @@ const Game=(()=>{
   const goldMat=new THREE.MeshStandardMaterial({color:0xffc83d,roughness:.28,metalness:.92,envMap:goldEnv,envMapIntensity:1.25,emissive:0x4a3000,emissiveIntensity:.25,flatShading:true});
   const goldRoofMat=new THREE.MeshStandardMaterial({color:0xe8b030,roughness:.35,metalness:.9,envMap:goldEnv,envMapIntensity:1.1,flatShading:true});
   const sparkTex=canvasTex(64,64,(g,w,h)=>{const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,"rgba(255,255,255,1)");r.addColorStop(.25,"rgba(255,240,180,.7)");r.addColorStop(1,"rgba(255,220,120,0)");g.fillStyle=r;g.fillRect(0,0,w,h);g.fillStyle="#fff";g.beginPath();g.moveTo(32,0);g.lineTo(35,29);g.lineTo(64,32);g.lineTo(35,35);g.lineTo(32,64);g.lineTo(29,35);g.lineTo(0,32);g.lineTo(29,29);g.fill()});
+  const goldDeco=canvasTex(512,128,(g,w,h)=>{g.clearRect(0,0,w,h);g.strokeStyle="rgba(120,70,0,.85)";g.lineWidth=5;g.strokeRect(10,10,w-20,h-20);g.lineWidth=2;g.strokeRect(22,22,w-44,h-44);
+    for(const x of [70,220,380]){const gr=g.createLinearGradient(x,0,x+60,h);gr.addColorStop(0,"rgba(255,255,255,0)");gr.addColorStop(.5,"rgba(255,255,255,.55)");gr.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=gr;g.beginPath();g.moveTo(x,22);g.lineTo(x+26,22);g.lineTo(x+66,h-22);g.lineTo(x+40,h-22);g.fill()}
+    g.fillStyle="rgba(120,70,0,.9)";g.font="900 46px serif";g.textAlign="center";g.textBaseline="middle";g.fillText("★",36,h/2+2);g.fillText("★",w-36,h/2+2)});
+  const goldDecoMat=new THREE.MeshBasicMaterial({map:goldDeco,transparent:true,depthWrite:false});
   const isGold=n=>{try{const o=occupant(n);return !!(o&&o.nick&&isSupporter(o.nick))}catch{return false}};
   const wheelMat=new THREE.MeshStandardMaterial({color:0x1a1f2a,roughness:.5,metalness:.6});
 
@@ -716,6 +720,7 @@ const Game=(()=>{
     s.spokes=[];for(const bx of [-WL/2+2.3,WL/2-2.3]){g.add(mesh(box(2.8,.5,2.3),underMat,bx,.72,0));for(const o of [-.75,.75]){const w=mesh(cyl(.48,.48,.2,16),wheelMat,bx+o,.53,1.22);w.rotation.x=Math.PI/2;g.add(w);const sp=mesh(box(.12,.8,.04),brassMat,bx+o,.53,1.33);g.add(sp);s.spokes.push(sp)}}
     g.add(mesh(box(GAP+.2,.22,.4),underMat,WL/2+GAP/2,1.0,0));
     s.signC=texCanvas(512,80);s.sign=mesh(new THREE.PlaneGeometry(6,.94),new THREE.MeshBasicMaterial({map:s.signC.t,transparent:true}),0,5.15,.6);g.add(s.sign);
+    s.deco=mesh(new THREE.PlaneGeometry(WL-.2,1.25),goldDecoMat,0,1.9,1.505);s.deco.visible=false;s.front.add(s.deco);
     s.sparks=new THREE.Group();s.sparks.visible=false;g.add(s.sparks);
     for(let i=0;i<9;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTex,color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));sp.position.set(-WL/2+.6+Math.random()*(WL-1.2),1.4+Math.random()*3.1,1.6);sp.scale.setScalar(.5);sp.userData.ph=Math.random()*6.28;sp.userData.sp=1.5+Math.random()*2;s.sparks.add(sp)}
     for(const m of [s.back,s.fLow,s.fUp,s.roof,...s.pillars,...s.wins]){m.userData.slot=s;pickables.push(m)}
@@ -730,7 +735,7 @@ const Game=(()=>{
     s.n=n;s.g.visible=true;s.g.position.x=wagonX(n);
     const sp=specialsMap().get(n);const r=rng(n*2654435761);
     const gold=isGold(n);s.gold=gold;const bm0=sp?specialMat:bodyMats[Math.floor(r()*bodyMats.length)];const bm=gold?goldMat:bm0;s.baseMat=bm0;
-    for(const m of [s.back,s.endA,s.endB,s.fLow,s.fUp,...s.pillars])m.material=bm;s.roof.material=s.roof2.material=gold?goldRoofMat:roofMat;s.sparks.visible=gold;
+    for(const m of [s.back,s.endA,s.endB,s.fLow,s.fUp,...s.pillars])m.material=bm;s.roof.material=s.roof2.material=gold?goldRoofMat:roofMat;s.sparks.visible=gold;s.deco.visible=gold;
     for(const w of s.wins){w.material=r()<.86?winMats[Math.floor(r()*winMats.length)]:darkWinMat}
     drawPlate(s,n,!!sp||gold);s.sign.visible=!!sp;if(sp)drawSign(s,sp);s.front.visible=true;
   }
