@@ -12,6 +12,9 @@ GW = 128           # vagón, který zezlátne (smyšlený nick)
 GNICK = "tvuj.nick"
 
 EXTRA = r"""
+#ovPins .ovcap{display:none}
+.ovpin{font-size:30px!important;padding:14px 20px!important;border-radius:14px!important}
+.ovpin::after{border-width:12px!important;bottom:-12px!important;margin-left:-12px!important}
 .band{position:absolute;top:0;bottom:0;width:420px;left:-500px;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,240,180,.85),rgba(255,255,255,0));mix-blend-mode:screen;opacity:0}
 .flash{position:absolute;inset:0;background:#fff7d6;opacity:0}
 .cf{position:absolute;width:22px;height:34px;border-radius:4px;opacity:0}
