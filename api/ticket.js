@@ -21,6 +21,7 @@ export default wrap(async (req, res) => {
   const b = await body(req);
 
   if (b.action === 'claim') {
+    if (b.age !== true) throw new HttpError(400, 'Potvrď prosím, že je ti aspoň 15 let, nebo že s tím souhlasí rodiče.');
     const ipHash = clientIpHash(req);
     const out = await mutateJSON(FILE, emptyDb, (db) => claim(db, b, ipHash));
     return send(res, 201, out);

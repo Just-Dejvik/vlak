@@ -7,7 +7,7 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SITE="$HERE/_site"; STORE="$HERE/_store"
 rm -rf "$SITE" "$STORE"; mkdir -p "$SITE" "$STORE"
-cp -r "$HERE/../index.html" "$HERE/../api" "$HERE/../lib" "$HERE/../qrcode.js" "$HERE/../og.jpg" "$HERE/../data.json" "$HERE/../package.json" "$SITE/"
+cp -r "$HERE/../index.html" "$HERE/../api" "$HERE/../lib" "$HERE/../qrcode.js" "$HERE/../og.jpg" "$HERE/../data.json" "$HERE/../package.json" "$HERE/../fonts" "$HERE/../vendor" "$HERE/../podpora-qr.jpg" "$SITE/"
 python3 - "$SITE/index.html" <<'PY'
 import sys
 p = sys.argv[1]; s = open(p).read()

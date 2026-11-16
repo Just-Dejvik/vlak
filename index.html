@@ -16,12 +16,17 @@
 <meta property="og:locale" content="cs_CZ">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#4f9fe0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preload" href="/fonts/big-shoulders.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="/fonts/instrument-sans.woff" as="font" type="font/woff" crossorigin>
+<style>
+/* písma leží přímo na našem webu (žádné připojení ke Googlu) – licence SIL OFL, viz /fonts */
+@font-face{font-family:"Big Shoulders Display";src:url(/fonts/big-shoulders.woff) format("woff");font-weight:600 900;font-display:swap}
+@font-face{font-family:"Instrument Sans";src:url(/fonts/instrument-sans.woff) format("woff");font-weight:400 700;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(/fonts/plex-mono-400.woff) format("woff");font-weight:400;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(/fonts/plex-mono-500.woff) format("woff");font-weight:500;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url(/fonts/plex-mono-600.woff) format("woff");font-weight:600;font-display:swap}
+</style>
+<script src="/vendor/three.min.js"></script>
 <script src="/qrcode.js"></script>
 <style>
 /* Layout: hra na celou obrazovku — 3D vlak v slunečném odpoledni vzadu, nahoře tabule s čísly, dole dok s akcemi, panely vyjíždějí jako papírové karty. Nástupiště (jízdenka) je první, co člověk vidí. Jeden světlý svět. */
@@ -469,7 +474,7 @@ async function claimOnline(nickRaw,pub){
   const nick=cleanNick(nickRaw);
   if(!nick)return{err:"Napiš svůj instagramový nick."};
   if(!/^[a-z0-9._]{1,30}$/.test(nick)||/^\./.test(nick)||/\.$/.test(nick))return{err:"Nick může mít jen písmena bez diakritiky, číslice, tečky a podtržítka (max. 30 znaků)."};
-  try{const out=await api("/api/ticket",{method:"POST",body:{action:"claim",nick,public:!!pub,avatar:seededAvatar(hashStr(nick))}});
+  try{const out=await api("/api/ticket",{method:"POST",body:{action:"claim",age:true,nick,public:!!pub,avatar:seededAvatar(hashStr(nick))}});
     myTicket={...out.ticket,token:out.token};saveMy();S.followers+=1;return{ok:true}}
   catch(e){return{err:e.message}}
 }
@@ -1136,13 +1141,14 @@ function renderBoarding(){
       <form class="claim" id="bForm" novalidate>
         <div class="nickrow"><input type="text" id="bNick" placeholder="@tvuj.nick" autocomplete="off" spellcheck="false" maxlength="31" aria-label="Tvůj instagramový nick"><button class="btn primary" type="submit">Nastoupit</button></div>
         <label class="check"><input type="checkbox" id="bHide"><span>Skrýt můj nick před ostatními. Jinak ho ostatní uvidí u tvého vagónu.</span></label>
+        <label class="check"><input type="checkbox" id="bAge"><span>Je mi aspoň 15 let, nebo s tím souhlasí moji rodiče.</span></label>
         <div class="err" id="bErr" role="alert"></div>
         <p class="fine">Nikdy nechceme heslo. Jednou denně jízdenky porovnáme se seznamem sledujících. Když tě do 4 dnů nenajdeme, jízdenka propadne. <a href="#info" data-open="info">Pravidla a soukromí</a></p>
       </form>
       <details class="fine"><summary style="cursor:pointer">Už máš jízdenku na jiném zařízení?</summary><p style="margin-top:6px">Na zařízení, kde sis ji vyzvedl(a), otevři <b>Můj vagón</b> a dole v jízdence načti QR kód z části „Jízdenka na jiném zařízení“. Nemáš to zařízení? Napiš nám na Instagram a pošleme ti nový odkaz.</p></details>
       <button class="linkbtn" type="button" id="bLook">Jen se rozhlédnu</button>`;
     $("#bForm").onsubmit=async e=>{e.preventDefault();const btn=$("#bForm button[type=submit]");if(btn.disabled)return;btn.disabled=true;btn.textContent="Vydávám…";$("#bErr").textContent="";
-      const pub=!$("#bHide").checked;const r=ONLINE?await claimOnline($("#bNick").value,pub):claimTicket($("#bNick").value,pub);
+      const pub=!$("#bHide").checked;if(!$("#bAge").checked){btn.disabled=false;btn.textContent="Nastoupit";$("#bErr").textContent="Potvrď prosím, že je ti aspoň 15 let, nebo že s tím souhlasí rodiče.";return}const r=ONLINE?await claimOnline($("#bNick").value,pub):claimTicket($("#bNick").value,pub);
       btn.disabled=false;btn.textContent="Nastoupit";if(r.err){$("#bErr").textContent=r.err;return}
       closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();Game.flyTo(myTicket.wagon,0);toast(ONLINE?`Vítej na palubě! Vagón № ${fmt(myTicket.wagon)} je tvůj. Follow ověříme do 24 hodin.`:`Vítej na palubě! Tvůj vagón je № ${fmt(myTicket.wagon)}.`);
       if(!isPhone())setTimeout(()=>openSheet("jizdenka",true),Game.ok?3000:0)};
@@ -1349,10 +1355,20 @@ function sheetInfo(el){
       <li>Kdo přestane sledovat, vystoupí. Když se vrátí, dostane svůj vagón zpátky, pokud je volný.</li>
       <li>Nick je u vagónu vidět i pro ostatní. Když nechceš, zaškrtni při vyzvednutí jízdenky „Skrýt můj nick“, nebo ho skryj později v jízdence. Sprosté nebo cizí nicky schováme.</li>
     </ul></div>
-  <div class="card"><h3>Jaké údaje ukládáme</h3><p class="muted">Instagramový nick, číslo vagónu, vzhled tvého panáčka, kdy sis jízdenku vyzvedl(a), kdy jsme tě ověřili a jestli smí být nick vidět. Kvůli ochraně před zneužitím ukládáme na 24 hodin i zašifrovaný otisk připojení, ne samotnou IP adresu. Ze seznamu sledujících si necháváme jen jejich počet a zakódované otisky nicků, podle kterých tě po vyzvednutí jízdenky hned ověříme. Hlasy počítáme z veřejných komentářů pod našimi videy přes oficiální rozhraní Instagramu pro náš vlastní účet; komentáře neukládáme.</p>
-    <p class="muted">Data leží na serverech Vercel ve Frankfurtu a nikomu je neprodáváme. Uchováváme je, dokud projekt běží nebo dokud nepožádáš o smazání.</p></div>
-  <div class="card"><h3>Smazání a kontakt</h3><p class="muted">Jízdenku i nick smažeš sám(a) tlačítkem v jízdence. Případně napiš zprávu na ${ig} a smažeme je do druhého dne. Pokud máš za to, že s údaji zacházíme špatně, můžeš si stěžovat u Úřadu pro ochranu osobních údajů (uoou.gov.cz).</p>
-    <p class="muted">Je ti méně než 15 let? Zeptej se rodičů, jestli s tím souhlasí, než se zapíšeš.</p></div>
+  <div class="card"><h3>Kdo za webem stojí</h3><p class="muted">Web a hru provozuje ${S.operator?esc(S.operator)+", ":""}autor účtu ${ig} (správce osobních údajů). Kontakt: ${S.contact?`<a href="mailto:${esc(S.contact)}">${esc(S.contact)}</a> nebo `:""}zpráva na ${ig}.</p></div>
+  <div class="card"><h3>Jaké údaje ukládáme a proč</h3>
+    <ul class="muted" style="margin:0;padding-left:18px;display:grid;gap:4px">
+      <li><b>Jízdenka:</b> instagramový nick, číslo vagónu, vzhled panáčka, kdy sis jízdenku vyzvedl(a), kdy jsme tě ověřili a jestli smí být nick vidět. Potřebujeme to, abychom ti mohli dát vagón, o který sis řekl(a).</li>
+      <li><b>Zobrazení nicku</b> u vagónu je na tobě: kdykoli ho skryješ jedním zaškrtnutím.</li>
+      <li><b>Ochrana proti zneužití:</b> otisk připojení vytvořený tajným klíčem, který se každý den mění. Samotnou IP adresu neukládáme a otisk po 24 hodinách mažeme.</li>
+      <li><b>Kontrola sledujících:</b> ze seznamu sledujících našeho účtu si necháváme jen jejich počet a zakódované otisky nicků.</li>
+      <li><b>Hlasování:</b> hlasy sčítáme z veřejných komentářů pod našimi videy přes oficiální rozhraní Instagramu. Komentáře neukládáme.</li>
+      <li><b>Podporovatelé:</b> nick do seznamu podporovatelů (a zlatý vagón) přidáme jen tehdy, když ho sám(a) napíšeš ke svému příspěvku. Platby zpracovává tvoje banka, Ko-fi a PayPal, my údaje o kartě ani účtu nevidíme.</li>
+    </ul></div>
+  <div class="card"><h3>Kde data leží a jak dlouho</h3><p class="muted">Web běží na Vercelu a databáze na Upstash, obojí v datacentru ve Frankfurtu (EU). Obě firmy jsou americké a mají certifikaci EU-US Data Privacy Framework. Data nikomu neprodáváme a nepoužíváme je k reklamě. Jízdenku uchováváme, dokud ji máš; propadlou nebo smazanou jízdenku odstraníme.</p></div>
+  <div class="card"><h3>Cookies</h3><p class="muted">Nepoužíváme žádné cookies, reklamu ani sledovací nástroje, proto tu není žádná cookie lišta. Ve tvém prohlížeči si web pamatuje jen tvoji jízdenku a rozdělaného panáčka (místní úložiště), bez toho by hra nefungovala. Písma a 3D knihovnu máme přímo na svém webu, takže se při načtení nepřipojuješ k Googlu ani jiným cizím serverům.</p></div>
+  <div class="card"><h3>Tvoje práva a smazání</h3><p class="muted">Máš právo vědět, co o tobě máme, nechat to opravit nebo smazat a vznést námitku. Jízdenku i nick smažeš sám(a) tlačítkem v jízdence, nebo napiš na ${ig} a smažeme je do druhého dne. Když máš pocit, že s údaji zacházíme špatně, můžeš si stěžovat u Úřadu pro ochranu osobních údajů (uoou.gov.cz).</p></div>
+  <div class="card"><h3>Děti</h3><p class="muted">Jízdenku si můžeš vzít od 15 let. Pokud je ti méně, zeptej se nejdřív rodičů. Rodič může kdykoli napsat a jízdenku dítěte smažeme.</p></div>
   <div class="card"><h3>Ovládání</h3><p class="muted">Táhni do stran a projdeš vlak. Kolečkem, dvěma prsty nebo tahem nahoru přiblížíš. Klepni na vagón a nahlédneš dovnitř.</p></div>
   <p class="fine">${ONLINE?"":`Ukázková verze <span class="demo-tag">ukázka</span>. `}Vzdálenosti po trati jsou přibližné. Projekt nemá nic společného se společností Meta ani Instagramem. <a href="#sprava">Správa</a></p>`;
 }
@@ -1512,6 +1528,14 @@ function bindCheck(A){
     catch(e){btn.disabled=false;btn.textContent="Spustit kontrolu";if(e.status===401)return adminLogout();$("#fErr").textContent=e.message}};
 }
 function driverPool(){const ok=ADMIN_TICKETS.filter(t=>t.status==="verified");return ok.length?{list:ok,kind:"ověřených"}:{list:ADMIN_TICKETS.filter(t=>t.status==="pending"),kind:"čekajících na ověření"}}
+function opCardHtml(){
+  if(!ONLINE)return "";
+  return `<div class="card"><h3>Provozovatel webu</h3><p class="muted" style="font-size:.9rem">Zobrazí se v Pravidlech a soukromí. Zákon (GDPR) chce, aby bylo jasné, kdo web provozuje a jak ho kontaktovat.</p>
+    <div class="field"><span class="lab">Jméno (nepovinné)</span><input type="text" id="opName" maxlength="80" value="${esc(S.operator||"")}" placeholder="Jméno a příjmení"></div>
+    <div class="field"><span class="lab">Kontaktní e-mail</span><input type="email" id="opMail" maxlength="100" value="${esc(S.contact||"")}" placeholder="vlak.followeru@email.cz"></div>
+    <div class="row-f"><button class="btn primary" type="button" id="opSave">Uložit</button></div></div>`;
+}
+function bindOp(){const b=$("#opSave");if(b)b.onclick=()=>{S.operator=$("#opName").value.trim().slice(0,80);const m=$("#opMail").value.trim().slice(0,100);if(m&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){toast("Tohle nevypadá jako e-mail.");return}S.contact=m;save("Provozovatel uložen")}}
 function supCardHtml(){
   if(!ONLINE)return "";
   return `<div class="card"><h3>⭐ Podporovatelé</h3><p class="muted" style="font-size:.9rem">Kdo přispěl a chce být vidět (napsal nick do zprávy na Ko-fi nebo k platbě). Jeden nick na řádek. Na webu budou v kartě Podpoř vlak a jejich vagón bude zlatý.</p>
@@ -1649,6 +1673,7 @@ function renderAdmin(){
     ${igCardHtml()}
     ${driverCardHtml()}
     ${supCardHtml()}
+    ${opCardHtml()}
     <div class="card"><h3>Výhybka · ${esc(nodeName(v.at))}</h3>
       <p class="muted" style="font-size:.9rem">Trasa: ${S.route.map(id=>esc(nodeName(id))).join(" → ")}</p>
       <div class="tblbox"><table class="tbl"><thead><tr><th>Směr</th><th>Hlasy</th><th></th></tr></thead><tbody>
@@ -1723,7 +1748,7 @@ function bindAdmin(){
     if(!name||!km||isNaN(lat)||isNaN(lon)){$("#nErr").textContent="Vyplň název, kilometry a obě souřadnice.";return}
     let id=name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")||"st";while(S.nodes[id])id+="2";
     S.nodes[id]={name,lon,lat,lab:"r"};S.edges.push([from,id,km]);if(S.vote&&S.vote.at===from&&!S.route.includes(id))S.vote.options.push({to:id,votes:0});save(`Stanice ${name} přidána`)};
-  bindTickets(A);bindCheck(A);bindDriver(A);bindSup(A);bindTypos(A);bindIg(A);
+  bindTickets(A);bindCheck(A);bindDriver(A);bindSup(A);bindOp();bindTypos(A);bindIg(A);
   const lo=$("#aLogout");if(lo)lo.onclick=()=>{adminLogout();toast("Odhlášeno")};
   $("#dCopy").onclick=()=>{const ta=$("#dJson");const txt=JSON.stringify(S,null,2);const fb=()=>{ta.focus();ta.select();toast("Označeno, zkopíruj Ctrl+C")};if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Data zkopírována"),fb);else fb()};
   $("#dLoad").onclick=()=>{try{const d=JSON.parse($("#dJson").value);if(!d.nodes||!d.route||typeof d.followers!=="number")throw 0;S=d;save("Data načtena")}catch(e){$("#dErr").textContent="Tohle nejsou platná data vlaku. Zkontroluj, že je vložený celý JSON."}};
