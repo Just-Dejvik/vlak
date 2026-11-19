@@ -71,7 +71,7 @@ const signTex=canvasTex(1024,320,(g,w,h)=>{g.fillStyle='#fffaf0';g.fillRect(0,0,
   g.beginPath();g.moveTo(w/2,20);g.lineTo(w/2,h-20);g.lineWidth=6;g.stroke();
   g.fillStyle='#c99a1e';g.font='900 92px "BS",sans-serif';g.textAlign='center';g.textBaseline='middle';
   g.fillText('◀ MILIONÁŘ',w/4,h/2+4);g.fillStyle='#2f6f9f';g.fillText('LIDI ▶',w*3/4,h/2+4)});
-const sign=new THREE.Group();sign.position.set(4.2,0,4.6);scene.add(sign);
+const sign=new THREE.Group();sign.position.set(7.4,0,-1.2);sign.rotation.y=-.35;scene.add(sign);
 for(const x of [-2.2,2.2])sign.add(mesh(cyl(.09,.09,3.6,8),M(0x5a4030),x,1.8,0));
 sign.add(mesh(box(5.4,1.7,.12),M(0x1e2a33),0,3.2,0));
 {const p=new THREE.Mesh(new THREE.PlaneGeometry(5.2,1.62),new THREE.MeshBasicMaterial({map:signTex}));p.position.set(0,3.2,.07);sign.add(p)}
@@ -85,7 +85,7 @@ function person(o){const g=new THREE.Group();const skin=M(o.skin),shirt=M(o.shir
   g.add(mesh(sph(.27,10,8),shirt,0,.72,0));
   for(const x of [-.13,.13]){g.add(mesh(cyl(.12,.11,.82,8),pants,x,-.4,0));g.add(mesh(box(.2,.14,.3),shoe,x,-.83,.07))}
   const head=new THREE.Group();head.position.set(0,1.0,0);g.add(head);
-  head.add(mesh(sph(.24,14,10),skin,0,0,0));
+  head.scale.setScalar(1.35);head.add(mesh(sph(.24,14,10),skin,0,0,0));
   const hair=mesh(new THREE.SphereGeometry(.255,14,10,0,Math.PI*2,0,Math.PI*.5),M(o.hair),0,.03,-.02);hair.rotation.x=-.35;head.add(hair);
   const eye=M(0x111111);for(const x of [-.085,.085])head.add(mesh(sph(.035,8,6),eye,x,.04,.215));
   const mouth=mesh(sph(.05,8,6),M(0x5a1a14),0,-.09,.205);mouth.scale.set(1,1.4,.5);head.add(mouth);g.userData.mouth=mouth;
@@ -104,7 +104,7 @@ const ropeM=M(0xc9a66b,{roughness:.95});
 // položí postavu napříč kolejí a přiváže ji
 function tie(p,side,s){const tp=pathAt(side,s);const G=new THREE.Group();G.add(p);
   p.rotation.set(-Math.PI/2,0,0);            // na záda, hlava k -z (lokálně)
-  const L=new THREE.Group();L.add(G);L.rotation.y=Math.PI/2-tp.h;L.position.set(tp.x,.62,tp.z);scene.add(L);
+  const L=new THREE.Group();L.add(G);G.scale.setScalar(1.25);L.rotation.y=Math.PI/2-tp.h;L.position.set(tp.x,.72,tp.z);scene.add(L);
   // provazy kolem hrudi, pasu a nohou + ke kolejnicím
   for(const y of [.55,.05,-.55]){const r=mesh(new THREE.TorusGeometry(.33,.035,6,18),ropeM,0,0,0);r.rotation.x=0;r.position.set(0,y,0);r.rotation.set(Math.PI/2,0,0);p.add(r)}
   for(const y of [.7,-.7]){const c=mesh(cyl(.03,.03,.9,6),ropeM,0,0,0);c.position.set(0,y*1.07,-.25);c.rotation.x=.9;p.add(c)}
@@ -149,7 +149,7 @@ const wagCols=[0xd4361f,0x2f6f9f,0x3f8a5c,0xf0a03a,0x7a4fa3,0x2b9fc2,0xc4453a,0x
 const WAG=[];const WL=12.2;
 for(let i=0;i<16;i++){const w=new THREE.Group();const col=M(wagCols[i%8],{roughness:.55});const dark=M(0x2b3440);
   w.add(mesh(box(2.8,2.5,WL-.6),col,0,2.45,0));
-  const roof=mesh(cyl(1.6,1.6,WL-.4,16,1,false,0,Math.PI),M(0x6b7078),0,3.7,0);roof.rotation.set(Math.PI/2,0,Math.PI/2);roof.scale.set(1,1,.35);w.add(roof);
+  w.add(mesh(box(3.1,.22,WL-.3),M(0x6b7078),0,3.8,0));w.add(mesh(box(2.4,.25,WL-.8),M(0x5a5f66),0,4.0,0));
   for(let k=0;k<5;k++)for(const x of [-1.41,1.41])w.add(mesh(box(.04,.9,1.3),M(0xfff4cc,{emissive:0xffe08a,emissiveIntensity:.35}),x,2.85,-4.4+k*2.2));
   w.add(mesh(box(2.4,.35,WL-1),dark,0,1.05,0));
   for(const z of [-4,4])for(const x of [-1.15,1.15]){const wh=mesh(cyl(.5,.5,.2,14),dark,x,.62,z);wh.rotation.z=Math.PI/2;w.add(wh)}
@@ -161,7 +161,7 @@ for(let i=0;i<26;i++){const s=mesh(sph(.6,8,6),smokeM.clone(),0,-50,0,false);sce
 /* ---------- krajina ---------- */
 {const trunk=M(0x6b4a2a),leaf=[M(0x2f6e3c),M(0x3f8a4a),M(0x4f9a52)];
  for(let i=0;i<220;i++){const x=(rnd()-.5)*240,z=-200+rnd()*300;
-   if(Math.abs(x)<9&&z>-5)continue;if(z<0&&z>-70&&(Math.abs(x+pathAt(-1,-z).x)<8||Math.abs(x-pathAt(1,-z).x)<8))continue;if(Math.abs(x)<10&&z<0&&z>-40)continue;
+   if(Math.abs(x)<9&&z>-5)continue;if(z<0&&z>-70&&(Math.abs(x+pathAt(-1,-z).x)<8||Math.abs(x-pathAt(1,-z).x)<8))continue;if(Math.abs(x)<10&&z<0&&z>-40)continue;if(Math.hypot(x-pathAt(-1,24).x,z-pathAt(-1,24).z)<14)continue;
    const s=1+rnd()*1.6;const t=new THREE.Group();t.position.set(x,0,z);t.add(mesh(cyl(.25*s,.32*s,1.6*s,6),trunk,0,.8*s,0));
    t.add(mesh(new THREE.ConeGeometry(1.8*s,3.4*s,7),leaf[i%3],0,3*s,0));t.add(mesh(new THREE.ConeGeometry(1.3*s,2.6*s,7),leaf[(i+1)%3],0,4.4*s,0));scene.add(t)}
  const hill=M(0x5f9a48);for(let i=0;i<9;i++){const h=mesh(sph(60+rnd()*40,16,10),hill,-300+i*80,-30,-260-rnd()*60,false);h.scale.y=.45;scene.add(h)}
@@ -178,16 +178,16 @@ function setTrain(z,speed,t){trainZ=z;train.position.z=z;for(const w of loco.use
   const ph=-z/.85;loco.userData.rods.forEach(r=>{r.position.y=.85+Math.sin(ph)*.25;r.position.z=-.6+Math.cos(ph)*.25});
   // kouř: obláčky vycházejí z komína a stoupají
   for(let i=0;i<SMOKE.length;i++){const s=SMOKE[i];const life=2.4;const k=((t*(1.5+speed*.08)+i/SMOKE.length*life)%life)/life;
-    s.position.set(Math.sin(i*7)*.4*k,4.9+k*7,z-3.4+k*(4+speed*.6));s.scale.setScalar(.5+k*2.6);s.material.opacity=.85*(1-k)}}
+    s.position.set(Math.sin(i*7)*.5*k,4.9+k*6,z-3.4+k*(1.5+speed*.18));s.scale.setScalar(.35+k*1.6);s.material.opacity=.8*(1-k)}}
 function setLever(a){leverA=a;pivot.rotation.z=a}
 function cam(p,l,fov=50){camera.position.copy(p);camera.fov=fov;camera.updateProjectionMatrix();camera.lookAt(l);
   if(shake>0){camera.position.x+=Math.sin(performance.now()*.061)*shake;camera.position.y+=Math.cos(performance.now()*.047)*shake}}
 const proj=(v)=>{const q=v.clone().project(camera);return{x:(q.x*.5+.5)*W,y:(-q.y*.5+.5)*H,z:q.z}};
 const bub=document.getElementById('bub'),bubT=document.getElementById('bubT'),tagL=document.getElementById('tagL'),tagR=document.getElementById('tagR');
-function place(el,v,dy=0,op=1){const p=proj(v);el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';el.style.opacity=p.z<1?op:0}
+function place(el,v,dy=0,op=1){const p=proj(v);if(el===bub){const cx=Math.max(420,Math.min(W-420,p.x));el.firstChild.style.setProperty('--tx',(380+p.x-cx)+'px');p.x=cx}el.style.left=p.x+'px';el.style.top=(p.y+dy)+'px';el.style.opacity=p.z<1?op:0}
 function anim(t){ // postavy se zmítají
   const m=MIL.p;m.userData.arms.forEach((a,i)=>a.rotation.z=(i?-1:1)*(.3+.25*Math.sin(t*9+i)));m.userData.head.rotation.y=Math.sin(t*5)*.35;m.userData.mouth.scale.y=1.2+Math.abs(Math.sin(t*14))*1.4;
-  MIL.L.position.y=.62+Math.abs(Math.sin(t*6))*.04;
+  MIL.L.position.y=.72+Math.abs(Math.sin(t*6))*.04;
   PEOPLE.forEach((P,i)=>{const a=P.p.userData.arms;a[0].rotation.z=.9+Math.sin(t*7+i)*.7;a[1].rotation.z=-.9-Math.sin(t*7.5+i*1.3)*.7;P.p.userData.head.rotation.y=Math.sin(t*4+i)*.4;P.p.userData.mouth.scale.y=1+Math.abs(Math.sin(t*10+i))*1.2});
   HELP.forEach((h,i)=>h.rotation.z=Math.sin(t*3+i)*.08)}
 
@@ -203,21 +203,21 @@ const SH={
     cam(V(lerp(0,0,u),lerp(16,30,u),lerp(22,26,u)),V(0,0,lerp(-14,-22,u)),50);
     place(tagL,V(MILP.x,2.2,MILP.z),0,t>.5?1:0);place(tagR,V(PPL0.x,2.2,-28),0,t>1.0?1:0);bub.style.opacity=0},
   d_left(t){setTrain(18,0,t+7);const u=inout(t/2.9);
-    cam(V(lerp(-2,MILP.x+3.2,u),lerp(10,2.6,u),lerp(6,MILP.z+5.2,u)),V(lerp(-6,MILP.x,u),lerp(1,.9,u),lerp(-10,MILP.z,u)),lerp(50,40,u));
+    cam(V(lerp(-2,MILP.x-.2,u),lerp(12,4.8,u),lerp(8,MILP.z+5.0,u)),V(lerp(-6,MILP.x-.9,u),lerp(1,.8,u),lerp(-10,MILP.z+.2,u)),lerp(50,44,u));
     tagL.style.opacity=0;tagR.style.opacity=0;bub.style.opacity=0},
-  e_mil(t){setTrain(18,0,t+10);cam(V(MILP.x+2.8+Math.sin(t*.4)*.3,2.4,MILP.z+4.6-t*.12),V(MILP.x-.2,.95,MILP.z),40);
-    place(bub,V(MILP.x,2.3,MILP.z),-40,1);tagL.style.opacity=0;tagR.style.opacity=0},
-  f_right(t){setTrain(18,0,t+16);const u=inout(t/2.9);const z=lerp(PPL0.z+2,PPL1.z+6,u);
-    cam(V(PPL0.x+5.2,3.0,z+3),V(PPL0.x-.5,.8,z-3),44);bub.style.opacity=0;tagL.style.opacity=0;tagR.style.opacity=0},
+  e_mil(t){setTrain(18,0,t+10);cam(V(MILP.x-.2+Math.sin(t*.5)*.15,4.8-t*.15,MILP.z+5.0-t*.2),V(MILP.x-.9,.8,MILP.z+.2),44-t*1.1);
+    place(bub,V(MILP.x-1.4,1.8,MILP.z+.6),-40,1);tagL.style.opacity=0;tagR.style.opacity=0},
+  f_right(t){setTrain(18,0,t+16);const u=inout(t/2.9);const q=pathAt(1,lerp(15,38,u)),q2=pathAt(1,lerp(18,41,u));
+    cam(V(q.x+3.0,5.4,q.z+2.6),V(q2.x-.2,.6,q2.z),46);bub.style.opacity=0;tagL.style.opacity=0;tagR.style.opacity=0},
   g_lever(t){setTrain(18,0,t+19);const a=t<1.4?Math.sin(t*2.2)*.1:(t<2.5?lerp(0,.55,ease((t-1.4)/.4)):lerp(.55,-.55,ease((t-2.5)/.4)));setLever(a);
-    cam(V(4.2+lerp(5.5,4,inout(t/3.4)),3.4,2.2+lerp(5,4,inout(t/3.4))),V(4.2,2.3,2.2),46);bub.style.opacity=0;tagL.style.opacity=tagR.style.opacity=0},
+    cam(V(4.2+lerp(-3.5,-2.6,inout(t/3.4)),3.6,2.2+lerp(7.5,6,inout(t/3.4))),V(5.2,2.4,.8),46);bub.style.opacity=0;tagL.style.opacity=tagR.style.opacity=0},
   h_eject(t){setTrain(18,0,t+22);setLever(0);
     // vylosovaní cestující: vagóny vylétají z vlaku
     const sel=[2,5,7,10,13];sel.forEach((i,k)=>{const w=WAG[i];const s=t-1.9-k*.35;if(s<0){w.position.set(0,0,4.5+WL/2+i*WL);w.rotation.set(0,0,0);return}
       const dir=k%2?1:-1;w.position.set(dir*s*14,Math.max(-2,s*14-s*s*9),4.5+WL/2+i*WL+s*2);w.rotation.set(s*1.5,0,dir*s*3)});
     cam(V(-26,15,48),V(0,1,72),48);bub.style.opacity=0},
   i_risk(t){setTrain(18,0,t+27);setLever(Math.sin(t*28)*.03);const u=ease(t/1.8);
-    cam(V(4.2+lerp(3.2,1.9,u),lerp(3.6,3.3,u),2.2+lerp(3.2,1.9,u)),V(4.2,3.4,2.2),lerp(40,32,u));bub.style.opacity=0},
+    cam(V(4.2+lerp(-1.6,-1.0,u),lerp(3.9,3.7,u),2.2+lerp(3.6,2.4,u)),V(4.2,3.5,2.2),lerp(40,32,u));bub.style.opacity=0},
   j_end(t){setTrain(18,0,t+29);setLever(Math.sin(t*1.2)*.12);const u=inout(t/3.4);
     cam(V(lerp(10,2,u),lerp(9,18,u),lerp(22,26,u)),V(0,0,lerp(-10,-18,u)),50);
     place(tagL,V(MILP.x,2.2,MILP.z),0,1);place(tagR,V(PPL0.x,2.2,-28),0,1);bub.style.opacity=0},
