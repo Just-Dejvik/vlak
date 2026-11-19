@@ -478,11 +478,13 @@ async function claimOnline(nickRaw,pub){
     myTicket={...out.ticket,token:out.token};saveMy();S.followers+=1;return{ok:true}}
   catch(e){return{err:e.message}}
 }
+let WARNED=0;
 async function refreshMy(){
   if(!ONLINE||!myTicket||!myTicket.token)return;
   try{const out=await api("/api/ticket?nick="+encodeURIComponent(myTicket.nick),{headers:{"x-ticket-token":myTicket.token}});
     const was=myTicket.status;myTicket={...out.ticket,token:myTicket.token};saveMy();renderHud();Game.setN(wagonCount());Game.refreshWagon();
     if(was==="pending"&&myTicket.status==="verified")toast("Jsi ověřený cestující. Tvůj vagón je № "+fmt(myTicket.wagon)+".");
+    else if(expiringSoon(myTicket)&&!WARNED){WARNED=1;toast(`Nenašli jsme tvůj follow. Dej follow${S.instagram?" @"+S.instagram:""}, jinak jízdenka propadne ${dleft(myTicket)}.`)}
     if(openKey==="jizdenka")sheetTicket($("#sheetBody"))}
   catch(e){
     // po výpadku úložiště: jízdenku z tohohle mobilu založíme znovu se stejným vagónem a panáčkem
@@ -509,7 +511,12 @@ async function applyTransfer(){
     if(myTicket.wagon)Game.flyTo(myTicket.wagon,0);toast(`Jízdenka @${myTicket.nick} je teď i na tomhle zařízení.`)}
   catch(e){toast("Tenhle odkaz na jízdenku už neplatí. Požádej o nový zprávou na Instagramu.")}
 }
-const STATUS_TXT={pending:"Čeká na ověření",verified:"Ověřený cestující",left:"Vystoupil(a)"};
+const STATUS_TXT={pending:"Platná jízdenka",verified:"Ověřený cestující",left:"Vystoupil(a)"};
+/** Při poslední kontrole sledujících jsme cestujícího nenašli (jen když kontrola proběhla až po vyzvednutí jízdenky). */
+const notFound=t=>!!(t&&t.status==="pending"&&S.lastCheck&&S.lastCheck.at>t.createdAt);
+/** …a jízdence zbývají poslední 2 dny: pak ho upozorníme i u vagónu. */
+const expiringSoon=t=>notFound(t)&&t.expiresAt&&t.expiresAt-Date.now()<2*864e5;
+const dleft=t=>{const d=Math.max(0,Math.ceil((t.expiresAt-Date.now())/864e5));return d<=0?"dnes":d===1?"do zítřka":`do ${d} dnů`};
 
 /* ================= 3D GAME ================= */
 const Game=(()=>{
@@ -994,7 +1001,7 @@ const Game=(()=>{
       const L=lbl(i++);if(L.txt!==html){L.d.innerHTML=html;L.txt=html}if(L.cls!==cls){L.d.className=cls;L.cls=cls}L.d.style.transform=`translate(${px.toFixed(1)}px,${py.toFixed(1)}px) translate(-50%,-100%)`;L.d.hidden=false};
     if(DRIVER&&loco.visible&&(focusN===0||z>.3)){const big=focusN===0&&z<.4;set(loco.position.x+3.6,big?5.5:5.6,big?`<small>strojvedoucí</small>${DRIVER.nick?"@"+esc(DRIVER.nick):"tajemný cestující"}`:`🚂 ${DRIVER.nick?"@"+esc(DRIVER.nick):"strojvedoucí"}`,big?"lbl big drv":"lbl drv")}
     if(focusN>0&&z<.4){const occ=occupant(focusN);const x=wagonX(focusN)-.1;
-      if(occ.nick)set(x,3.6,`<small>${occ.me?"Tohle jsi ty · ":""}vagón № ${fmt(focusN)}</small>${isSupporter(occ.nick)?"⭐ ":""}@${esc(occ.nick)}${isSupporter(occ.nick)?"<small>podporovatel vlaku 💛</small>":""}${occ.me&&myTicket.status==="pending"?"<small>čeká na ověření</small>":(occ.me&&!occ.public?"<small>nick vidíš jen ty</small>":"")}`,"lbl big"+(occ.me?" me":""));
+      if(occ.nick)set(x,3.6,`<small>${occ.me?"Tohle jsi ty · ":""}vagón № ${fmt(focusN)}</small>${isSupporter(occ.nick)?"⭐ ":""}@${esc(occ.nick)}${isSupporter(occ.nick)?"<small>podporovatel vlaku 💛</small>":""}${occ.me&&expiringSoon(myTicket)?"<small>⚠️ nenašli jsme tvůj follow</small>":(occ.me&&!occ.public?"<small>nick vidíš jen ty</small>":"")}`,"lbl big"+(occ.me?" me":""));
       else set(x,3.6,`<small>vagón № ${fmt(focusN)}</small>${!ONLINE||HIDDEN.has(focusN)?"cestující se skrytým nickem":(RECOVERING?"čeká na návrat cestujícího":"volný vagón")}`,"lbl big anon");
     }else if(z>.3){const nm=publicNicks();
       for(const s of slots){if(!s.g.visible||s.n<1)continue;const n=nm.get(s.n);if(!n)continue;const me=myTicket&&+myTicket.wagon===s.n;set(s.g.position.x,s.sign.visible?6.1:5.1,(me?"Ty · ":"")+"@"+esc(n),"lbl"+(me?" me":""))}}
@@ -1143,14 +1150,14 @@ function renderBoarding(){
         <label class="check"><input type="checkbox" id="bHide"><span>Skrýt můj nick před ostatními. Jinak ho ostatní uvidí u tvého vagónu.</span></label>
         <label class="check"><input type="checkbox" id="bAge"><span>Je mi aspoň 15 let, nebo s tím souhlasí moji rodiče.</span></label>
         <div class="err" id="bErr" role="alert"></div>
-        <p class="fine">Nikdy nechceme heslo. Jednou denně jízdenky porovnáme se seznamem sledujících. Když tě do 4 dnů nenajdeme, jízdenka propadne. <a href="#info" data-open="info">Pravidla a soukromí</a></p>
+        <p class="fine">Nikdy nechceme heslo. Jízdenky čas od času porovnáme se seznamem sledujících. Když tě do 4 dnů nenajdeme, jízdenka propadne. <a href="#info" data-open="info">Pravidla a soukromí</a></p>
       </form>
       <details class="fine"><summary style="cursor:pointer">Už máš jízdenku na jiném zařízení?</summary><p style="margin-top:6px">Na zařízení, kde sis ji vyzvedl(a), otevři <b>Můj vagón</b> a dole v jízdence načti QR kód z části „Jízdenka na jiném zařízení“. Nemáš to zařízení? Napiš nám na Instagram a pošleme ti nový odkaz.</p></details>
       <button class="linkbtn" type="button" id="bLook">Jen se rozhlédnu</button>`;
     $("#bForm").onsubmit=async e=>{e.preventDefault();const btn=$("#bForm button[type=submit]");if(btn.disabled)return;btn.disabled=true;btn.textContent="Vydávám…";$("#bErr").textContent="";
       const pub=!$("#bHide").checked;if(!$("#bAge").checked){btn.disabled=false;btn.textContent="Nastoupit";$("#bErr").textContent="Potvrď prosím, že je ti aspoň 15 let, nebo že s tím souhlasí rodiče.";return}const r=ONLINE?await claimOnline($("#bNick").value,pub):claimTicket($("#bNick").value,pub);
       btn.disabled=false;btn.textContent="Nastoupit";if(r.err){$("#bErr").textContent=r.err;return}
-      closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();Game.flyTo(myTicket.wagon,0);toast(ONLINE?`Vítej na palubě! Vagón № ${fmt(myTicket.wagon)} je tvůj. Follow ověříme do 24 hodin.`:`Vítej na palubě! Tvůj vagón je № ${fmt(myTicket.wagon)}.`);
+      closeBoarding();renderHud();Game.setN(wagonCount());Game.refreshWagon();Game.flyTo(myTicket.wagon,0);toast(ONLINE?`Vítej na palubě! Vagón № ${fmt(myTicket.wagon)} je tvůj. Nezapomeň dát follow, jinak jízdenka do 4 dnů propadne.`:`Vítej na palubě! Tvůj vagón je № ${fmt(myTicket.wagon)}.`);
       if(!isPhone())setTimeout(()=>openSheet("jizdenka",true),Game.ok?3000:0)};
   }
   $("#bLook").onclick=()=>{closeBoarding();Game.flyTo(Math.min(6,wagonCount()),.75)};
@@ -1188,10 +1195,9 @@ function sheetTicket(el,fresh){
     <div class="row"><span>Do</span><span>vlak nemá konečnou</span></div>
     <div class="row"><span>Stav</span><span>${STATUS_TXT[t.status]||"Platná"}</span></div>
     <div class="row"><span>Vydáno</span><span>${esc(t.createdAt?new Date(t.createdAt).toLocaleDateString("cs-CZ"):fmtDate(t.date))}</span></div></div>
-  ${t.status==="pending"&&ONLINE&&t.token?`<div class="task"${S.lastCheck&&S.lastCheck.at>t.createdAt?' style="border-color:var(--signal)"':""}><span class="eyebrow">${S.lastCheck&&S.lastCheck.at>t.createdAt?"Při kontrole jsme tě nenašli":"Je tvůj nick správně?"}</span>
-    <p style="margin-top:4px">${S.lastCheck&&S.lastCheck.at>t.createdAt?`Mezi sledujícími jsme nenašli <b>@${esc(t.nick)}</b>. Dej follow, nebo oprav nick, jestli ses překlepl(a). Vagón ti zůstane.`:`Ověřujeme podle nicku <b>@${esc(t.nick)}</b>. Musí přesně sedět s tvým Instagramem, i tečky a podtržítka.`}</p>
+  ${notFound(t)&&ONLINE&&t.token?`<div class="task" style="border-color:var(--signal)"><span class="eyebrow">${expiringSoon(t)?`Jízdenka propadne ${dleft(t)}`:"Při kontrole jsme tě nenašli"}</span>
+    <p style="margin-top:4px">Mezi sledujícími${S.instagram?` účtu @${esc(S.instagram)}`:""} jsme nenašli <b>@${esc(t.nick)}</b>. Dej follow, nebo oprav nick, jestli ses překlepl(a). ${t.expiresAt?`Když tě nenajdeme ani po ${new Date(t.expiresAt).toLocaleDateString("cs-CZ")}, jízdenka propadne.`:""}</p>
     <div class="row-f" style="margin-top:8px"><input type="text" id="tRen" value="${esc(t.nick)}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Správný nick"><button class="btn" type="button" id="tRenGo">Opravit nick</button></div><div class="err" id="tRenErr"></div></div>`:""}
-  ${t.status==="pending"?`<div class="task"><span class="eyebrow">Čeká na ověření</span><p style="margin-top:4px">Jednou denně porovnáme jízdenky se seznamem sledujících${S.instagram?` účtu @${esc(S.instagram)}`:""}. Když tě najdeme, staneš se ověřeným cestujícím. Když tě nenajdeme do ${t.expiresAt?new Date(t.expiresAt).toLocaleDateString("cs-CZ"):"4 dnů"}, jízdenka propadne.</p></div>`:""}
   ${t.status==="left"?`<div class="task"><span class="eyebrow">Vystoupil(a) jsi</span><p style="margin-top:4px">Při poslední kontrole jsme tě nenašli mezi sledujícími. Dej znovu follow a vrátíš se do vagónu № ${fmt(t.lastWagon||0)}, pokud bude volný.</p></div>`:""}
   ${t.wagon?`<div class="row-f"><button class="btn primary" type="button" id="tGo" style="flex:1">Ukaž mi můj vagón</button><button class="btn" type="button" data-open="sdilet" style="flex:1">Sdílet můj vagón</button></div>`:""}
   <div class="card" id="tvujCestujici"><h3>Tvůj cestující</h3><p class="muted" style="font-size:.88rem">Uprav si panáčka. Změny hned uvidíš ve vagónu.</p>
@@ -1349,7 +1355,7 @@ function sheetInfo(el){
   <div class="card"><h3>Follow = vagón</h3><p class="muted">Počet cestujících je počet followerů účtu ${ig}. Každý přidá jeden vagón dlouhý ${S.wagonLength} m a posune vlak o ${fmtKm(kmPer())} km dál. Vlak nikdy necouvá: když někdo vystoupí, vagón ubude, ale ujeté kilometry zůstanou.</p></div>
   <div class="card"><h3>Výhybky a vagóny</h3><p class="muted">Na rozcestích a u každého ${fmt(S.specialEvery)}. vagónu hlasujete v komentářích pod videem. Počítají se jen hlasy cestujících s jízdenkou, každý má jeden. Dokud není rozhodnuto, vlak na výhybce počká.</p></div>
   <div class="card"><h3>Strojvedoucí</h3><p class="muted">Na každé stanici vylosujeme z cestujících s jízdenkou jednoho strojvedoucího. Jeho panáček řídí lokomotivu až do další stanice. Kdo má nick skrytý, řídí jako „tajemný cestující“.</p></div>
-  <div class="card"><h3>Jízdenka a kontrola</h3><p class="muted">Jízdenka je dobrovolná a hned dostaneš vagón. Jednou denně porovnáme jízdenky se seznamem sledujících, který si stáhneme z vlastního instagramového účtu. Nic nescrapujeme a nikdy po tobě nechceme heslo.</p>
+  <div class="card"><h3>Jízdenka a kontrola</h3><p class="muted">Jízdenka je dobrovolná a hned dostaneš vagón. Čas od času porovnáme jízdenky se seznamem sledujících, který si stáhneme z vlastního instagramového účtu. Nic nescrapujeme a nikdy po tobě nechceme heslo.</p>
     <ul class="muted" style="margin:6px 0 0;padding-left:18px;display:grid;gap:4px">
       <li>Když tě do 4 dnů nenajdeme mezi sledujícími, jízdenka propadne.</li>
       <li>Kdo přestane sledovat, vystoupí. Když se vrátí, dostane svůj vagón zpátky, pokud je volný.</li>
