@@ -202,7 +202,7 @@ const SH={
   c_both(t){setTrain(18,0,t+4);const u=inout(t/2.6);
     cam(V(lerp(0,0,u),lerp(16,30,u),lerp(22,26,u)),V(0,0,lerp(-14,-22,u)),50);
     place(tagL,V(MILP.x,2.2,MILP.z),0,t>.5?1:0);place(tagR,V(PPL0.x,2.2,-28),0,t>1.0?1:0);bub.style.opacity=0},
-  d_left(t){setTrain(18,0,t+7);const u=inout(t/2.9);
+  d_left(t){setTrain(18,0,t+7);const u=inout(t/1.35);
     cam(V(lerp(-2,MILP.x-.2,u),lerp(12,4.8,u),lerp(8,MILP.z+5.0,u)),V(lerp(-6,MILP.x-.9,u),lerp(1,.8,u),lerp(-10,MILP.z+.2,u)),lerp(50,44,u));
     tagL.style.opacity=0;tagR.style.opacity=0;bub.style.opacity=0},
   e_mil(t){setTrain(18,0,t+10);cam(V(MILP.x-.2+Math.sin(t*.5)*.15,4.8-t*.15,MILP.z+5.0-t*.2),V(MILP.x-.9,.8,MILP.z+.2),44-t*1.1);
@@ -213,7 +213,7 @@ const SH={
     cam(V(4.2+lerp(-3.5,-2.6,inout(t/3.4)),3.6,2.2+lerp(7.5,6,inout(t/3.4))),V(5.2,2.4,.8),46);bub.style.opacity=0;tagL.style.opacity=tagR.style.opacity=0},
   h_eject(t){setTrain(18,0,t+22);setLever(0);
     // vylosovaní cestující: vagóny vylétají z vlaku
-    const sel=[2,5,7,10,13];sel.forEach((i,k)=>{const w=WAG[i];const s=t-1.9-k*.35;if(s<0){w.position.set(0,0,4.5+WL/2+i*WL);w.rotation.set(0,0,0);return}
+    const sel=[2,5,7,10,13];sel.forEach((i,k)=>{const w=WAG[i];const s=t-2.6-k*.35;if(s<0){w.position.set(0,0,4.5+WL/2+i*WL);w.rotation.set(0,0,0);return}
       const dir=k%2?1:-1;w.position.set(dir*s*7,Math.max(-2,s*11-s*s*6.5),4.5+WL/2+i*WL+s*1.5);w.rotation.set(s*.9,0,dir*s*1.8)});
     cam(V(-34,30,30),V(0,0,86),46);bub.style.opacity=0},
   i_risk(t){setTrain(18,0,t+27);setLever(Math.sin(t*28)*.03);const u=ease(t/1.8);

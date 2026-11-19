@@ -12,13 +12,13 @@ PLAN = [
     ("t1_intro", 2.85, 1700, [("Cestou do Paříže jsme narazili na tohle…", "Cestou do Paříže jsme narazili na tohle…")]),
     ("t2_switch", 1.0, 1700, [("Výhybka!", "Výhybka!")]),
     ("t3_both", 2.62, 1720, [("A na obou kolejích jsou přivázaní lidi!", "A na obou kolejích jsou přivázaní lidi!")]),
-    ("t4_left", 2.93, 1720, [("Vlevo milionář…", "Vlevo milionář…")]),
+    ("t4_left", 1.42, 1720, [("Vlevo milionář…", "Vlevo milionář…")]),
     ("t5_mil", 6.2, 1720, [("Zachraňte mě a dám vám TURBO!", "„Zachraňte mě a dám vám TURBO!"), ("Vlak pojede dvakrát rychleji", "Vlak pojede dvakrát rychleji"), ("a každý dostane cylindr!", "a každý dostane cylindr!“")]),
-    ("t6_right", 2.88, 1720, [("Vpravo dvacet lidí…", "Vpravo dvacet lidí…"), ("a nenabízí nic.", "a nenabízí nic.")]),
-    ("t7_lever", 3.39, 1540, [("Rozhodujete vy.", "Rozhodujete vy."), ("Napište MILIONÁŘ,", "Napište MILIONÁŘ,"), ("nebo LIDI.", "nebo LIDI.")]),
-    ("t8_eject", 5.11, 1720, [("Ale pozor: když vyhraje milionář,", "Ale pozor: když vyhraje milionář,"), ("vylosuju dvacet jeho voličů", "vylosuju dvacet jeho voličů"), ("a ty z vlaku vyhodím.", "a ty z vlaku vyhodím.")]),
+    ("t6_right", 3.45, 1720, [("a vpravo dvacet lidí…", "A vpravo dvacet lidí…"), ("a nenabízí nic.", "a nenabízí nic.")]),
+    ("t7_lever", 3.75, 1540, [("Rozhodujete vy.", "Rozhodujete vy."), ("Napište MILIONÁŘ,", "Napište MILIONÁŘ,"), ("nebo LIDI.", "nebo LIDI.")]),
+    ("t8_eject", 6.05, 1720, [("Ale pozor:", "Ale pozor:"), ("když vyhraje milionář,", "když vyhraje milionář,"), ("vylosuju dvacet jeho voličů", "vylosuju dvacet jeho voličů"), ("a ty z vlaku vyhodím.", "a ty z vlaku vyhodím.")]),
     ("t9_risk", 1.83, 1720, [("Takže…", "Takže…"), ("riskneš to?", "riskneš to?")]),
-    ("t10_end", 3.2, 1540, [("Výsledek bude v příštím videu!", "Výsledek bude v příštím videu!")]),
+    ("t10_end", 3.5, 1540, [("Výsledek bude v příštím videu!", "Výsledek bude v příštím videu!")]),
 ]
 if len(sys.argv) > 3:  # vlastní časy začátků vět v sekundách, oddělené čárkou
     MANUAL = [float(x) for x in sys.argv[3].split(",")]

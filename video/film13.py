@@ -54,29 +54,28 @@ async def shot(pg, name):
     elif name == "t4_left":     # 6,42–9,35: Vlevo milionář…
         await S("d_left")
         await pg.evaluate(ov('<div class="eb">Vlevo</div><div class="ttl"><y>Milionář</y></div>'))
-        await film.record(pg, name, 2.93)
+        await film.record(pg, name, 1.42)
     elif name == "t5_mil":      # 9,35–15,55: „Zachraňte mě a dám vám TURBO! Vlak pojede dvakrát rychleji a každý dostane cylindr!“
-        await S("e_mil", bub="Zachraňte mě!")
+        await S("e_mil", bub="Zachraňte mě a dám vám <y>TURBO!</y> 🚀")
         await pg.evaluate(ov(''))
-        cues = {T(.9): "()=>BUB('Zachraňte mě a dám vám <y>TURBO!</y> 🚀')",
-                T(2.45): "()=>BUB('Vlak pojede <y>2× rychleji</y>…')",
-                T(4.5): "()=>BUB('…a každý dostane <y>CYLINDR!</y> 🎩')"}
+        cues = {T(2.45): "()=>BUB('Vlak pojede <y>2× rychleji</y>…')",
+                T(4.55): "()=>BUB('…a každý dostane <y>CYLINDR!</y> 🎩')"}
         await film.record(pg, name, 6.2, cues=cues)
     elif name == "t6_right":    # 15,55–18,43: Vpravo dvacet lidí… a nenabízí nic.
         await S("f_right")
         await pg.evaluate(ov('<div class="eb">Vpravo</div><div class="ttl"><y>20 lidí</y></div>'))
-        await film.record(pg, name, 2.88, cues={T(1.66): ov('<div class="eb">Nabízí</div><div class="ttl huge">Nic 🤷</div>')})
+        await film.record(pg, name, 3.45, cues={T(1.74): ov('<div class="eb">Nabízí</div><div class="ttl huge">Nic 🤷</div>')})
     elif name == "t7_lever":    # 18,43–21,82: Rozhodujete vy. Napište MILIONÁŘ, nebo LIDI.
         await S("g_lever")
         await pg.evaluate(ov('<div class="eb">Páka je v tvých rukou</div><div class="ttl">Rozhodujete<br><y>vy!</y></div>'))
-        h, js = opts((1.43, 2.51))
+        h, js = opts((1.25, 2.69))
         await full(h); await pg.evaluate(film4.fx(js))
-        await film.record(pg, name, 3.39, cues={T(1.43): ov('<div class="eb">Napište do komentářů</div><div class="ttl">Milionář,<br><y>nebo lidi?</y></div>')})
+        await film.record(pg, name, 3.75, cues={T(1.25): ov('<div class="eb">Napište do komentářů</div><div class="ttl">Milionář,<br><y>nebo lidi?</y></div>')})
     elif name == "t8_eject":    # 21,82–26,93: Ale pozor: když vyhraje milionář, vylosuju 20 jeho voličů a ty z vlaku vyhodím.
         await S("h_eject")
         await pg.evaluate(ov('<div class="eb">Ale pozor!</div><div class="ttl">Když vyhraje<br><y>milionář…</y></div>'))
-        await film.record(pg, name, 5.11, cues={T(1.61): ov('<div class="eb">Vylosuju</div><div class="ttl">20 jeho<br><y>voličů…</y></div>'),
-                                               T(3.44): ov('<div class="eb">A ty</div><div class="ttl huge"><y>Vyhodím!</y></div>')})
+        await film.record(pg, name, 6.05, cues={T(2.56): ov('<div class="eb">Vylosuju</div><div class="ttl">20 jeho<br><y>voličů…</y></div>'),
+                                               T(4.38): ov('<div class="eb">A ty</div><div class="ttl huge"><y>Vyhodím!</y></div>')})
     elif name == "t9_risk":     # 26,93–28,76: Takže… riskneš to?
         await S("i_risk")
         await full('<div style="position:absolute;inset:0;background:radial-gradient(circle,rgba(0,0,0,0) 35%,rgba(0,0,0,.6))"></div>')
@@ -87,7 +86,7 @@ async def shot(pg, name):
         await pg.evaluate(ov('<div class="eb">Hlasuj v komentářích 👇</div><div class="ttl">Výsledek<br><y>příště!</y></div>'))
         h, js = opts((.2, .35))
         await full(h); await pg.evaluate(film4.fx(js))
-        await film.record(pg, name, 3.2)
+        await film.record(pg, name, 3.5)
 
 ALL = ["t1_intro", "t2_switch", "t3_both", "t4_left", "t5_mil", "t6_right", "t7_lever", "t8_eject", "t9_risk", "t10_end"]
 
