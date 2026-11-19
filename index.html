@@ -464,7 +464,7 @@ function claimTicket(nickRaw,pub){
   const nick=cleanNick(nickRaw);
   if(!nick)return{err:"Napiš svůj instagramový nick."};
   if(!/^[a-z0-9._]{1,30}$/.test(nick)||/^\./.test(nick)||/\.$/.test(nick))return{err:"Nick může mít jen písmena bez diakritiky, číslice, tečky a podtržítka (max. 30 znaků)."};
-  if((S.tickets||[]).some(t=>t.nick===nick))return{err:"Tenhle nick už jízdenku má. Pokud je tvůj, napiš nám zprávu na Instagram."};
+  if((S.tickets||[]).some(t=>t.nick===nick))return{err:"Tenhle nick už jízdenku má. Pokud je tvůj, napiš nám zprávu na Instagram a pošleme ti odkaz na tvůj vagón."};
   const taken=new Set((S.tickets||[]).map(t=>+t.wagon));let w=1;while(taken.has(w))w++;
   if(w>S.followers)return{err:"Všechny vagóny jsou obsazené. Počkej na nové cestující."};
   myTicket={nick,wagon:w,public:!!pub,status:"verified",createdAt:Date.now(),avatar:seededAvatar(hashStr(nick))};
@@ -1372,7 +1372,7 @@ function sheetInfo(el){
       <li><b>Podporovatelé:</b> nick do seznamu podporovatelů (a zlatý vagón) přidáme jen tehdy, když ho sám(a) napíšeš ke svému příspěvku. Platby zpracovává tvoje banka, Ko-fi a PayPal, my údaje o kartě ani účtu nevidíme.</li>
     </ul></div>
   <div class="card"><h3>Kde data leží a jak dlouho</h3><p class="muted">Web běží na Vercelu a databáze na Upstash, obojí v datacentru ve Frankfurtu (EU). Obě firmy jsou americké a mají certifikaci EU-US Data Privacy Framework. Data nikomu neprodáváme a nepoužíváme je k reklamě. Jízdenku uchováváme, dokud ji máš; propadlou nebo smazanou jízdenku odstraníme.</p></div>
-  <div class="card"><h3>Cookies</h3><p class="muted">Nepoužíváme žádné cookies, reklamu ani sledovací nástroje, proto tu není žádná cookie lišta. Ve tvém prohlížeči si web pamatuje jen tvoji jízdenku a rozdělaného panáčka (místní úložiště), bez toho by hra nefungovala. Písma a 3D knihovnu máme přímo na svém webu, takže se při načtení nepřipojuješ k Googlu ani jiným cizím serverům.</p></div>
+  <div class="card"><h3>Cookies</h3><p class="muted">Nepoužíváme reklamu, analytiku ani sledovací cookies, proto tu není žádná cookie lišta. Ve tvém prohlížeči si web pamatuje jen tvoji jízdenku a rozdělaného panáčka (místní úložiště) a jednu technickou cookie <b>vf_t</b> se zálohou klíče k tvé jízdence, aby se ti vagón neztratil, když prohlížeč smaže místní data. Vydrží nejvýš 400 dní a smaže se, když jízdenku zrušíš. Bez toho by hra nefungovala, proto k tomu není potřeba souhlas. Písma a 3D knihovnu máme přímo na svém webu, takže se při načtení nepřipojuješ k Googlu ani jiným cizím serverům.</p></div>
   <div class="card"><h3>Tvoje práva a smazání</h3><p class="muted">Máš právo vědět, co o tobě máme, nechat to opravit nebo smazat a vznést námitku. Jízdenku i nick smažeš sám(a) tlačítkem v jízdence, nebo napiš na ${ig} a smažeme je do druhého dne. Když máš pocit, že s údaji zacházíme špatně, můžeš si stěžovat u Úřadu pro ochranu osobních údajů (uoou.gov.cz).</p></div>
   <div class="card"><h3>Děti</h3><p class="muted">Jízdenku si můžeš vzít od 15 let. Pokud je ti méně, zeptej se nejdřív rodičů. Rodič může kdykoli napsat a jízdenku dítěte smažeme.</p></div>
   <div class="card"><h3>Ovládání</h3><p class="muted">Táhni do stran a projdeš vlak. Kolečkem, dvěma prsty nebo tahem nahoru přiblížíš. Klepni na vagón a nahlédneš dovnitř.</p></div>
@@ -1789,7 +1789,10 @@ async function init(){
   if(!ONLINE){try{const r=await fetch("data.json",{cache:"no-store"});if(r.ok){const d=await r.json();if(d&&d.nodes&&d.route)BASE=d}}catch(e){}}
   const draft=ONLINE?null:lsGet(KEY);if(draft){try{S=JSON.parse(draft);localDraft=true}catch(e){S=clone(BASE)}}else S=clone(BASE);
   if(ONLINE){try{ADMIN_PW=sessionStorage.getItem(ADMKEY)}catch(e){}}
-  loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;route();if(Game.ok)Game.setDriver(DRIVER);if(PENDING_TRANSFER)applyTransfer();else refreshMy();
+  loadMy();if(ONLINE&&myTicket&&!myTicket.token)myTicket=null;
+  // Instagram občas smaže místní úložiště webu: jízdenku pak načteme ze záložní cookie
+  if(ONLINE&&!myTicket&&!PENDING_TRANSFER){try{const out=await api("/api/ticket?me=1");if(out.ticket&&out.token){myTicket={...out.ticket,token:out.token};saveMy()}}catch(e){}}
+  route();if(Game.ok)Game.setDriver(DRIVER);if(PENDING_TRANSFER)applyTransfer();else refreshMy();
   if(ONLINE)setInterval(async()=>{if(document.hidden||location.hash==="#sprava")return;try{const d=await loadWorld();const before=JSON.stringify(ROSTER);S=d.state;setRoster(d.roster);COUNTS=d.counts;DRIVER=d.driver||null;HIDDEN=new Set(d.hidden||[]);if(Game.ok)Game.setDriver(DRIVER);renderHud();Game.setN(wagonCount());if(JSON.stringify(ROSTER)!==before)Game.refreshWagon()}catch(e){}},60000);
   const h=location.hash.slice(1);
   let seen=false;try{seen=sessionStorage.getItem(SEENKEY)==="1"}catch(e){}
