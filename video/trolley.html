@@ -214,8 +214,8 @@ const SH={
   h_eject(t){setTrain(18,0,t+22);setLever(0);
     // vylosovaní cestující: vagóny vylétají z vlaku
     const sel=[2,5,7,10,13];sel.forEach((i,k)=>{const w=WAG[i];const s=t-1.9-k*.35;if(s<0){w.position.set(0,0,4.5+WL/2+i*WL);w.rotation.set(0,0,0);return}
-      const dir=k%2?1:-1;w.position.set(dir*s*14,Math.max(-2,s*14-s*s*9),4.5+WL/2+i*WL+s*2);w.rotation.set(s*1.5,0,dir*s*3)});
-    cam(V(-26,15,48),V(0,1,72),48);bub.style.opacity=0},
+      const dir=k%2?1:-1;w.position.set(dir*s*7,Math.max(-2,s*11-s*s*6.5),4.5+WL/2+i*WL+s*1.5);w.rotation.set(s*.9,0,dir*s*1.8)});
+    cam(V(-34,30,30),V(0,0,86),46);bub.style.opacity=0},
   i_risk(t){setTrain(18,0,t+27);setLever(Math.sin(t*28)*.03);const u=ease(t/1.8);
     cam(V(4.2+lerp(-1.6,-1.0,u),lerp(3.9,3.7,u),2.2+lerp(3.6,2.4,u)),V(4.2,3.5,2.2),lerp(40,32,u));bub.style.opacity=0},
   j_end(t){setTrain(18,0,t+29);setLever(Math.sin(t*1.2)*.12);const u=inout(t/3.4);
