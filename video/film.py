@@ -63,7 +63,10 @@ async def snap(pg, path, quality=90):
     if sess is None:
         sess = await pg.context.new_cdp_session(pg)
         pg._vf_cdp = sess
-    r = await sess.send("Page.captureScreenshot", {"format": "jpeg", "quality": quality})
+    opts = {"format": "jpeg", "quality": quality}
+    sc = getattr(pg, "_vf_scale", None)
+    if sc: opts["clip"] = {"x": 0, "y": 0, "width": pg.viewport_size["width"], "height": pg.viewport_size["height"], "scale": sc}
+    r = await sess.send("Page.captureScreenshot", opts)
     with open(path, "wb") as f: f.write(base64.b64decode(r["data"]))
 
 async def record(pg, name, seconds, warm=0, cues=None):
