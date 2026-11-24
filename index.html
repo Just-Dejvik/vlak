@@ -1580,7 +1580,7 @@ function coalGame(){
   function setGold(g){bladeParts.forEach(p=>p.material=g?goldM:steelM);q("#cGs").hidden=!g}
 
   // rozvržení a kamera (na výšku se kotel musí vejít na šířku)
-  function resize(){if(!ok)return;const w=innerWidth,h=innerHeight;R.setPixelRatio(Math.min(1.75,devicePixelRatio||1));R.setSize(w,h,false);cam.aspect=w/h;
+  function resize(){if(!ok)return;const w=innerWidth,h=innerHeight;R.setPixelRatio(Math.min(window.__coalDpr||1.75,devicePixelRatio||1));R.setSize(w,h,false);cam.aspect=w/h;
     cam.position.set(0,1.6,3.3);cam.lookAt(0,1.2,0);cam.fov=Math.max(50,Math.min(78,2*Math.atan(Math.tan(Math.atan(1.35/3.3))/cam.aspect)*180/Math.PI));cam.updateProjectionMatrix()}
   addEventListener("resize",()=>{if(open)resize()});
   const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
