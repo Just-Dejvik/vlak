@@ -10,6 +10,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#9fd4f2}canvas{display
 #bub y{color:#d4361f}
 .tag3{position:fixed;left:0;top:0;z-index:55;transform:translate(-50%,-100%);font:900 64px/1 BS,sans-serif;text-transform:uppercase;color:#fff;padding:16px 30px;border-radius:22px;box-shadow:0 12px 30px rgba(0,0,0,.3);opacity:0;white-space:nowrap}
 </style></head><body>
+<div id="flash" style="position:fixed;inset:0;background:#fff;z-index:58;opacity:0;pointer-events:none"></div>
 <div id="bub"><div class="b" id="bubT"></div></div>
 <div class="tag3" id="tagL" style="background:#c99a1e">💰 Milionář</div>
 <div class="tag3" id="tagR" style="background:#2f6f9f">👥 20 lidí</div>
@@ -106,9 +107,10 @@ function tie(p,side,s){const tp=pathAt(side,s);const G=new THREE.Group();G.add(p
   p.rotation.set(-Math.PI/2,0,0);            // na záda, hlava k -z (lokálně)
   const L=new THREE.Group();L.add(G);G.scale.setScalar(1.25);L.rotation.y=Math.PI/2-tp.h;L.position.set(tp.x,.72,tp.z);scene.add(L);
   // provazy kolem hrudi, pasu a nohou + ke kolejnicím
-  for(const y of [.55,.05,-.55]){const r=mesh(new THREE.TorusGeometry(.33,.035,6,18),ropeM,0,0,0);r.rotation.x=0;r.position.set(0,y,0);r.rotation.set(Math.PI/2,0,0);p.add(r)}
-  for(const y of [.7,-.7]){const c=mesh(cyl(.03,.03,.9,6),ropeM,0,0,0);c.position.set(0,y*1.07,-.25);c.rotation.x=.9;p.add(c)}
-  return{L,p,tp}}
+  const ropes=[];
+  for(const y of [.55,.05,-.55]){const r=mesh(new THREE.TorusGeometry(.33,.035,6,18),ropeM,0,0,0);r.rotation.x=0;r.position.set(0,y,0);r.rotation.set(Math.PI/2,0,0);p.add(r);ropes.push(r)}
+  for(const y of [.7,-.7]){const c=mesh(cyl(.03,.03,.9,6),ropeM,0,0,0);c.position.set(0,y*1.07,-.25);c.rotation.x=.9;p.add(c);ropes.push(c)}
+  return{L,p,tp,ropes,ry:L.rotation.y}}
 
 // milionář vlevo
 const MIL=tie(person({skin:0xf1c9a5,shirt:0x1b1d24,pants:0x1b1d24,hair:0xdedede,top:true,mono:true,stache:true,bow:true,suit:true}),-1,24);
@@ -191,6 +193,42 @@ function anim(t){ // postavy se zmítají
   PEOPLE.forEach((P,i)=>{const a=P.p.userData.arms;a[0].rotation.z=.9+Math.sin(t*7+i)*.7;a[1].rotation.z=-.9-Math.sin(t*7.5+i*1.3)*.7;P.p.userData.head.rotation.y=Math.sin(t*4+i)*.4;P.p.userData.mouth.scale.y=1+Math.abs(Math.sin(t*10+i))*1.2});
   HELP.forEach((h,i)=>h.rotation.z=Math.sin(t*3+i)*.08)}
 
+/* ---------- díl 14: vlak po větvi, zachránění lidé, peníze a cylindr ---------- */
+function setTrainPath(side,sf,t){train.position.set(0,0,0);
+  const put=(o,s)=>{const p=pathAt(side,s);o.position.set(p.x,0,p.z);o.rotation.y=-p.h};
+  put(loco,sf);WAG.forEach((w,i)=>{put(w,sf-(4.5+WL/2+i*WL))});
+  for(const w of loco.userData.wheels)w.rotation.x=sf/.85;const ph=sf/.85;loco.userData.rods.forEach(r=>{r.position.y=.85+Math.sin(ph)*.25;r.position.z=-.6+Math.cos(ph)*.25});
+  const ch=loco.localToWorld(V(0,4.9,-3.4)),bk=loco.localToWorld(V(0,4.9,2)).sub(ch).normalize();
+  for(let i=0;i<SMOKE.length;i++){const s=SMOKE[i];const k=((t*2.2+i/SMOKE.length*1.6)%1.6)/1.6;s.position.copy(ch).addScaledVector(bk,k*9).add(V(Math.sin(i*7)*.4*k,k*3,0));s.scale.setScalar(.35+k*1.5);s.material.opacity=.75*(1-k)}}
+function resetTrain(){loco.position.set(0,0,0);loco.rotation.set(0,0,0);WAG.forEach((w,i)=>{w.position.set(0,0,4.5+WL/2+i*WL);w.rotation.set(0,0,0);w.visible=true})}
+function savePeople(s,t){PEOPLE.forEach((P,i)=>{const k=Math.max(0,Math.min(1,(s-i*.035)/.4)),e=inout(k);
+  P.ropes.forEach(r=>r.visible=k<.08);P.p.rotation.x=lerp(-Math.PI/2,0,e);
+  const jump=k>=1?Math.abs(Math.sin(t*7+i*1.7))*.55:0;
+  P.L.position.set(P.tp.x+lerp(0,2.3,e),lerp(.72,1.13,e)+jump,P.tp.z);P.L.rotation.y=P.ry;
+  const a=P.p.userData.arms;if(k>0){a[0].rotation.z=lerp(a[0].rotation.z,2.6+Math.sin(t*9+i)*.35,e);a[1].rotation.z=lerp(a[1].rotation.z,-2.6-Math.sin(t*9.5+i)*.35,e)}
+  P.p.userData.mouth.scale.y=1.6+Math.abs(Math.sin(t*8+i))*.8})}
+function tiePeople(){PEOPLE.forEach(P=>{P.ropes.forEach(r=>r.visible=true);P.p.rotation.x=-Math.PI/2;P.L.position.set(P.tp.x,.72,P.tp.z)})}
+const billTex=canvasTex(256,128,(g,w,h)=>{g.fillStyle='#7fbf6a';g.fillRect(0,0,w,h);g.strokeStyle='#2f6b2a';g.lineWidth=10;g.strokeRect(8,8,w-16,h-16);g.beginPath();g.arc(w/2,h/2,34,0,7);g.fillStyle='#cfe8c0';g.fill();g.fillStyle='#2f6b2a';g.font='900 64px serif';g.textAlign='center';g.textBaseline='middle';g.fillText('$',w/2,h/2+4);g.font='900 30px sans-serif';g.fillText('100',40,30);g.fillText('100',w-40,h-28)});
+const billM=new THREE.MeshStandardMaterial({map:billTex,side:THREE.DoubleSide,roughness:.9});
+const BILLS=[];for(let i=0;i<46;i++){const b=new THREE.Mesh(new THREE.PlaneGeometry(.9,.45),billM);b.castShadow=true;b.visible=false;scene.add(b);
+  BILLS.push({b,vx:(rnd()-.5)*9,vy:5+rnd()*9,vz:(rnd()-.5)*7,sp:rnd()*6+2,ph:rnd()*6})}
+const COINS=[];for(let i=0;i<16;i++){const c=mesh(cyl(.16,.16,.04,14),M(0xf0c040,{metalness:.7,roughness:.3}),0,-9,0);scene.add(c);COINS.push({c,vx:(rnd()-.5)*7,vy:6+rnd()*6,vz:(rnd()-.5)*6})}
+const HAT=new THREE.Group();{const hm=M(0x151515,{roughness:.4});HAT.add(mesh(cyl(.45,.45,.05,20),hm,0,0,0));HAT.add(mesh(cyl(.28,.3,.58,20),hm,0,.3,0));HAT.add(mesh(cyl(.305,.305,.1,20),M(0x8a1a1a),0,.08,0))}
+HAT.visible=false;scene.add(HAT);
+const HIT0=V(MILP_X(),1.0,MILP_Z()),HATEND=V(MILP_X()-3.6,.04,MILP_Z()-2.8);
+function MILP_X(){return pathAt(-1,24).x}function MILP_Z(){return pathAt(-1,24).z}
+function burst(k){ // k = s od nárazu
+  const on=k>=0;MIL.L.visible=!on;
+  BILLS.forEach((o,i)=>{o.b.visible=on;if(!on)return;const d=(1-Math.exp(-1.6*k))/1.6;
+    let y=HIT0.y+o.vy*d-1.1*k-1.2*k*k*Math.exp(-k);y=Math.max(.03+i*.002,y);
+    o.b.position.set(HIT0.x+o.vx*d+Math.sin(k*o.sp+o.ph)*.5,y,HIT0.z+o.vz*d);
+    if(y>.05)o.b.rotation.set(k*o.sp+o.ph,k*o.sp*.7,Math.sin(k*3+o.ph));else o.b.rotation.set(-Math.PI/2,0,o.ph)});
+  COINS.forEach(o=>{if(!on){o.c.position.y=-9;return}const y=Math.max(.06,1+o.vy*k-9.8*k*k/2);o.c.position.set(HIT0.x+o.vx*Math.min(k,1.4),y,HIT0.z+o.vz*Math.min(k,1.4));o.c.rotation.set(k*9,0,k*7)});
+  HAT.visible=on;if(on){const u=Math.min(1,k/1.55);const p=HIT0.clone().lerp(HATEND,u);p.y=lerp(1.6,HATEND.y,u)+Math.sin(u*Math.PI)*8.5;
+    if(k>1.55){const b=k-1.55;p.y=HATEND.y+Math.abs(Math.sin(b*9))*.35*Math.exp(-b*5)}
+    HAT.position.copy(p);HAT.rotation.set(u<1?k*9:0,u<1?k*4:.6,u<1?k*6:Math.sin(Math.max(0,k-1.55)*9)*.25*Math.exp(-(k-1.55)*5))}}
+const flash=document.getElementById('flash');
+
 /* ---------- záběry (t = s od začátku záběru) ---------- */
 const MILP=pathAt(-1,24),PPL0=pathAt(1,16),PPL1=pathAt(1,41);
 const SH={
@@ -222,6 +260,19 @@ const SH={
     cam(V(lerp(10,2,u),lerp(9,18,u),lerp(22,26,u)),V(0,0,lerp(-10,-18,u)),50);
     place(tagL,V(MILP.x,2.2,MILP.z),0,1);place(tagR,V(PPL0.x,2.2,-28),0,1);bub.style.opacity=0},
 };
+Object.assign(SH,{
+  k_lever(t){setTrain(18,0,t+30);const a=t<.25?Math.sin(t*20)*.05:lerp(0,.62,ease((t-.25)/.28));setLever(a);shake=t>.5&&t<.75?.06:0;
+    cam(V(4.2-2.9,3.5,2.2+6.4-t*.6),V(4.6,2.3,.9),44);bub.style.opacity=0;tagL.style.opacity=tagR.style.opacity=0},
+  l_saved(t){setTrain(18,0,t+31);setLever(.62);savePeople(t-.15,t);const u=inout(t/3.4);const q=pathAt(1,lerp(18,30,u)),q2=pathAt(1,lerp(22,36,u));
+    cam(V(q.x+7.2,5.2,q.z+7.5),V(q2.x+1.6,1.3,q2.z),50);bub.style.opacity=0;tagL.style.opacity=tagR.style.opacity=0},
+  m_hit(t){const th=1.55;setLever(.62);savePeople(9,t);WAG.forEach((w,i)=>w.visible=i<6);
+    setTrainPath(-1,19+40*(t-th),t);burst(t-th);
+    const fl=t-th;flash.style.opacity=fl>=0&&fl<.12?.85*(1-fl/.12):0;shake=fl>=0&&fl<.7?.35*(1-fl/.7):0;
+    const camA=V(MILP_X()-6.5,4.4,MILP_Z()-11),lookA=V(MILP_X()+2.2,1.0,MILP_Z()+9);
+    const camB=V(MILP_X()-7.2,2.5,MILP_Z()-7.2),lookB=V(HATEND.x+.7,.5,HATEND.z+.4);const v=inout((t-3.0)/1.1);
+    cam(camA.clone().lerp(camB,v),lookA.clone().lerp(lookB,v),lerp(44,34,v));
+    if(fl<0){place(bub,V(MILP_X(),1.7,MILP_Z()),-30,t>.15?1:0)}else bub.style.opacity=0;tagL.style.opacity=tagR.style.opacity=0},
+});
 window.SHOT=(name,opts={})=>{shot=name;t0=performance.now();if(opts.bub!==undefined)bubT.innerHTML=opts.bub;shake=0};
 window.BUB=h=>{bubT.innerHTML=h};
 window.SHAKE=v=>{shake=v};
