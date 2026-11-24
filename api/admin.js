@@ -6,6 +6,14 @@ import {
 import { body, requireAdmin, send, wrap } from '../lib/http.js';
 import { renameDriver } from '../lib/driver.js';
 import { ensureMap } from '../lib/europe.js';
+import { bonusKm, cleanEventInput, COAL_FILE, coalStats, currentEvent, emptyCoal, isActive, publicEvent, readCoal } from '../lib/coal.js';
+
+async function coalView() {
+  const doc = await readCoal(true);
+  const ev = currentEvent(doc);
+  const stats = ev ? await coalStats(ev.id, 10) : null;
+  return { ev: publicEvent(ev), active: isActive(ev), stats, bonusKm: bonusKm(doc), goldShovels: doc.goldShovels, past: doc.events.length };
+}
 
 const listTickets = (db) => Object.values(db.tickets)
   .map(ticketView)
@@ -15,9 +23,10 @@ export default wrap(async (req, res) => {
   await requireAdmin(req);
 
   if (req.method === 'GET') {
-    const [st, db] = await Promise.all([readJSON('state.json'), readJSON('tickets.json')]);
+    const [st, db, coal] = await Promise.all([readJSON('state.json'), readJSON('tickets.json'), coalView()]);
     const tickets = db ? db.data : emptyDb();
     return send(res, 200, {
+      coal,
       state: ensureMap(st ? st.data : seedState()),
       tickets: listTickets(tickets),
       counts: counts(tickets),
@@ -37,6 +46,54 @@ export default wrap(async (req, res) => {
       return { ok: true };
     });
     return send(res, 200, { ok: true });
+  }
+
+  if (b.action === 'coal-start') {
+    const { hours, goal, bonus } = cleanEventInput(b);
+    const now = Date.now();
+    await mutateJSON(COAL_FILE, emptyCoal, (doc) => {
+      if (!Array.isArray(doc.events)) doc.events = [];
+      if (isActive(currentEvent(doc), now)) throw new HttpError(409, 'Event už běží. Nejdřív ho ukonči.');
+      doc.events.push({ id: 'e' + now.toString(36), start: now, end: now + Math.round(hours * 3600_000), goal, bonus, done: false });
+      return { ok: true };
+    });
+    return send(res, 200, { coal: await coalView() });
+  }
+
+  if (b.action === 'coal-stop') {
+    const now = Date.now();
+    await mutateJSON(COAL_FILE, emptyCoal, (doc) => {
+      const ev = currentEvent(doc);
+      if (!isActive(ev, now)) return { skipWrite: true, result: { ok: true } };
+      ev.end = now;
+      return { ok: true };
+    });
+    return send(res, 200, { coal: await coalView() });
+  }
+
+  if (b.action === 'coal-award') {
+    const count = Math.max(1, Math.min(20, Math.round(Number(b.count) || 5)));
+    const doc0 = await readCoal(true);
+    const ev0 = currentEvent(doc0);
+    if (!ev0) throw new HttpError(404, 'Žádný uhelný event neproběhl.');
+    if (isActive(ev0)) throw new HttpError(409, 'Event ještě běží. Lopaty rozdáš po jeho konci.');
+    const db = await readJSON('tickets.json');
+    const tickets = db ? db.data.tickets : {};
+    const st = await coalStats(ev0.id, 50);
+    const winners = st.top.map(([nick]) => nick).filter((nick) => tickets[nick] && (tickets[nick].status === 'pending' || tickets[nick].status === 'verified')).slice(0, count);
+    await mutateJSON(COAL_FILE, emptyCoal, (doc) => {
+      const ev = doc.events.find((e) => e.id === ev0.id);
+      ev.awarded = winners;
+      doc.goldShovels = [...new Set([...(doc.goldShovels || []), ...winners])];
+      return { ok: true };
+    });
+    return send(res, 200, { winners, coal: await coalView() });
+  }
+
+  if (b.action === 'coal-shovels') {
+    const list = [...new Set((Array.isArray(b.list) ? b.list : []).map((x) => cleanNick(x)))].slice(0, 500);
+    await mutateJSON(COAL_FILE, emptyCoal, (doc) => { doc.goldShovels = list; return { ok: true }; });
+    return send(res, 200, { coal: await coalView() });
   }
 
   if (b.action === 'verify') {

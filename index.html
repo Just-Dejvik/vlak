@@ -258,6 +258,49 @@ textarea{min-height:90px;resize:vertical}
 .tbl th{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
 .tblbox{overflow-x:auto}
 @media (prefers-reduced-motion:reduce){.train-line,.head-pulse{animation:none}.bar>i{transition:none}.ticket.fresh .stamp{animation:none}}
+/* ---------- uhelný event ---------- */
+.coal-pill{position:absolute;left:50%;top:calc(var(--st) + 96px);transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:9px 16px 9px 12px;font:600 .95rem var(--body);color:#fff;background:linear-gradient(180deg,#3a2a20,#1f1712);box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,170,80,.35);cursor:pointer;white-space:nowrap}
+.coal-pill b{font-family:var(--display);font-size:1.15rem;letter-spacing:.02em;text-transform:uppercase}
+.coal-pill .tm{font:600 .85rem var(--mono);color:#ffc46b;background:rgba(255,255,255,.08);padding:2px 8px;border-radius:999px}
+.coal-pill .fl{font-size:1.2rem;display:inline-block}
+.coal-pill.on{animation:coalGlow 1.6s ease-in-out infinite}
+.coal-pill.on .fl{animation:coalFl .5s ease-in-out infinite alternate}
+@keyframes coalGlow{50%{box-shadow:0 8px 30px rgba(255,120,30,.55),inset 0 0 0 1px rgba(255,170,80,.7)}}
+@keyframes coalFl{to{transform:scale(1.18) rotate(-6deg)}}
+#coal{position:fixed;inset:0;z-index:300;background:#140f0b;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none;color:#fff;font-family:var(--body)}
+#coal[hidden]{display:none}
+#coal canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#coal .c-top{position:absolute;left:0;right:0;top:0;padding:calc(var(--st) + 10px) 12px 0;display:flex;align-items:center;gap:10px}
+#coal .c-x{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:1.1rem;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+#coal .c-t{flex:1;text-align:center;line-height:1.1}
+#coal .c-ey{display:block;font:600 .7rem var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#ffc46b}
+#coal .c-t b{font:800 1.5rem var(--display);letter-spacing:.03em}
+#coal .c-prog{position:absolute;left:12px;right:12px;top:calc(var(--st) + 62px);background:rgba(20,14,10,.62);border-radius:18px;padding:10px 14px 10px;box-shadow:inset 0 0 0 1px rgba(255,170,80,.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#coal .c-row{display:flex;align-items:baseline;gap:6px}
+#coal #cTot{font:800 1.9rem/1 var(--display);color:#ffd27a}
+#coal #cGoal{font:600 .9rem var(--body);color:#e8d9c4}
+#coal .c-pl{margin-left:auto;font:600 .78rem var(--mono);color:#cbb89f}
+#coal .c-bar{height:12px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:7px}
+#coal .c-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#ff5a1f,#ffb02e,#ffe27a);box-shadow:0 0 14px rgba(255,140,40,.8);transition:width .4s}
+#coal .c-sub{margin-top:6px;font-size:.82rem;color:#e8d9c4}
+#coal .c-top5{position:absolute;left:12px;top:calc(var(--st) + 168px);margin:0;padding:8px 12px 8px 30px;background:rgba(20,14,10,.5);border-radius:14px;font:600 .78rem/1.5 var(--body);color:#f2e6d6;max-width:58%;pointer-events:none}
+#coal .c-top5:empty{display:none}
+#coal .c-top5 li span{color:#ffc46b;font-family:var(--mono);margin-left:6px}
+#coal .c-top5 li.me{color:#ffe27a}
+#coal .c-me{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom) + 18px);background:rgba(20,14,10,.62);border-radius:16px;padding:8px 14px;box-shadow:inset 0 0 0 1px rgba(255,170,80,.22);pointer-events:none}
+#coal .c-me span{display:block;font:600 .68rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#ffc46b}
+#coal .c-me b{font:800 2.2rem/1 var(--display)}
+#coal .c-me em{display:block;font-style:normal;font-size:.75rem;color:#ffe27a}
+#coal .c-hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 36%);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;font:800 1.25rem var(--display);letter-spacing:.04em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,.7);pointer-events:none;white-space:nowrap}
+#coal .c-hand{font-size:2.6rem;animation:coalHand 1.1s ease-in-out infinite}
+@keyframes coalHand{0%{transform:translateY(40px);opacity:0}25%{opacity:1}70%{transform:translateY(-30px);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+#coal .c-msg{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-30%);background:rgba(20,14,10,.9);border-radius:22px;padding:22px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,170,80,.3)}
+#coal .c-msg h3{font:800 1.8rem/1.05 var(--display);text-transform:uppercase;margin:0 0 8px;color:#ffd27a}
+#coal .c-msg p{margin:0 0 12px;color:#e8d9c4}
+#coal .c-msg ol{text-align:left;margin:0 auto 12px;max-width:280px;padding-left:24px;line-height:1.6}
+#coal .c-msg .btn{margin:4px}
+#coal .c-pop{position:absolute;z-index:2;font:800 2.2rem var(--display);color:#ffe27a;text-shadow:0 0 12px rgba(255,140,40,.9),0 2px 0 #7a2a1c;pointer-events:none;animation:coalPop .8s ease-out forwards}
+@keyframes coalPop{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-10px) scale(1.15);opacity:1}100%{transform:translate(-50%,-90px) scale(1);opacity:0}}
 </style>
 </head>
 <body>
@@ -435,7 +478,7 @@ function neighbors(id){return S.edges.filter(e=>e[0]===id||e[1]===id).map(e=>e[0
 const kmPer=()=>S.kmPerPassenger>0?+S.kmPerPassenger:1;
 const peakN=()=>Math.max(+S.peak||0,S.followers);
 function info(){
-  const L=S.followers*S.wagonLength/1000;const D=peakN()*kmPer();const legs=[];let cum=0;const nodeKm={};nodeKm[S.route[0]]=0;
+  const L=S.followers*S.wagonLength/1000;const D=peakN()*kmPer()+bonusKmNow();const legs=[];let cum=0;const nodeKm={};nodeKm[S.route[0]]=0;
   for(let i=1;i<S.route.length;i++){const a=S.route[i-1],b=S.route[i];const km=edgeKm(a,b)||0;legs.push({from:a,to:b,start:cum,km});cum+=km;nodeKm[b]=cum}
   let head;
   if(D>=cum||!legs.length){head={leg:null,t:1,node:S.route[S.route.length-1],waiting:true,over:D-cum}}
@@ -444,7 +487,8 @@ function info(){
   return{L,D,pos:Math.min(D,cum),total:cum,legs,head,nodeKm,cur:S.route[curIdx],curIdx};
 }
 // kolik dalších cestujících je potřeba, aby vlak ujel km kilometrů od Prahy
-const needFor=km=>Math.max(0,Math.ceil(km/kmPer()-1e-9)-peakN());
+const bonusKmNow=()=>Math.max(0,+S.bonusKm||0);
+const needFor=km=>Math.max(0,Math.ceil((km-bonusKmNow())/kmPer()-1e-9)-peakN());
 function locative(id){const m={praha:"Praze",kolin:"Kolíně",pardubice:"Pardubicích",hradec:"Hradci Králové",trebova:"České Třebové",brno:"Brně",olomouc:"Olomouci",ostrava:"Ostravě",breclav:"Břeclavi",hbrod:"Havlíčkově Brodě",plzen:"Plzni",cheb:"Chebu",domazlice:"Domažlicích",usti:"Ústí nad Labem",decin:"Děčíně",liberec:"Liberci",tabor:"Táboře",budejovice:"Českých Budějovicích",viden:"Vídni",berlin:"Berlíně",mnichov:"Mnichově",krakov:"Krakově",varsava:"Varšavě",budapest:"Budapešti",pariz:"Paříži",londyn:"Londýně",rim:"Římě",drazdany:"Drážďanech",bratislava:"Bratislavě",katovice:"Katovicích",linec:"Linci",norimberk:"Norimberku",rezno:"Řezně",lipsko:"Lipsku",hamburk:"Hamburku",frankfurt:"Frankfurtu",zilina:"Žilině",kosice:"Košicích",vratislav:"Vratislavi",salcburk:"Salcburku",benatky:"Benátkách",milan:"Miláně",curych:"Curychu",brusel:"Bruselu",amsterdam:"Amsterdamu",kodan:"Kodani",lublan:"Lublani",zahreb:"Záhřebu",belehrad:"Bělehradě",istanbul:"Istanbulu",graz:"Štýrském Hradci",koln_r:"Kolíně nad Rýnem",zeneva:"Ženevě",neapol:"Neapoli",florencie:"Florencii",sofie:"Sofii",bukurest:"Bukurešti",atheny:"Aténách",lvov:"Lvově",kyjev:"Kyjevě"};return m[id]||nodeName(id)}
 function genitive(id){const m={pardubice:"Pardubic",kolin:"Kolína",praha:"Prahy",hradec:"Hradce Králové",trebova:"České Třebové",brno:"Brna",olomouc:"Olomouce",ostrava:"Ostravy",breclav:"Břeclavi",hbrod:"Havlíčkova Brodu",plzen:"Plzně",cheb:"Chebu",domazlice:"Domažlic",usti:"Ústí nad Labem",decin:"Děčína",liberec:"Liberce",tabor:"Tábora",budejovice:"Českých Budějovic",viden:"Vídně",berlin:"Berlína",mnichov:"Mnichova",krakov:"Krakova",varsava:"Varšavy",budapest:"Budapešti",pariz:"Paříže",londyn:"Londýna",rim:"Říma",drazdany:"Drážďan",bratislava:"Bratislavy",katovice:"Katovic",linec:"Lince",norimberk:"Norimberka",rezno:"Řezna",lipsko:"Lipska",hamburk:"Hamburku",frankfurt:"Frankfurtu",zilina:"Žiliny",kosice:"Košic",vratislav:"Vratislavi",salcburk:"Salcburku",benatky:"Benátek",milan:"Milána",curych:"Curychu",brusel:"Bruselu",amsterdam:"Amsterdamu",kodan:"Kodaně",lublan:"Lublaně",zahreb:"Záhřebu",belehrad:"Bělehradu",istanbul:"Istanbulu",graz:"Štýrského Hradce",koln_r:"Kolína nad Rýnem",zeneva:"Ženevy",neapol:"Neapole",florencie:"Florencie",sofie:"Sofie",bukurest:"Bukurešti",atheny:"Atén",lvov:"Lvova",kyjev:"Kyjeva"};return m[id]||nodeName(id)}
 
@@ -856,6 +900,10 @@ const Game=(()=>{
     const armL=new THREE.Group();armL.position.set(-.38,.72,0);armL.add(mesh(cyl(.085,.08,.6,8),coat,0,-.3,0));armL.add(mesh(sph(.09,8,6),skin,0,-.62,0));armL.rotation.set(-.9,0,.15);g.add(armL);
     const armR=new THREE.Group();armR.position.set(.38,.72,0);armR.add(mesh(cyl(.085,.08,.6,8),coat,0,-.3,0));armR.add(mesh(sph(.09,8,6),skin,0,-.62,0));armR.rotation.set(-.9,0,-.15);g.add(armR);
     if(a.item==="kniha"){const b=mesh(box(.42,.06,.3),mat("#2f6f9f"),0,.28,.42);b.rotation.x=-.6;g.add(b)}
+    if(a.gs){const sh=new THREE.Group();const gm=goldMat;
+      sh.add(mesh(cyl(.03,.035,1.15,8),mat("#8a5a32"),0,.1,0));sh.add(mesh(box(.38,.44,.035),gm,0,.89,0));sh.add(mesh(box(.035,.44,.1),gm,-.19,.89,.04));sh.add(mesh(box(.035,.44,.1),gm,.19,.89,.04));sh.add(mesh(box(.38,.06,.1),gm,0,.66,.04));
+      const gr=mesh(new THREE.TorusGeometry(.08,.022,6,12),mat("#8a5a32"),0,-.52,0);sh.add(gr);sh.position.set(.74,.02,.38);sh.rotation.z=-.1;g.add(sh);
+      for(const [x,y] of [[.95,1.25],[.55,1.05],[.86,.62]]){const sp=new THREE.Mesh(new THREE.OctahedronGeometry(.045,0),new THREE.MeshBasicMaterial({color:0xfff2a8}));sp.position.set(x,y,.48);g.add(sp)}}
     if(a.item==="kytara"){const gt=new THREE.Group();const bd=mesh(cyl(.25,.25,.1,14),mat("#b5723a"));bd.rotation.x=Math.PI/2;gt.add(bd);gt.add(mesh(box(.08,.7,.06),mat("#3b2518"),0,.45,0));gt.position.set(-.05,.25,.4);gt.rotation.z=.9;g.add(gt)}
     return{g,armR,head,t:0};
   }
@@ -874,7 +922,7 @@ const Game=(()=>{
     const xs=new Set(occ.extras||[]);if(xs.has("terarium"))shelf.visible=false;if(xs.has("monalisa"))picFrame.visible=false;
     mug.visible=occ.avatar.item==="hrnek"||r()<.25;
     avatarSlot.clear();petSlot.clear();
-    av=buildAvatar(occ.avatar);av.g.position.set(-.1,1.82,-.75);av.waves=!!occ.nick;avatarSlot.add(av.g);
+    av=buildAvatar(Object.assign({},occ.avatar,{gs:typeof hasGoldShovel==='function'&&hasGoldShovel(occ.nick)}));av.g.position.set(-.1,1.82,-.75);av.waves=!!occ.nick;avatarSlot.add(av.g);
     pet=null;if(occ.avatar.pet&&occ.avatar.pet!=="zadny"){pet=buildPet(occ.avatar.pet);petSlot.add(pet.g)}petSlot.position.x=xs.has("bazen")?-1.4:0;
     warm.position.set(wagonX(n)+1.2,2.9,.6);
   }
@@ -1064,7 +1112,7 @@ const Game=(()=>{
   function setActive(v){if(v&&!active){active=true;last=performance.now();requestAnimationFrame(frame)}else if(!v)active=false}
   document.addEventListener("visibilitychange",()=>setActive(!document.hidden&&!$("#game").hidden));
   requestAnimationFrame(frame);
-  return{ok:true,
+  return{ok:true,pause(v){setActive(!v&&!document.hidden)},
     setN(n){n=Math.max(1,n);if(n===N)return;N=n;if(ovOn)ovBuild();else ovN=-1;for(const s of slots)s.n=-1;lastCenter=null;lastFocus=-2;tx=clampX(tx)},
     flyTo,zoomTo,setActive,
     setOverview,ovLook,overview:()=>ovOn,onOverview(f){ovCbs.push(f)},refreshOverview(){if(ovOn){ovBuild();ovLandmark()}else ovN=-1},
@@ -1369,6 +1417,7 @@ function sheetInfo(el){
       <li><b>Ochrana proti zneužití:</b> otisk připojení vytvořený tajným klíčem, který se každý den mění. Samotnou IP adresu neukládáme a otisk po 24 hodinách mažeme.</li>
       <li><b>Kontrola sledujících:</b> ze seznamu sledujících našeho účtu si necháváme jen jejich počet a zakódované otisky nicků.</li>
       <li><b>Hlasování:</b> hlasy sčítáme z veřejných komentářů pod našimi videy přes oficiální rozhraní Instagramu. Komentáře neukládáme.</li>
+      <li><b>Uhelný event:</b> když házíš uhlí do kotle, ukládáme k tvému nicku počet hodů, abychom mohli sestavit žebříček a předat zlaté lopaty. Skrytý nick je v žebříčku jako „anonym“.</li>
       <li><b>Podporovatelé:</b> nick do seznamu podporovatelů (a zlatý vagón) přidáme jen tehdy, když ho sám(a) napíšeš ke svému příspěvku. Platby zpracovává tvoje banka, Ko-fi a PayPal, my údaje o kartě ani účtu nevidíme.</li>
     </ul></div>
   <div class="card"><h3>Kde data leží a jak dlouho</h3><p class="muted">Web běží na Vercelu a databáze na Upstash, obojí v datacentru ve Frankfurtu (EU). Obě firmy jsou americké a mají certifikaci EU-US Data Privacy Framework. Data nikomu neprodáváme a nepoužíváme je k reklamě. Jízdenku uchováváme, dokud ji máš; propadlou nebo smazanou jízdenku odstraníme.</p></div>
@@ -1424,13 +1473,230 @@ function renderMap(){
   requestAnimationFrame(()=>{svg.style.height=Math.round(svg.getBoundingClientRect().width*680/1060)+"px";const box=$("#mapbox");if(box&&box.scrollWidth>box.clientWidth+4){const scale=box.scrollWidth/1060;box.scrollLeft=Math.max(0,(hx-vx)/w*box.scrollWidth-box.clientWidth/2)}});
 }
 
+/* ================= UHELNÝ EVENT ================= */
+// Cestující švihem prstu nahoru házejí lopatou uhlí do kotle. Hody se posílají po dávkách,
+// server hlídá rozumnou rychlost. Společný cíl = bonusové km, top topiči = zlatá lopata.
+const coalEv=()=>S.coal||null;
+const coalActive=(ev=coalEv())=>!!ev&&Date.now()>=ev.start&&Date.now()<ev.end;
+const coalRecent=(ev=coalEv())=>!!ev&&Date.now()<ev.end+36*3600e3;
+const hasGoldShovel=nick=>!!nick&&(S.goldShovels||[]).includes(nick);
+function hms(ms){const s=Math.max(0,Math.floor(ms/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")}
+function renderCoalPill(){
+  let el=$("#coalPill");const ev=coalEv();
+  if(!ONLINE||!ev||!coalRecent(ev)||$("#game").hidden){if(el)el.hidden=true;return}
+  if(!el){el=document.createElement("button");el.id="coalPill";el.type="button";el.className="coal-pill";el.onclick=()=>openCoal();$("#game").appendChild(el)}
+  el.hidden=false;const act=coalActive(ev);
+  const html=act?`<span class="fl">🔥</span><b>Házej uhlí!</b><span class="tm">${hms(ev.end-Date.now())}</span>`:`<span class="fl">🏆</span><b>${ev.done?"Cíl splněn!":"Uhelný event"}</b><span class="tm">výsledky</span>`;
+  if(el.innerHTML!==html)el.innerHTML=html;el.classList.toggle("on",act);
+}
+setInterval(()=>{renderCoalPill();if(CO&&CO.isOpen())CO.tick()},1000);
+let CO=null;
+function openCoal(){if(!CO)CO=coalGame();CO.open()}
+
+function coalGame(){
+  const root=document.createElement("div");root.id="coal";root.hidden=true;
+  root.innerHTML=`<canvas aria-label="Kotel lokomotivy. Švihni prstem nahoru a hodíš lopatu uhlí."></canvas>
+    <div class="c-top"><button class="c-x" type="button" id="cX" aria-label="Zavřít">✕</button>
+      <div class="c-t"><span class="c-ey" id="cEy">Uhelný event · zbývá</span><b id="cTm">–</b></div>
+      <button class="c-x" type="button" id="cSnd" aria-label="Zvuk">🔊</button></div>
+    <div class="c-prog"><div class="c-row"><span id="cTot">0</span><span id="cGoal">/ 0 lopat</span><span class="c-pl" id="cPl"></span></div>
+      <div class="c-bar"><i id="cBar"></i></div><div class="c-sub" id="cSub"></div></div>
+    <ol class="c-top5" id="cTop"></ol>
+    <div class="c-me"><span>Tvoje lopaty</span><b id="cMe">0</b><em id="cGs" hidden>✨ zlatá lopata</em></div>
+    <div class="c-hint" id="cHint"><span class="c-hand">👆</span>Švihni prstem nahoru</div>
+    <div class="c-msg" id="cMsg" hidden></div>`;
+  document.body.appendChild(root);
+  const q=s=>root.querySelector(s);
+  const cv=root.querySelector("canvas");
+  let open=false,ok=true;
+  let R;try{R=new THREE.WebGLRenderer({canvas:cv,antialias:true});}catch(e){ok=false}
+  const sc=new THREE.Scene();sc.background=new THREE.Color(0x15100c);sc.fog=new THREE.Fog(0x15100c,6,14);
+  const cam=new THREE.PerspectiveCamera(60,1,.05,40);
+  const M2=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.75,metalness:0,flatShading:true},o));
+  const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d),C=(a,b,h,s=16)=>new THREE.CylinderGeometry(a,b,h,s);
+  const add=(g,m,x,y,z,p=sc)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);p.add(o);return o};
+  const tex=(w,h,draw)=>{const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t};
+  if(ok){
+    R.outputEncoding=THREE.sRGBEncoding;
+    sc.add(new THREE.HemisphereLight(0x8fa3b8,0x2a1c10,.45));
+    const win=new THREE.DirectionalLight(0xcfe2ff,.45);win.position.set(-3,3,2);sc.add(win);
+  }
+  // podlaha z prken
+  const plank=tex(256,256,(g,w,h)=>{g.fillStyle="#5a3c24";g.fillRect(0,0,w,h);for(let i=0;i<8;i++){g.fillStyle=i%2?"#61422a":"#553821";g.fillRect(0,i*32,w,30);g.fillStyle="#2e1e12";g.fillRect(0,i*32+30,w,2);for(let k=0;k<6;k++){g.fillStyle="rgba(0,0,0,.12)";g.fillRect(Math.random()*w,i*32+4+Math.random()*20,40+Math.random()*60,2)}}});
+  plank.wrapS=plank.wrapT=THREE.RepeatWrapping;plank.repeat.set(2,2);
+  {const f=add(new THREE.PlaneGeometry(4,5),new THREE.MeshStandardMaterial({map:plank,roughness:.95}),0,0,1.6);f.rotation.x=-Math.PI/2}
+  // stěny kabiny, strop
+  const wallM=M2(0x2f5a44,{roughness:.6}),darkM=M2(0x1c2026,{roughness:.5,metalness:.4}),brassM=M2(0xc9973f,{metalness:.8,roughness:.3});
+  for(const sx of [-1,1]){add(B(.1,3.2,5),wallM,sx*1.95,1.6,1.4);add(B(.14,.12,5),brassM,sx*1.9,1.05,1.4)}
+  add(B(4,.1,5),M2(0x22362b),0,3.1,1.4);add(B(4,3.3,.1),M2(0x171a1f),0,1.6,-.45);
+  // okna s ubíhající krajinou
+  const land=tex(512,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,"#7fb8e6");gr.addColorStop(.6,"#cfe6f2");gr.addColorStop(.61,"#6fa552");gr.addColorStop(1,"#4f8a3e");g.fillStyle=gr;g.fillRect(0,0,w,h);
+    for(let i=0;i<26;i++){const x=(i*41+Math.random()*20)%w,s=14+Math.random()*16;g.fillStyle=i%3?"#2f6e3c":"#3f8a4a";g.beginPath();g.moveTo(x,78-s*1.8);g.lineTo(x-s*.6,80);g.lineTo(x+s*.6,80);g.fill()}});
+  land.wrapS=THREE.RepeatWrapping;
+  const winMats=[];for(const sx of [-1,1]){const m=new THREE.MeshBasicMaterial({map:land.clone()});m.map.wrapS=THREE.RepeatWrapping;m.map.needsUpdate=true;winMats.push(m);
+    const p=add(new THREE.PlaneGeometry(1.5,.85),m,sx*1.89,2.05,1.5);p.rotation.y=-sx*Math.PI/2;
+    const fr=new THREE.Group();fr.position.set(sx*1.88,2.05,1.5);fr.rotation.y=-sx*Math.PI/2;sc.add(fr);
+    add(B(1.66,.08,.06),brassM,0,.46,0,fr);add(B(1.66,.08,.06),brassM,0,-.46,0,fr);add(B(.08,1,.06),brassM,.79,0,0,fr);add(B(.08,1,.06),brassM,-.79,0,0,fr)}
+  // čelo kotle
+  const back=add(C(1.55,1.55,.3,40),M2(0x2a2e35,{metalness:.55,roughness:.45}),0,1.45,-.25);back.rotation.x=Math.PI/2;
+  {const rim=add(new THREE.TorusGeometry(1.55,.05,8,48),brassM,0,1.45,-.09);for(let i=0;i<28;i++){const a=i/28*Math.PI*2;add(new THREE.SphereGeometry(.03,6,4),brassM,Math.cos(a)*1.42,1.45+Math.sin(a)*1.42,-.08)}}
+  // manometry
+  const gaugeT=tex(128,128,(g,w,h)=>{g.fillStyle="#f4efe2";g.beginPath();g.arc(64,64,62,0,7);g.fill();g.strokeStyle="#222";g.lineWidth=3;for(let i=0;i<=10;i++){const a=Math.PI*.8+i/10*Math.PI*1.4;g.beginPath();g.moveTo(64+Math.cos(a)*50,64+Math.sin(a)*50);g.lineTo(64+Math.cos(a)*58,64+Math.sin(a)*58);g.stroke()}g.fillStyle="#cf4630";g.beginPath();g.arc(64,64,6,0,7);g.fill()});
+  const needles=[];for(const x of [-.55,.55]){const gg=new THREE.Group();gg.position.set(x,2.35,-.06);sc.add(gg);const r=add(C(.2,.2,.06,24),brassM,0,0,0,gg);r.rotation.x=Math.PI/2;
+    const f=add(new THREE.CircleGeometry(.17,24),new THREE.MeshBasicMaterial({map:gaugeT}),0,0,.035,gg);const nd=new THREE.Group();nd.position.z=.04;gg.add(nd);add(B(.012,.13,.01),M2(0xcf4630),0,.06,0,nd);needles.push(nd)}
+  // trubky a regulátor
+  {const p=add(C(.04,.04,2.2,10),brassM,0,1.95,-.06);p.rotation.z=Math.PI/2;for(const x of [-.95,.95]){add(C(.04,.04,.9,10),brassM,x,1.5,-.06)}
+   const lv=new THREE.Group();lv.position.set(.9,2.6,0);lv.rotation.z=-.6;sc.add(lv);add(C(.035,.035,.7,8),brassM,0,-.35,.05,lv);add(new THREE.SphereGeometry(.07,10,8),M2(0x7a2a1c),0,-.72,.05,lv)}
+  // topeniště: rám dvířek, oheň, otevřená dvířka
+  const DOOR={x:0,y:.95,w:.86,h:.6};
+  const fireC=document.createElement("canvas");fireC.width=128;fireC.height=96;const fg=fireC.getContext("2d");
+  const fireT=new THREE.CanvasTexture(fireC);fireT.encoding=THREE.sRGBEncoding;
+  const fireM=new THREE.MeshBasicMaterial({map:fireT});add(new THREE.PlaneGeometry(DOOR.w,DOOR.h),fireM,DOOR.x,DOOR.y,-.075);
+  const frameM=M2(0x15171b,{metalness:.6,roughness:.4});
+  add(B(DOOR.w+.24,.12,.08),frameM,0,DOOR.y+DOOR.h/2+.06,-.06);add(B(DOOR.w+.24,.14,.22),frameM,0,DOOR.y-DOOR.h/2-.07,0);
+  add(B(.12,DOOR.h,.08),frameM,-DOOR.w/2-.06,DOOR.y,-.06);add(B(.12,DOOR.h,.08),frameM,DOOR.w/2+.06,DOOR.y,-.06);
+  for(const sx of [-1,1]){const h=new THREE.Group();h.position.set(sx*(DOOR.w/2+.1),DOOR.y,-.02);h.rotation.y=sx*-1.9;sc.add(h);
+    const d=add(B(DOOR.w/2,DOOR.h,.05),M2(0x23262c,{metalness:.5,roughness:.5}),sx*-DOOR.w/4,0,0,h);
+    for(let i=0;i<4;i++)add(new THREE.SphereGeometry(.018,6,4),brassM,sx*-DOOR.w/4+(i%2?.12:-.12),(i<2?.2:-.2),.03,h);
+    add(B(.1,.04,.05),brassM,sx*-(DOOR.w/2-.06),0,.05,h)}
+  const glow=add(new THREE.PlaneGeometry(2.4,1.8),new THREE.MeshBasicMaterial({map:tex(128,128,(g,w,h)=>{const r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,"rgba(255,170,60,.9)");r.addColorStop(.4,"rgba(255,110,30,.35)");r.addColorStop(1,"rgba(255,80,20,0)");g.fillStyle=r;g.fillRect(0,0,w,h)}),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}),DOOR.x,DOOR.y,.05);
+  const fireL=new THREE.PointLight(0xff8a2a,1.4,7,1.6);fireL.position.set(0,DOOR.y,.6);sc.add(fireL);
+  // hromada uhlí
+  const coalM=M2(0x1b1c20,{roughness:.55,metalness:.25}),lumpG=new THREE.DodecahedronGeometry(.09,0);
+  {let s=7;const r=()=>(s=(s*16807)%2147483647)/2147483647;for(let i=0;i<120;i++){const a=r()*Math.PI*2,d=Math.sqrt(r())*.85,x=.35+Math.cos(a)*d*1.1,z=1.75+Math.sin(a)*d*.55;const hgt=Math.max(0,.42*(1-d*d));const m=add(lumpG,coalM,x,hgt*r()+.04,z);m.scale.setScalar(.7+r()*1.1);m.rotation.set(r()*3,r()*3,r()*3)}}
+  add(B(1.9,.3,.06),M2(0x3b2a1c),.35,.15,2.3);
+  // lopata
+  const shovel=new THREE.Group();sc.add(shovel);
+  const woodM=M2(0x8a5a32,{roughness:.8}),steelM=M2(0x8d939b,{metalness:.75,roughness:.35}),goldM=M2(0xffc93a,{metalness:.95,roughness:.22,emissive:0x3a2600});
+  {const h=add(C(.028,.032,1.05,10),woodM,0,0,-.52,shovel);h.rotation.x=Math.PI/2;const gr=add(new THREE.TorusGeometry(.07,.02,6,14),woodM,0,0,.06,shovel);gr.rotation.y=Math.PI/2}
+  const blade=new THREE.Group();blade.position.set(0,0,-1.05);shovel.add(blade);
+  const bladeParts=[add(B(.36,.02,.42),steelM,0,-.01,-.2,blade),add(B(.02,.07,.42),steelM,-.18,.025,-.2,blade),add(B(.02,.07,.42),steelM,.18,.025,-.2,blade),add(B(.36,.08,.02),steelM,0,.03,.01,blade)];
+  const load=new THREE.Group();blade.add(load);
+  {let s=3;const r=()=>(s=(s*16807)%2147483647)/2147483647;for(let i=0;i<5;i++){const m=add(lumpG,coalM,(r()-.5)*.2,.06+r()*.04,-.2+(r()-.5)*.2,load);m.scale.setScalar(.8+r()*.5)}}
+  // letící hroudy, jiskry
+  const FLY=[];for(let i=0;i<6;i++){const g=new THREE.Group();for(let k=0;k<4;k++){const m=add(lumpG,coalM,(k%2-.5)*.09,(k>>1)*.06,0,g);m.scale.setScalar(.8+k*.15)}g.visible=false;sc.add(g);FLY.push({g,t:-1})}
+  const sparkM=new THREE.MeshBasicMaterial({color:0xffb347});const SPK=[];for(let i=0;i<60;i++){const m=add(B(.03,.03,.03),sparkM,0,-5,0);SPK.push({m,t:9,v:new THREE.Vector3()})}
+  const tmp=new THREE.Vector3();
+  function setGold(g){bladeParts.forEach(p=>p.material=g?goldM:steelM);q("#cGs").hidden=!g}
+
+  // rozvržení a kamera (na výšku se kotel musí vejít na šířku)
+  function resize(){if(!ok)return;const w=innerWidth,h=innerHeight;R.setPixelRatio(Math.min(1.75,devicePixelRatio||1));R.setSize(w,h,false);cam.aspect=w/h;
+    cam.position.set(0,1.6,3.3);cam.lookAt(0,1.2,0);cam.fov=Math.max(50,Math.min(78,2*Math.atan(Math.tan(Math.atan(1.35/3.3))/cam.aspect)*180/Math.PI));cam.updateProjectionMatrix()}
+  addEventListener("resize",()=>{if(open)resize()});
+  const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+  // pózy lopaty: kde je držadlo a kam míří list
+  const PO={rest:[V3(.5,.12,2.95),V3(.02,.52,1.72)],dip:[V3(.55,.02,3.05),V3(.08,.3,1.82)],up:[V3(.3,.6,2.7),V3(-.05,1.75,1.35)]};
+  const gP=new THREE.Vector3(),gT=new THREE.Vector3();
+  function pose(A,Bp,u){gP.copy(A[0]).lerp(Bp[0],u);gT.copy(A[1]).lerp(Bp[1],u)}
+  // stav hry
+  let anim=-1,queued=0,aim=0,last=performance.now(),heat=0,hintGone=false,thrown=0;
+  let pend=0,inflight=0,mineSrv=0,totSrv=0,stats=null,sending=false,done=false,ended=false,lastBad=0;
+  let snd=(()=>{try{return localStorage.getItem("vf.coal.snd")!=="0"}catch(e){return true}})(),AC=null;
+  q("#cSnd").textContent=snd?"🔊":"🔇";
+  q("#cSnd").onclick=e=>{e.stopPropagation();snd=!snd;q("#cSnd").textContent=snd?"🔊":"🔇";try{localStorage.setItem("vf.coal.snd",snd?"1":"0")}catch(_){}};
+  q("#cX").onclick=e=>{e.stopPropagation();close()};
+  function audio(){if(!snd)return null;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();return AC}catch(e){return null}}
+  function noise(a,dur,f0,f1,vol){const n=a.createBufferSource(),buf=a.createBuffer(1,Math.floor(a.sampleRate*dur),a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;n.buffer=buf;
+    const f=a.createBiquadFilter();f.type="bandpass";f.Q.value=1.2;f.frequency.setValueAtTime(f0,a.currentTime);f.frequency.exponentialRampToValueAtTime(f1,a.currentTime+dur);
+    const g=a.createGain();g.gain.setValueAtTime(vol,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);n.connect(f);f.connect(g);g.connect(a.destination);n.start()}
+  function sWhoosh(){const a=audio();if(a)noise(a,.22,500,2200,.18)}
+  function sBoom(){const a=audio();if(!a)return;noise(a,.35,900,160,.35);const o=a.createOscillator(),g=a.createGain();o.frequency.setValueAtTime(110,a.currentTime);o.frequency.exponentialRampToValueAtTime(40,a.currentTime+.25);g.gain.setValueAtTime(.35,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.3);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.32)}
+
+  function canThrow(){return ONLINE&&myTicket&&myTicket.token&&coalActive()&&!ended}
+  function throwOne(dx){
+    if(!canThrow()){showMsg();return}
+    if(anim>=0){queued=1;aim=dx;return}
+    anim=0;aim=dx;pend++;thrown++;sWhoosh();if(navigator.vibrate)try{navigator.vibrate(12)}catch(e){}
+    if(!hintGone&&thrown>=2){hintGone=true;q("#cHint").hidden=true}
+    renderNums();
+  }
+  function launch(){const f=FLY.find(f=>f.t<0)||FLY[0];blade.getWorldPosition(tmp);f.p0=tmp.clone();f.p2=new THREE.Vector3(DOOR.x+aim*.25,DOOR.y-.08,-.1);f.p1=f.p0.clone().lerp(f.p2,.5);f.p1.y+=.55;f.t=0;f.g.visible=true}
+  function hit(){heat=Math.min(1.6,heat+.55);sBoom();
+    for(let i=0,k=0;i<SPK.length&&k<14;i++){const s=SPK[i];if(s.t<.9)continue;s.t=0;k++;s.m.position.set(DOOR.x+(Math.random()-.5)*.6,DOOR.y+(Math.random()-.3)*.3,0);s.v.set((Math.random()-.5)*2.4,1+Math.random()*2.2,.8+Math.random()*1.8)}
+    tmp.set(DOOR.x,DOOR.y+.35,0).project(cam);const p=document.createElement("div");p.className="c-pop";p.textContent="+1";p.style.left=((tmp.x*.5+.5)*innerWidth)+"px";p.style.top=((-tmp.y*.5+.5)*innerHeight)+"px";root.appendChild(p);setTimeout(()=>p.remove(),850)}
+  const E=u=>u<=0?0:u>=1?1:u*u*(3-2*u);
+  function frame(now){
+    if(!open)return;requestAnimationFrame(frame);
+    const dt=Math.min(.05,(now-last)/1000);last=now;const t=now/1000;
+    // lopata: nabrat – švih – návrat
+    load.visible=true;
+    if(anim>=0){anim+=dt;const a=anim;
+      if(a<.07)pose(PO.rest,PO.dip,E(a/.07));
+      else if(a<.2)pose(PO.dip,PO.up,E((a-.07)/.13));
+      else pose(PO.up,PO.rest,E((a-.2)/.14));
+      load.visible=a<.16||a>.3;
+      if(a>=.16&&!launched){launched=true;launch()}
+      if(a>=.34){anim=-1;launched=false;if(queued){queued=0;throwOne(aim)}}
+    }else{pose(PO.rest,PO.rest,0);gT.y+=Math.sin(t*2)*.02}
+    shovel.position.copy(gP);shovel.lookAt(gT);shovel.rotateY(Math.PI);
+    for(const f of FLY){if(f.t<0)continue;f.t+=dt/.36;const u=Math.min(1,f.t),a=1-u;
+      f.g.position.set(a*a*f.p0.x+2*a*u*f.p1.x+u*u*f.p2.x,a*a*f.p0.y+2*a*u*f.p1.y+u*u*f.p2.y,a*a*f.p0.z+2*a*u*f.p1.z+u*u*f.p2.z);f.g.rotation.set(t*9,t*7,0);f.g.scale.setScalar(1-u*.35);
+      if(u>=1){f.t=-1;f.g.visible=false;hit()}}
+    for(const s of SPK){if(s.t>=.9){s.m.position.y=-5;continue}s.t+=dt;s.v.y-=4.5*dt;s.m.position.addScaledVector(s.v,dt);s.m.scale.setScalar(Math.max(.01,1-s.t/.9))}
+    heat=Math.max(0,heat-dt*.9);const fl=.85+.15*Math.sin(t*23)*Math.sin(t*7.3);
+    fireL.intensity=(1.2+heat*1.6)*fl;glow.material.opacity=.55+heat*.35;glow.scale.setScalar(1+heat*.25);
+    drawFire(t);needles.forEach((n,i)=>n.rotation.z=-1.6+Math.min(1,.35+(totShown()/Math.max(1,(coalEv()||{}).goal||1)))*2.4+Math.sin(t*(3+i))*.03);
+    winMats.forEach((m,i)=>{m.map.offset.x=(t*(i?.35:-.35))%1});
+    R.render(sc,cam);
+  }
+  let launched=false;
+  function drawFire(t){const w=128,h=96,hh=heat;const gr=fg.createLinearGradient(0,0,0,h);gr.addColorStop(0,"#1a0603");gr.addColorStop(.45,`rgb(${120+hh*80|0},${30+hh*30|0},10)`);gr.addColorStop(.8,`rgb(255,${110+hh*60|0},30)`);gr.addColorStop(1,"#ffe9a0");fg.fillStyle=gr;fg.fillRect(0,0,w,h);
+    for(let i=0;i<14;i++){const x=(i/13)*w,ht=30+18*Math.sin(t*6+i*1.7)+14*Math.sin(t*11+i*2.9)+hh*26;const g2=fg.createLinearGradient(0,h-ht,0,h);g2.addColorStop(0,"rgba(255,200,80,0)");g2.addColorStop(.5,"rgba(255,170,50,.75)");g2.addColorStop(1,"rgba(255,240,170,.95)");fg.fillStyle=g2;fg.beginPath();fg.moveTo(x-12,h);fg.quadraticCurveTo(x+Math.sin(t*9+i)*8,h-ht*1.2,x+12,h);fg.fill()}
+    const v=fg.createRadialGradient(w/2,h/2,10,w/2,h/2,80);v.addColorStop(.55,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,.65)");fg.fillStyle=v;fg.fillRect(0,0,w,h);fireT.needsUpdate=true}
+
+  // ovládání: švih nahoru (prst i myš)
+  let g0=null;
+  root.addEventListener("pointerdown",e=>{if(e.target.closest("button,.c-msg"))return;g0={x:e.clientX,y:e.clientY,t:performance.now(),fired:false,id:e.pointerId};audio()});
+  root.addEventListener("pointermove",e=>{if(!g0||g0.fired||e.pointerId!==g0.id)return;const dy=g0.y-e.clientY,dt=performance.now()-g0.t;if(dy>55&&dt<700){g0.fired=true;throwOne(Math.max(-1,Math.min(1,(e.clientX-g0.x)/150)))}});
+  const up=e=>{if(!g0||e.pointerId!==g0.id)return;const dy=g0.y-e.clientY,dt=performance.now()-g0.t;if(!g0.fired&&dy>35&&(dt<900||dy/dt>.18))throwOne(Math.max(-1,Math.min(1,(e.clientX-g0.x)/150)));g0=null};
+  root.addEventListener("pointerup",up);root.addEventListener("pointercancel",()=>g0=null);
+  root.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
+
+  // síť
+  const totShown=()=>Math.max(totSrv,stats?stats.total:0)+pend+inflight;
+  async function flush(){if(sending||!pend||!canThrow())return;const ev=coalEv();const n=Math.min(pend,60);pend-=n;inflight=n;sending=true;
+    try{const r=await api("/api/coal",{method:"POST",headers:{"x-ticket-token":myTicket.token},body:{nick:myTicket.nick,n,ev:ev.id}});
+      inflight=0;totSrv=Math.max(totSrv,r.total);mineSrv=r.mine;if(r.done&&!done){done=true;if(S.coal)S.coal.done=true;celebrate()}}
+    catch(e){inflight=0;if(e.status===409){ended=true;loadStats()}else if(e.status===403||e.status===404){lastBad=Date.now();showMsg(e.message)}else pend+=n}
+    finally{sending=false;renderNums()}}
+  async function loadStats(){try{const me=myTicket&&myTicket.nick?"?me="+encodeURIComponent(myTicket.nick):"";const r=await api("/api/coal"+me);stats=r;
+      if(r.ev){S.coal=Object.assign(S.coal||{},r.ev);if(r.ev.done&&!done){done=true}}
+      if(typeof r.mine==="number"&&!pend&&!inflight)mineSrv=Math.max(mineSrv,r.mine);if(r.ev&&!r.active&&Date.now()>=r.ev.end)ended=true;renderNums();renderTop();if(!canThrow())showMsg()}catch(e){}}
+  function renderNums(){const ev=coalEv();if(!ev)return;const tot=totShown();q("#cTot").textContent=fmt(tot);q("#cGoal").textContent=`/ ${fmt(ev.goal)} lopat`;
+    q("#cBar").style.width=Math.min(100,tot/ev.goal*100)+"%";q("#cPl").textContent=stats&&stats.players?`${fmt(stats.players)} topičů`:"";
+    q("#cSub").innerHTML=!coalActive(ev)&&!(done||ev.done)?`Event skončil. Díky všem topičům!`:done||ev.done?`🎉 <b>Cíl splněn!</b> Vlak popojede o ${fmt(ev.bonus)} km blíž k cíli.`:`Splníme cíl a vlak poskočí o <b>${fmt(ev.bonus)} km</b>. Top 5 topičů dostane <b>zlatou lopatu</b>.`;
+    q("#cMe").textContent=fmt(mineSrv+pend+inflight)}
+  function renderTop(){const l=stats&&stats.top||[];const me=myTicket&&myTicket.nick;q("#cTop").innerHTML=l.slice(0,5).map(([n,c],i)=>`<li${n&&n===me?' class="me"':""}>${n?"@"+esc(n):"anonym"}<span>${fmt(c)}</span></li>`).join("")}
+  function tick(){const ev=coalEv();if(!ev)return;const act=coalActive(ev);q("#cEy").textContent=act?"Uhelný event · zbývá":"Uhelný event";q("#cTm").textContent=act?hms(ev.end-Date.now()):(ev.done||done?"Cíl splněn! 🎉":"Skončilo");
+    if(!act&&!ended&&Date.now()>=ev.end){ended=true;flush();showMsg()}}
+  function celebrate(){heat=1.6;for(let i=0;i<3;i++)setTimeout(hit,i*180);toast(`🎉 Cíl splněn! Vlak poskočí o ${fmt((coalEv()||{}).bonus||0)} km`)}
+  function showMsg(err){const m=q("#cMsg");const ev=coalEv();
+    if(err){m.innerHTML=`<h3>Jejda</h3><p>${esc(err)}</p><button class="btn" type="button" data-c="x">Zavřít</button>`}
+    else if(!myTicket||!myTicket.token){m.innerHTML=`<h3>Jen pro cestující</h3><p>Uhlí do kotle můžou házet jen lidi s jízdenkou. Nastup do vlaku a hned můžeš topit!</p><button class="btn primary" type="button" data-c="board">Nastoupit do vlaku</button>`}
+    else if(ev&&!coalActive(ev)){const l=(stats&&stats.top||[]).slice(0,5);const aw=ev.awarded;
+      m.innerHTML=`<h3>${ev.done||done?"Cíl splněn! 🎉":"Event skončil"}</h3><p>${ev.done||done?`Naházeli jsme ${fmt(totShown())} lopat a vlak poskočil o ${fmt(ev.bonus)} km.`:`Naházeli jsme ${fmt(totShown())} z ${fmt(ev.goal)} lopat. Příště to dáme!`}</p>
+        ${l.length?`<p style="margin:0 0 4px"><b>Nejlepší topiči</b>${aw?" · zlatá lopata ✨":""}</p><ol>${l.map(([n,c])=>`<li>${n?"@"+esc(n):"anonym"} · ${fmt(c)}</li>`).join("")}</ol>`:""}
+        <p style="font-size:.9rem">Tvoje lopaty: <b>${fmt(mineSrv)}</b></p><button class="btn" type="button" data-c="x">Zpět do vlaku</button>`}
+    else{m.hidden=true;return}
+    m.hidden=false;q("#cHint").hidden=true;m.querySelectorAll("[data-c]").forEach(b=>b.onclick=e=>{e.stopPropagation();const c=b.dataset.c;if(c==="board"){close();openBoarding()}else if(c==="x"){if(err){m.hidden=true}else close()}})}
+  let iv=null;
+  function openG(){if(!ok){toast("Tvůj prohlížeč neumí 3D. Zkus to v jiném.");return}
+    open=true;root.hidden=false;resize();if(typeof Game!=="undefined"&&Game.pause)Game.pause(true);
+    setGold(hasGoldShovel(myTicket&&myTicket.nick));q("#cMsg").hidden=true;ended=false;
+    renderNums();renderTop();tick();if(!canThrow())showMsg();loadStats();
+    clearInterval(iv);iv=setInterval(()=>{flush();if(!document.hidden)loadStats()},3000);last=performance.now();requestAnimationFrame(frame)}
+  function close(){open=false;root.hidden=true;clearInterval(iv);flush();if(typeof Game!=="undefined"&&Game.pause)Game.pause(false)}
+  document.addEventListener("visibilitychange",()=>{if(document.hidden&&open)flush()});
+  return{open:openG,close,isOpen:()=>open,tick};
+}
+
 /* ================= ADMIN ================= */
 function adminLogout(){ADMIN_PW=null;try{sessionStorage.removeItem(ADMKEY)}catch(e){}if(location.hash==="#sprava")renderAdmin()}
 async function adminLoad(){
   const out=await api("/api/admin",{headers:{"x-admin-password":ADMIN_PW||""}});
   S=out.state;ADMIN_TICKETS=out.tickets||[];COUNTS=out.counts;S.igFollowers=S.followers;S.followers=(COUNTS.pending||0)+(COUNTS.verified||0);ADMIN_REC=out.recovering||null;
   if(ADMIN_REC){const act=ADMIN_TICKETS.filter(t=>t.status==="pending"||t.status==="verified");ADMIN_REC.back=act.filter(t=>t.wagon&&t.wagon<=ADMIN_REC.upTo).length;ADMIN_REC.fresh=act.length-ADMIN_REC.back;S.followers=ADMIN_REC.upTo+ADMIN_REC.fresh}
-  S.peak=out.peak||S.followers;return out;
+  S.peak=out.peak||S.followers;ADMIN_COAL=out.coal||null;if(ADMIN_COAL){S.bonusKm=ADMIN_COAL.bonusKm||0;S.goldShovels=ADMIN_COAL.goldShovels||[];S.coal=ADMIN_COAL.ev}return out;
 }
 function renderLogin(err){
   $("#admin").innerHTML=`<div class="adm-head"><div><span class="eyebrow">Správa projektu</span><h2 style="margin-top:6px">Výpravna</h2></div><a class="btn" href="#">← Zpět do vlaku</a></div>
@@ -1549,6 +1815,37 @@ function supCardHtml(){
     <div class="row-f"><button class="btn primary" type="button" id="supSave">Uložit podporovatele</button></div></div>`;
 }
 function bindSup(A){const b=$("#supSave");if(b)b.onclick=()=>{const list=[...new Set($("#supList").value.split(/[\s,;]+/).map(x=>x.trim().replace(/^@+/,"").toLowerCase()).filter(x=>/^[a-z0-9._]{1,30}$/.test(x)))];S.supporters=list;save(`Podporovatelé uloženi (${list.length})`)}}
+function coalCardHtml(){
+  if(!ONLINE)return "";
+  const c=ADMIN_COAL||{};const ev=c.ev;const st=c.stats;const act=!!ev&&Date.now()>=ev.start&&Date.now()<ev.end;
+  const sug=Math.max(1000,Math.round(S.followers*22/1000)*1000);
+  const top=st&&st.top&&st.top.length?`<ol style="margin:6px 0 10px;padding-left:22px;font-size:.92rem">${st.top.map(([n,k],i)=>`<li>@${esc(n)} · <b>${fmt(k)}</b>${i<5?" 🥇":""}</li>`).join("")}</ol>`:"";
+  const prog=ev&&st?`<p style="font-size:1.05rem"><b>${fmt(st.total)}</b> / ${fmt(ev.goal)} lopat · ${fmt(st.players)} topičů${ev.done?" · <b style='color:var(--moss)'>cíl splněn, +"+fmt(ev.bonus)+" km</b>":""}</p>`:"";
+  return `<div class="card"><h3>🔥 Uhelný event</h3>
+    ${act?`<p class="muted" style="font-size:.9rem">Event běží, zbývá <b>${hms(ev.end-Date.now())}</b> (do ${fmtDT(ev.end)}). Cíl: ${fmt(ev.goal)} lopat, odměna +${fmt(ev.bonus)} km.</p>${prog}${top}
+      <div class="row-f"><button class="btn" type="button" id="coRef">Obnovit</button><button class="btn small danger" type="button" id="coStop">Ukončit teď</button></div>`
+    :`${ev?`<p class="muted" style="font-size:.9rem">Poslední event skončil ${fmtDT(ev.end)}.</p>${prog}${top}
+      ${ev.awarded?`<p class="fine">Zlaté lopaty dostali: ${ev.awarded.map(n=>"@"+esc(n)).join(", ")||"nikdo"}</p>`:(st&&st.top&&st.top.length?`<div class="row-f"><button class="btn primary" type="button" id="coAward">Rozdat zlaté lopaty top 5</button></div>`:"")}`:""}
+      <p class="fine">Cestující švihem prstu házejí uhlí do kotle. Když společně splní cíl, vlak poskočí o bonusové km. Top 5 pak dostane zlatou lopatu (rozdáš ji tady po konci eventu). Web spuštění ukáže do 1–2 minut, takže event zapni chvilku před zveřejněním videa.</p>
+      <div class="row-f"><div class="field"><label for="coH">Délka (hodiny)</label><input type="number" id="coH" min="0.05" step="0.5" value="3"></div>
+        <div class="field"><label for="coG">Cíl (lopat)</label><input type="number" id="coG" min="10" step="1000" value="${sug}"></div>
+        <div class="field"><label for="coB">Odměna (km)</label><input type="number" id="coB" min="0" value="100"></div></div>
+      <div class="row-f"><button class="btn primary" type="button" id="coStart">Spustit event</button></div>`}
+    <div class="field" style="margin-top:10px"><label for="coGs">Zlaté lopaty (nick na řádek)</label><textarea id="coGs" rows="3" style="width:100%;font:500 .9rem var(--mono)">${esc((c.goldShovels||[]).join("\n"))}</textarea></div>
+    <div class="row-f"><button class="btn small" type="button" id="coGsSave">Uložit zlaté lopaty</button></div>
+    <div class="err" id="coErr"></div></div>`;
+}
+function bindCoal(){
+  const call=async(body,msg)=>{try{const out=await api("/api/admin",{method:"POST",headers:{"x-admin-password":ADMIN_PW||""},body});ADMIN_COAL=out.coal;S.bonusKm=ADMIN_COAL.bonusKm||0;S.goldShovels=ADMIN_COAL.goldShovels||[];S.coal=ADMIN_COAL.ev;renderAdmin();if(msg)toast(typeof msg==="function"?msg(out):msg)}catch(e){if(e.status===401)return adminLogout();const er=$("#coErr");if(er)er.textContent=e.message}};
+  const b=id=>document.getElementById(id);
+  if(b("coStart"))b("coStart").onclick=()=>{const hours=+b("coH").value,goal=+b("coG").value,bonus=+b("coB").value;if(!confirmInline(b("coStart"),`Spustit na ${hours} h?`))return;call({action:"coal-start",hours,goal,bonus},"Uhelný event běží! 🔥")};
+  if(b("coStop"))b("coStop").onclick=()=>{if(!confirmInline(b("coStop"),"Opravdu ukončit?"))return;call({action:"coal-stop"},"Event ukončen")};
+  if(b("coAward"))b("coAward").onclick=()=>call({action:"coal-award",count:5},o=>`Zlaté lopaty: ${o.winners.map(n=>"@"+n).join(", ")||"nikdo"}`);
+  if(b("coRef"))b("coRef").onclick=async()=>{try{await adminLoad();renderAdmin()}catch(e){if(e.status===401)adminLogout()}};
+  if(b("coGsSave"))b("coGsSave").onclick=()=>{const list=[...new Set(b("coGs").value.split(/[\s,;]+/).map(x=>x.trim().replace(/^@+/,"").toLowerCase()).filter(x=>/^[a-z0-9._]{1,30}$/.test(x)))];call({action:"coal-shovels",list},`Zlaté lopaty uloženy (${list.length})`)};
+}
+// druhé kliknutí potvrdí (bez prohlížečových dialogů)
+function confirmInline(btn,txt){if(btn.dataset.sure==="1")return true;btn.dataset.sure="1";const o=btn.textContent;btn.textContent=txt+" Klikni znovu";setTimeout(()=>{if(btn.isConnected){btn.dataset.sure="";btn.textContent=o}},3500);return false}
 function driverCardHtml(){
   if(!ONLINE)return "";
   const cur=S.driver&&S.driver.nick;const t=cur&&ADMIN_TICKETS.find(x=>x.nick===cur);const p=driverPool();
@@ -1615,7 +1912,7 @@ function bindIg(A){
   const use=k=>()=>{if(!IG_COUNT||!S.vote)return;S.vote.options.forEach(o=>{o.votes=IG_COUNT[k][o.to]||0});save(k==="riders"?"Hlasy cestujících uloženy":"Všechny hlasy uloženy")};
   const ur=$("#igUseR");if(ur)ur.onclick=use("riders");const ua=$("#igUseA");if(ua)ua.onclick=use("all");
 }
-let ADMIN_REC=null;
+let ADMIN_REC=null,ADMIN_COAL=null;
 let TFILTER="",RELINK=null;
 let XOPEN=null;const EXTRA_LIST=[["bazen","Bazén"],["terarium","Terárium (had, želva, ještěrka)"],["monalisa","Mona Lisa"]];
 function ticketsCardHtml(){
@@ -1678,6 +1975,7 @@ function renderAdmin(){
     </div>
     ${igCardHtml()}
     ${driverCardHtml()}
+    ${coalCardHtml()}
     ${supCardHtml()}
     ${opCardHtml()}
     <div class="card"><h3>Výhybka · ${esc(nodeName(v.at))}</h3>
@@ -1754,7 +2052,7 @@ function bindAdmin(){
     if(!name||!km||isNaN(lat)||isNaN(lon)){$("#nErr").textContent="Vyplň název, kilometry a obě souřadnice.";return}
     let id=name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"")||"st";while(S.nodes[id])id+="2";
     S.nodes[id]={name,lon,lat,lab:"r"};S.edges.push([from,id,km]);if(S.vote&&S.vote.at===from&&!S.route.includes(id))S.vote.options.push({to:id,votes:0});save(`Stanice ${name} přidána`)};
-  bindTickets(A);bindCheck(A);bindDriver(A);bindSup(A);bindOp();bindTypos(A);bindIg(A);
+  bindTickets(A);bindCheck(A);bindDriver(A);bindCoal();bindSup(A);bindOp();bindTypos(A);bindIg(A);
   const lo=$("#aLogout");if(lo)lo.onclick=()=>{adminLogout();toast("Odhlášeno")};
   $("#dCopy").onclick=()=>{const ta=$("#dJson");const txt=JSON.stringify(S,null,2);const fb=()=>{ta.focus();ta.select();toast("Označeno, zkopíruj Ctrl+C")};if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Data zkopírována"),fb);else fb()};
   $("#dLoad").onclick=()=>{try{const d=JSON.parse($("#dJson").value);if(!d.nodes||!d.route||typeof d.followers!=="number")throw 0;S=d;save("Data načtena")}catch(e){$("#dErr").textContent="Tohle nejsou platná data vlaku. Zkontroluj, že je vložený celý JSON."}};
