@@ -1629,7 +1629,7 @@ function coalGame(){
       if(a>=.34){anim=-1;launched=false;if(queued){queued=0;throwOne(aim)}}
     }else{pose(PO.rest,PO.rest,0);gT.y+=Math.sin(t*2)*.02}
     shovel.position.copy(gP);shovel.lookAt(gT);shovel.rotateY(Math.PI);
-    for(const f of FLY){if(f.t<0)continue;f.t+=dt/.36;const u=Math.min(1,f.t),a=1-u;
+    for(const f of FLY){if(f.t<0)continue;f.t+=dt/(window.__coalFly||.36);const u=Math.min(1,f.t),a=1-u;
       f.g.position.set(a*a*f.p0.x+2*a*u*f.p1.x+u*u*f.p2.x,a*a*f.p0.y+2*a*u*f.p1.y+u*u*f.p2.y,a*a*f.p0.z+2*a*u*f.p1.z+u*u*f.p2.z);f.g.rotation.set(t*9,t*7,0);f.g.scale.setScalar(1-u*.35);
       if(u>=1){f.t=-1;f.g.visible=false;hit()}}
     for(const s of SPK){if(s.t>=.9){s.m.position.y=-5;continue}s.t+=dt;s.v.y-=4.5*dt;s.m.position.addScaledVector(s.v,dt);s.m.scale.setScalar(Math.max(.01,1-s.t/.9))}
