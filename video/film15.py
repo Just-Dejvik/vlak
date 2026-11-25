@@ -11,6 +11,7 @@ TOK = open("/tmp/claude-0/ftok").read().strip()
 ME = {"nick": "tvuj.nick", "token": TOK, "wagon": 1816, "status": "pending", "public": True,
       "avatar": {"coat": "#2f6f9f", "hat": "koruna", "pet": "pes", "item": "nic", "hair": "#6b3f22", "skin": "#f1c9a5"}}
 ROSTER = json.loads(film12.roster())
+C2LEN = float(os.environ.get('C2LEN', '4.32'))
 GSW = 12                      # vagón s vymyšleným cestujícím se zlatou lopatou
 GSN = next(e[1] for e in ROSTER if e[0] == GSW)
 
@@ -96,10 +97,10 @@ async def shot(name, b):
     elif name == "c2_event":  # 2,13–6,45: Dnes od 16 do 19 hodin se koná uhelný event.
         ctx, pg = await mk_c(b, api="hang")
         await pg.add_style_tag(content="#coal .c-top,#coal .c-prog,#coal .c-me,#coal .c-hint{opacity:0}")
-        await pg.evaluate(ov('<div class="eb">Dnes</div><div class="ttl">🔥 Uhelný<br><y>event!</y></div>'))
+        await pg.evaluate(ov('<div class="eb">V pátek</div><div class="ttl">🔥 Uhelný<br><y>event!</y></div>'))
         await setfull(pg, '<div class="timec"><span id="tc">16:00 – 19:00</span></div>')
         await pg.evaluate(fx(ease + "const k=t-1.2;document.getElementById('tc').style.transform=`scale(${k<0?0:(k<.35?B(k/.35):1+.02*Math.sin(k*4))})`"))
-        await film.record(pg, name, 4.32, cues=swipes([.5, 2.2, 3.4]))
+        await film.record(pg, name, C2LEN, cues=swipes([.5, 2.0, 3.2]))
     elif name == "c3_open":   # 6,45–7,30: Otevři web,
         ctx, pg = await mk_c(b, coal=False)
         await pg.evaluate("()=>{Game.flyTo(1790,.6)}"); await steps(pg, 200)
@@ -150,7 +151,7 @@ async def shot(name, b):
         await film14.train(pg)
         await pg.evaluate("()=>{Game.flyTo(0,.6);Game.setShift(-.13)}"); await steps(pg, 220)
         await pg.evaluate(ov('<div class="eb">Odkaz na web</div><div class="ttl">Je v <y>biu!</y> 👆</div>'))
-        await setfull(pg, '<div style="position:absolute;left:0;right:0;top:1300px;text-align:center"><span id="tc" style="display:inline-block;background:#1f1712;color:#fff;border-radius:999px;padding:26px 50px;font:800 64px/1 IS,sans-serif;box-shadow:0 0 50px rgba(255,120,30,.6),0 12px 30px rgba(0,0,0,.3);transform:scale(0)">🔥 Dnes 16:00–19:00</span>'
+        await setfull(pg, '<div style="position:absolute;left:0;right:0;top:1300px;text-align:center"><span id="tc" style="display:inline-block;background:#1f1712;color:#fff;border-radius:999px;padding:26px 50px;font:800 64px/1 IS,sans-serif;box-shadow:0 0 50px rgba(255,120,30,.6),0 12px 30px rgba(0,0,0,.3);transform:scale(0)">🔥 V pátek 16:00–19:00</span>'
                       '<div id="ht" style="margin-top:46px;font:900 70px BS,sans-serif;color:#fff;text-shadow:0 6px 0 rgba(20,40,60,.35);opacity:0">@vlak.followeru 🚂</div></div>')
         await pg.evaluate(fx(ease + "const s=t-.15;document.getElementById('tc').style.transform=`scale(${s<0?0:(s<.35?B(s/.35):1+.03*Math.sin(s*5))})`;document.getElementById('ht').style.opacity=Math.min(1,Math.max(0,(t-.7)/.3))"))
         await film.record(pg, name, 3.0)
