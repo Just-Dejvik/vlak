@@ -608,6 +608,21 @@ const Game=(()=>{
     for(const x of [70,220,380]){const gr=g.createLinearGradient(x,0,x+60,h);gr.addColorStop(0,"rgba(255,255,255,0)");gr.addColorStop(.5,"rgba(255,255,255,.55)");gr.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=gr;g.beginPath();g.moveTo(x,22);g.lineTo(x+26,22);g.lineTo(x+66,h-22);g.lineTo(x+40,h-22);g.fill()}
     g.fillStyle="rgba(120,70,0,.9)";g.font="900 46px serif";g.textAlign="center";g.textBaseline="middle";g.fillText("★",36,h/2+2);g.fillText("★",w-36,h/2+2)});
   const goldDecoMat=new THREE.MeshBasicMaterial({map:goldDeco,transparent:true,depthWrite:false});
+  // Pařížský vagón: cestující, se kterým vlak dorazil do Paříže (2 124 km − 100 bonusových km z uhelného eventu = 2 024. cestující).
+  const PARIS_WAGON=2024;
+  const tricolor=canvasTex(512,128,(g,w,h)=>{g.clearRect(0,0,w,h);const cs=["#1f4fa8","#f4f4f0","#d4303a"];for(let i=0;i<3;i++){g.fillStyle=cs[i];g.fillRect(i*w/3,0,w/3+1,h)}g.strokeStyle="rgba(40,30,10,.7)";g.lineWidth=6;g.strokeRect(3,3,w-6,h-6)});
+  const tricolorMat=new THREE.MeshBasicMaterial({map:tricolor,transparent:true,depthWrite:false});
+  function makeEiffel(){const e=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:0x7a5634,roughness:.55,metalness:.35,flatShading:true});
+    const leg=(x,z)=>{const l=new THREE.Mesh(new THREE.BoxGeometry(.12,1.3,.12),m);l.position.set(x*.38,.62,z*.38);l.rotation.z=-x*.32;l.rotation.x=z*.32;e.add(l)};
+    for(const x of [-1,1])for(const z of [-1,1])leg(x,z);
+    const arch=new THREE.Mesh(new THREE.BoxGeometry(1.1,.1,1.1),m);arch.position.y=.42;e.add(arch);
+    const p1=new THREE.Mesh(new THREE.BoxGeometry(.62,.1,.62),m);p1.position.y=1.2;e.add(p1);
+    const mid=new THREE.Mesh(new THREE.CylinderGeometry(.08,.26,1.25,4),m);mid.position.y=1.85;mid.rotation.y=Math.PI/4;e.add(mid);
+    const p2=new THREE.Mesh(new THREE.BoxGeometry(.3,.07,.3),m);p2.position.y=2.3;e.add(p2);
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(.02,.08,.75,4),m);top.position.y=2.75;top.rotation.y=Math.PI/4;e.add(top);
+    const fl=new THREE.Group();fl.position.set(1.4,0,0);const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.8,6),new THREE.MeshStandardMaterial({color:0xdddddd,metalness:.6,roughness:.3}));pole.position.y=.9;fl.add(pole);
+    const fm=new THREE.Mesh(new THREE.PlaneGeometry(.9,.6),new THREE.MeshBasicMaterial({map:canvasTex(96,64,(g,w,h)=>{const cs=["#1f4fa8","#f4f4f0","#d4303a"];for(let i=0;i<3;i++){g.fillStyle=cs[i];g.fillRect(i*w/3,0,w/3+1,h)}}),side:THREE.DoubleSide}));fm.position.set(.46,1.5,0);fl.add(fm);fl.userData.flag=fm;e.add(fl);e.userData.flag=fm;
+    e.scale.setScalar(1.25);return e}
   const isGold=n=>{try{const o=occupant(n);return !!(o&&o.nick&&isSupporter(o.nick))}catch{return false}};
   const wheelMat=new THREE.MeshStandardMaterial({color:0x1a1f2a,roughness:.5,metalness:.6});
 
@@ -778,6 +793,7 @@ const Game=(()=>{
     g.add(mesh(box(GAP+.2,.22,.4),underMat,WL/2+GAP/2,1.0,0));
     s.signC=texCanvas(512,80);s.sign=mesh(new THREE.PlaneGeometry(6,.94),new THREE.MeshBasicMaterial({map:s.signC.t,transparent:true}),0,5.15,.6);g.add(s.sign);
     s.deco=mesh(new THREE.PlaneGeometry(WL-.2,1.25),goldDecoMat,0,1.9,1.505);s.deco.visible=false;s.front.add(s.deco);
+    s.paris=new THREE.Group();s.paris.visible=false;g.add(s.paris);{const t=mesh(new THREE.PlaneGeometry(WL-.2,1.25),tricolorMat,0,1.9,1.506);s.paris.add(t);const e=makeEiffel();e.position.set(0,4.62,0);s.paris.add(e);s.eiffel=e}
     s.sparks=new THREE.Group();s.sparks.visible=false;g.add(s.sparks);
     for(let i=0;i<9;i++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTex,color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));sp.position.set(-WL/2+.6+Math.random()*(WL-1.2),1.4+Math.random()*3.1,1.6);sp.scale.setScalar(.5);sp.userData.ph=Math.random()*6.28;sp.userData.sp=1.5+Math.random()*2;s.sparks.add(sp)}
     for(const m of [s.back,s.fLow,s.fUp,s.roof,...s.pillars,...s.wins]){m.userData.slot=s;pickables.push(m)}
@@ -792,9 +808,9 @@ const Game=(()=>{
     s.n=n;s.g.visible=true;s.g.position.x=wagonX(n);
     const sp=specialsMap().get(n);const r=rng(n*2654435761);
     const gold=isGold(n);s.gold=gold;const bm0=sp?specialMat:bodyMats[Math.floor(r()*bodyMats.length)];const bm=gold?goldMat:bm0;s.baseMat=bm0;
-    for(const m of [s.back,s.endA,s.endB,s.fLow,s.fUp,...s.pillars])m.material=bm;s.roof.material=s.roof2.material=gold?goldRoofMat:roofMat;s.sparks.visible=gold;s.deco.visible=gold;
+    for(const m of [s.back,s.endA,s.endB,s.fLow,s.fUp,...s.pillars])m.material=bm;s.roof.material=s.roof2.material=gold?goldRoofMat:roofMat;s.sparks.visible=gold;const pw=n===PARIS_WAGON;s.paris.visible=pw;s.deco.visible=gold&&!pw;
     for(const w of s.wins){w.material=r()<.86?winMats[Math.floor(r()*winMats.length)]:darkWinMat}
-    drawPlate(s,n,!!sp||gold);s.sign.visible=!!sp;if(sp)drawSign(s,sp);s.front.visible=true;
+    drawPlate(s,n,!!sp||gold||pw);const sgn=sp&&!pw?sp:"";s.sign.visible=!!sgn;if(sgn)drawSign(s,sgn);s.front.visible=true;
   }
   function updatePool(center,force){const R=Math.floor(POOL/2);
     for(let n=center-R;n<=center+R;n++){const s=slots[((n%POOL)+POOL)%POOL];if(n<1||n>N){s.g.visible=false;s.n=-1;continue}if(s.n!==n||force)configure(s,n)}}
@@ -1075,6 +1091,7 @@ const Game=(()=>{
     const gk=(Array.isArray(S.supporters)?S.supporters.join(","):"")+"|"+(typeof ROSTER_MAP!=="undefined"?ROSTER_MAP.size:0)+"|"+(myTicket?myTicket.wagon+myTicket.nick:"");
     if(gk!==goldKey){goldKey=gk;updatePool(Math.max(1,center),true);lastCenter=center}
     if(center!==lastCenter){updatePool(Math.max(1,center),false);lastCenter=center}
+    if(!reduce)for(const sl of slots)if(sl.paris.visible&&sl.g.visible){const f=sl.eiffel.userData.flag;f.rotation.y=Math.sin(now/260)*.35;f.scale.x=1-Math.abs(Math.sin(now/330))*.12}
     if(!reduce)for(const sl of slots)if(sl.gold&&sl.g.visible)for(const sp of sl.sparks.children){const v=Math.max(0,Math.sin(now/1000*sp.userData.sp+sp.userData.ph));sp.material.opacity=Math.pow(v,10);sp.scale.setScalar(.25+.55*Math.pow(v,4))}
     const focusN=z<.5&&center>0?center:(z<.5?0:-1);
     if(focusN!==lastFocus){for(const s of slots)s.front.visible=true;
