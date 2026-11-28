@@ -81,9 +81,9 @@ async def shot(name, b):
     elif name == "p6_only":     # 13,11–15,11: Bude jediný v celém vlaku.
         await train(pg)
         await pg.evaluate(f"()=>{{Game.flyTo({PW},.6)}}"); await steps(pg, 240)
-        await pg.evaluate(film12.cam_js(PW), [10, 9, 20, -14, 3, 0]); await steps(pg, 5)
+        await pg.evaluate(film12.cam_js(PW), [-16, 7, 15, 9, 2.5, 0]); await steps(pg, 5)
         await pg.evaluate(ov('<div class="eb">Ze všech vagónů</div><div class="ttl">Jediný<br><y>v celém vlaku!</y></div>'))
-        await pg.evaluate(fx("{const k=t;window.__cam=[10+k*6,9+k*3,20+k*7,-14-k*8,3,0]}"))
+        await pg.evaluate(fx("{const k=t;window.__cam=[-16-k*3,7+k*2,15+k*5,9+k*4,2.5,0]}"))
         await film.record(pg, name, 2.0)
     elif name == "p7_you":      # 15,11–17,10: Tak kdo to bude? Ty?
         await train(pg)
